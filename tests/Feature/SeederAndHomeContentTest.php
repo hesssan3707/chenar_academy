@@ -25,6 +25,28 @@ class SeederAndHomeContentTest extends TestCase
         $this->assertGreaterThanOrEqual(3, Category::query()->where('type', 'ticket')->count());
     }
 
+    public function test_catalog_seeder_includes_institutions_and_note_video_categories_with_icons(): void
+    {
+        $this->seed(CatalogSeeder::class);
+
+        $this->assertDatabaseHas('categories', ['type' => 'institution', 'slug' => 'iau']);
+        $this->assertDatabaseHas('categories', ['type' => 'institution', 'slug' => 'pnu']);
+
+        $iau = Category::query()->where('type', 'institution')->where('slug', 'iau')->first();
+        $this->assertNotNull($iau);
+
+        $this->assertDatabaseHas('categories', [
+            'type' => 'note',
+            'slug' => 'iau-math-1',
+            'parent_id' => $iau->id,
+            'icon_key' => 'math',
+        ]);
+
+        $this->assertGreaterThanOrEqual(2, Category::query()->where('type', 'institution')->count());
+        $this->assertGreaterThanOrEqual(1, Category::query()->where('type', 'note')->count());
+        $this->assertGreaterThanOrEqual(1, Category::query()->where('type', 'video')->count());
+    }
+
     public function test_homepage_loads_banner_and_posts_from_database(): void
     {
         Banner::query()->create([

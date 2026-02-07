@@ -7,8 +7,8 @@ use App\Models\OtpCode;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -21,7 +21,7 @@ class OtpController extends Controller
             'purpose' => ['required', 'string', Rule::in(['login', 'register', 'password_reset'])],
         ]);
 
-        if ($validated['purpose'] === 'password_reset') {
+        if (in_array($validated['purpose'], ['login', 'password_reset'], true)) {
             if (! User::query()->where('phone', $validated['phone'])->exists()) {
                 throw ValidationException::withMessages([
                     'phone' => 'کاربری با این شماره تلفن پیدا نشد.',
@@ -35,7 +35,7 @@ class OtpController extends Controller
             'ok' => true,
             'purpose' => $validated['purpose'],
             'phone' => $validated['phone'],
-            'cooldown_seconds' => 120,
+            'cooldown_seconds' => 60,
             'toast' => [
                 'type' => 'success',
                 'title' => 'کد ارسال شد',
@@ -46,13 +46,17 @@ class OtpController extends Controller
 
     private function sendOtp(Request $request, string $phone, string $purpose): void
     {
-        $cooldownKey = sprintf('otp.cooldown:%s:%s', $purpose, preg_replace('/\D+/', '', $phone) ?: $phone);
+        $normalizedPhone = preg_replace('/\D+/', '', $phone) ?: $phone;
+        $throttleKey = sprintf('otp.send:%s:%s', $purpose, $normalizedPhone);
 
-        if (! Cache::add($cooldownKey, true, now()->addSeconds(120))) {
+        if (RateLimiter::tooManyAttempts($throttleKey, 2)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
             throw ValidationException::withMessages([
-                'otp_code' => 'برای ارسال مجدد کد، لطفا ۲ دقیقه صبر کنید.',
+                'otp_code' => sprintf('تعداد درخواست زیاد است. لطفا %d ثانیه دیگر تلاش کنید.', max(1, (int) $seconds)),
             ]);
         }
+
+        RateLimiter::hit($throttleKey, 60);
 
         $code = app()->isProduction()
             ? (string) random_int(10000, 99999)

@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
 
         $admin = User::query()->firstOrCreate(['phone' => $adminPhone], [
             'name' => 'Admin',
-            'email' => $adminPhone.'@chenar.local',
+            'email' => null,
             'password' => 'password',
             'phone_verified_at' => now(),
             'is_active' => true,
@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
 
         $user = User::query()->firstOrCreate(['phone' => $userPhone], [
             'name' => 'User',
-            'email' => $userPhone.'@chenar.local',
+            'email' => null,
             'password' => 'password',
             'phone_verified_at' => now(),
             'is_active' => true,

@@ -28,8 +28,6 @@ class UserFactory extends Factory
 
         return [
             'name' => $firstName.' '.$lastName,
-            'first_name' => $firstName,
-            'last_name' => $lastName,
             'phone' => fake()->unique()->numerify('09#########'),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),

@@ -23,8 +23,7 @@ class RegisterController extends Controller
     {
         $validated = $request->validate([
             'phone' => ['required', 'string', 'max:20'],
-            'first_name' => ['required', 'string', 'max:80'],
-            'last_name' => ['required', 'string', 'max:80'],
+            'name' => ['required', 'string', 'max:160'],
             'password' => ['required', 'string', 'min:6', 'max:120', 'confirmed'],
             'password_confirmation' => ['required', 'string', 'max:120'],
             'otp_code' => ['required', 'string', 'max:10'],
@@ -38,14 +37,11 @@ class RegisterController extends Controller
 
         $this->consumeOtpOrFail($validated['phone'], 'register', (string) $validated['otp_code']);
 
-        $email = $this->emailForPhone($validated['phone']);
-        $fullName = trim(($validated['first_name'] ?? '').' '.($validated['last_name'] ?? '')) ?: $validated['phone'];
+        $fullName = trim((string) ($validated['name'] ?? '')) ?: $validated['phone'];
 
         $user = User::query()->create([
             'name' => $fullName,
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
-            'email' => $email,
+            'email' => null,
             'password' => $validated['password'],
             'phone' => $validated['phone'],
             'phone_verified_at' => now(),
@@ -87,13 +83,6 @@ class RegisterController extends Controller
         }
 
         $otp->forceFill(['consumed_at' => now()])->save();
-    }
-
-    private function emailForPhone(string $phone): string
-    {
-        $normalized = preg_replace('/\D+/', '', $phone) ?: $phone;
-
-        return $normalized.'@chenar.local';
     }
 
     private function redirectAfterAuth(User $user): RedirectResponse

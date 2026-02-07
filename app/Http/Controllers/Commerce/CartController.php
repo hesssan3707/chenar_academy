@@ -39,11 +39,10 @@ class CartController extends Controller
     {
         $validated = $request->validate([
             'product_id' => ['required', 'integer', 'exists:products,id'],
-            'quantity' => ['nullable', 'integer', 'min:1', 'max:99'],
         ]);
 
         $product = Product::query()->where('status', 'published')->findOrFail($validated['product_id']);
-        $quantity = (int) ($validated['quantity'] ?? 1);
+        $quantity = 1;
 
         $guestToken = $this->getOrCreateGuestCartToken($request);
         $request->session()->put('cart_token', $guestToken);
@@ -54,7 +53,7 @@ class CartController extends Controller
         $item = CartItem::query()->where('cart_id', $cart->id)->where('product_id', $product->id)->first();
         if ($item) {
             $item->forceFill([
-                'quantity' => min(99, (int) $item->quantity + $quantity),
+                'quantity' => 1,
                 'unit_price' => $unitPrice,
                 'currency' => $product->currency ?? 'IRR',
             ])->save();
@@ -84,17 +83,13 @@ class CartController extends Controller
 
     public function updateItem(Request $request, int $item): RedirectResponse
     {
-        $validated = $request->validate([
-            'quantity' => ['required', 'integer', 'min:1', 'max:99'],
-        ]);
-
         $cart = $this->findCart($request);
         if (! $cart) {
             return redirect()->route('cart.index');
         }
 
         $cartItem = CartItem::query()->where('id', $item)->where('cart_id', $cart->id)->firstOrFail();
-        $cartItem->forceFill(['quantity' => (int) $validated['quantity']])->save();
+        $cartItem->forceFill(['quantity' => 1])->save();
 
         return redirect()->route('cart.index')->with('toast', [
             'type' => 'success',

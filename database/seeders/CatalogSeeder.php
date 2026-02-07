@@ -15,6 +15,7 @@ class CatalogSeeder extends Seeder
     {
         $this->seedPostCategories();
         $this->seedTicketCategories();
+        $this->seedInstitutionsAndCatalogCategories();
         $this->seedPosts();
         $this->seedNotes();
         $this->seedVideos();
@@ -65,6 +66,64 @@ class CatalogSeeder extends Seeder
         }
     }
 
+    private function seedInstitutionsAndCatalogCategories(): void
+    {
+        $institutions = [
+            ['title' => 'دانشگاه آزاد اسلامی', 'slug' => 'iau', 'icon_key' => 'university'],
+            ['title' => 'دانشگاه پیام نور', 'slug' => 'pnu', 'icon_key' => 'university'],
+        ];
+
+        foreach ($institutions as $institution) {
+            Category::query()->firstOrCreate(
+                ['type' => 'institution', 'slug' => $institution['slug']],
+                [
+                    'title' => $institution['title'],
+                    'parent_id' => null,
+                    'icon_key' => $institution['icon_key'],
+                    'description' => null,
+                    'is_active' => true,
+                    'sort_order' => 0,
+                ],
+            );
+        }
+
+        $items = [
+            ['type' => 'note', 'title' => 'ریاضی ۱', 'slug' => 'iau-math-1', 'parent' => 'iau', 'icon_key' => 'math'],
+            ['type' => 'note', 'title' => 'ریاضی ۲', 'slug' => 'iau-math-2', 'parent' => 'iau', 'icon_key' => 'math'],
+            ['type' => 'note', 'title' => 'فیزیک', 'slug' => 'iau-physics', 'parent' => 'iau', 'icon_key' => 'physics'],
+            ['type' => 'note', 'title' => 'ریاضی ۱', 'slug' => 'pnu-math-1', 'parent' => 'pnu', 'icon_key' => 'math'],
+            ['type' => 'note', 'title' => 'محاسبات', 'slug' => 'pnu-calculus', 'parent' => 'pnu', 'icon_key' => 'calculator'],
+            ['type' => 'note', 'title' => 'فیزیک', 'slug' => 'pnu-physics', 'parent' => 'pnu', 'icon_key' => 'physics'],
+            ['type' => 'video', 'title' => 'ریاضی', 'slug' => 'iau-video-math', 'parent' => 'iau', 'icon_key' => 'video'],
+            ['type' => 'video', 'title' => 'فیزیک', 'slug' => 'iau-video-physics', 'parent' => 'iau', 'icon_key' => 'video'],
+            ['type' => 'video', 'title' => 'ریاضی', 'slug' => 'pnu-video-math', 'parent' => 'pnu', 'icon_key' => 'video'],
+            ['type' => 'video', 'title' => 'محاسبات', 'slug' => 'pnu-video-calculus', 'parent' => 'pnu', 'icon_key' => 'video'],
+        ];
+
+        foreach ($items as $item) {
+            $institution = Category::query()
+                ->where('type', 'institution')
+                ->where('slug', $item['parent'])
+                ->first();
+
+            if (! $institution) {
+                continue;
+            }
+
+            Category::query()->firstOrCreate(
+                ['type' => $item['type'], 'slug' => $item['slug']],
+                [
+                    'title' => $item['title'],
+                    'parent_id' => $institution->id,
+                    'icon_key' => $item['icon_key'],
+                    'description' => null,
+                    'is_active' => true,
+                    'sort_order' => 0,
+                ],
+            );
+        }
+    }
+
     private function seedPosts(): void
     {
         for ($i = 1; $i <= 5; $i++) {
@@ -82,6 +141,14 @@ class CatalogSeeder extends Seeder
 
     private function seedNotes(): void
     {
+        $noteCategorySlugs = [
+            1 => 'iau-math-1',
+            2 => 'iau-math-2',
+            3 => 'pnu-math-1',
+            4 => 'pnu-calculus',
+            5 => 'pnu-physics',
+        ];
+
         for ($i = 1; $i <= 5; $i++) {
             $product = Product::query()->firstOrCreate(['slug' => 'note-'.$i], [
                 'type' => 'note',
@@ -95,11 +162,27 @@ class CatalogSeeder extends Seeder
                 'published_at' => now()->subDays(10 - $i),
                 'meta' => $i === 1 ? ['badge' => 'فروش ویژه'] : [],
             ]);
+
+            $categorySlug = $noteCategorySlugs[$i] ?? null;
+            if ($categorySlug) {
+                $category = Category::query()->where('type', 'note')->where('slug', $categorySlug)->first();
+                if ($category) {
+                    $product->categories()->syncWithoutDetaching([$category->id]);
+                }
+            }
         }
     }
 
     private function seedVideos(): void
     {
+        $videoCategorySlugs = [
+            1 => 'iau-video-math',
+            2 => 'iau-video-physics',
+            3 => 'pnu-video-math',
+            4 => 'pnu-video-calculus',
+            5 => 'pnu-video-math',
+        ];
+
         for ($i = 1; $i <= 5; $i++) {
             $product = Product::query()->firstOrCreate(['slug' => 'video-'.$i], [
                 'type' => 'video',
@@ -119,6 +202,14 @@ class CatalogSeeder extends Seeder
                 'duration_seconds' => 1800,
                 'meta' => [],
             ]);
+
+            $categorySlug = $videoCategorySlugs[$i] ?? null;
+            if ($categorySlug) {
+                $category = Category::query()->where('type', 'video')->where('slug', $categorySlug)->first();
+                if ($category) {
+                    $product->categories()->syncWithoutDetaching([$category->id]);
+                }
+            }
         }
     }
 

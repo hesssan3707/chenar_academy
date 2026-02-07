@@ -13,17 +13,9 @@
                     @csrf
 
                     <label class="field">
-                        <span class="field__label">نام</span>
-                        <input name="first_name" type="text" autocomplete="given-name" required value="{{ old('first_name') }}">
-                        @error('first_name')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
-
-                    <label class="field">
-                        <span class="field__label">نام خانوادگی</span>
-                        <input name="last_name" type="text" autocomplete="family-name" required value="{{ old('last_name') }}">
-                        @error('last_name')
+                        <span class="field__label">نام و نام خانوادگی</span>
+                        <input name="name" type="text" autocomplete="name" required value="{{ old('name') }}">
+                        @error('name')
                             <div class="field__error">{{ $message }}</div>
                         @enderror
                     </label>

@@ -13,7 +13,7 @@
                     <div class="stack stack--sm">
                         <div>
                             <span class="field__label">نام و نام خانوادگی</span>
-                            <div>{{ trim((auth()->user()->first_name ?? '').' '.(auth()->user()->last_name ?? '')) ?: (auth()->user()->name ?? '-') }}</div>
+                            <div>{{ auth()->user()->name ?? '-' }}</div>
                         </div>
 
                         <div>
@@ -23,7 +23,8 @@
 
                         <div>
                             <span class="field__label">ایمیل</span>
-                            <div>{{ auth()->user()->email ?? '-' }}</div>
+                            @php($email = (string) (auth()->user()->email ?? ''))
+                            <div>{{ $email !== '' && ! str_ends_with($email, '@chenar.local') ? $email : '-' }}</div>
                         </div>
 
                         <div>

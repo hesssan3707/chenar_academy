@@ -16,6 +16,15 @@ class OtpAuthTest extends TestCase
     {
         $phone = '09120000009';
 
+        User::query()->create([
+            'name' => $phone,
+            'email' => $phone.'@chenar.local',
+            'phone' => $phone,
+            'phone_verified_at' => now(),
+            'password' => 'password',
+            'is_active' => true,
+        ]);
+
         $this->postJson(route('otp.send'), [
             'purpose' => 'login',
             'phone' => $phone,
@@ -23,16 +32,42 @@ class OtpAuthTest extends TestCase
             'ok' => true,
             'purpose' => 'login',
             'phone' => $phone,
-            'cooldown_seconds' => 120,
+            'cooldown_seconds' => 60,
         ]);
 
         $otp = OtpCode::query()->where('phone', $phone)->where('purpose', 'login')->firstOrFail();
         $this->assertTrue(Hash::check('11111', $otp->code_hash));
     }
 
-    public function test_send_otp_is_rate_limited_for_two_minutes(): void
+    public function test_login_otp_send_requires_existing_user(): void
+    {
+        $phone = '09120000011';
+
+        $this->postJson(route('otp.send'), [
+            'purpose' => 'login',
+            'phone' => $phone,
+        ])->assertStatus(422)->assertJsonValidationErrors(['phone']);
+
+        $this->assertDatabaseCount('otp_codes', 0);
+    }
+
+    public function test_send_otp_is_rate_limited_to_two_per_minute(): void
     {
         $phone = '09120000010';
+
+        User::query()->create([
+            'name' => $phone,
+            'email' => $phone.'@chenar.local',
+            'phone' => $phone,
+            'phone_verified_at' => now(),
+            'password' => 'password',
+            'is_active' => true,
+        ]);
+
+        $this->postJson(route('otp.send'), [
+            'purpose' => 'login',
+            'phone' => $phone,
+        ])->assertOk();
 
         $this->postJson(route('otp.send'), [
             'purpose' => 'login',
@@ -55,8 +90,7 @@ class OtpAuthTest extends TestCase
         ])->assertOk();
 
         $this->post(route('register.store'), [
-            'first_name' => 'Test',
-            'last_name' => 'User',
+            'name' => 'Test User',
             'phone' => $phone,
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
@@ -65,6 +99,7 @@ class OtpAuthTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'phone' => $phone,
+            'email' => null,
             'is_active' => 1,
         ]);
     }

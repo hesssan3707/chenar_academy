@@ -31,7 +31,6 @@ class CartTest extends TestCase
 
         $this->post(route('cart.items.store'), [
             'product_id' => $product->id,
-            'quantity' => 1,
         ])->assertRedirect(route('cart.index'));
 
         $this->assertDatabaseCount('carts', 1);
@@ -50,10 +49,12 @@ class CartTest extends TestCase
         $this->withSession(['cart_token' => $cart->session_id])
             ->get(route('cart.index'))
             ->assertOk()
-            ->assertSee('جزوه تست');
+            ->assertSee('جزوه تست')
+            ->assertDontSee('تعداد')
+            ->assertDontSee('جمع این آیتم');
     }
 
-    public function test_adding_same_product_twice_increments_quantity(): void
+    public function test_adding_same_product_twice_does_not_increment_quantity(): void
     {
         $product = Product::query()->create([
             'type' => 'video',
@@ -85,7 +86,7 @@ class CartTest extends TestCase
         $this->assertDatabaseCount('cart_items', 1);
 
         $cartItem = CartItem::query()->firstOrFail();
-        $this->assertSame(2, (int) $cartItem->quantity);
+        $this->assertSame(1, (int) $cartItem->quantity);
         $this->assertSame(70000, (int) $cartItem->unit_price);
     }
 }

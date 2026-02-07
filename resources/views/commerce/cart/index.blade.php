@@ -35,34 +35,11 @@
                                                     <span class="price__unit">تومان</span>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <div class="cluster" style="justify-content: space-between;">
-                                            <form method="post" action="{{ route('cart.items.update', $item->id) }}" class="cluster">
-                                                @csrf
-                                                @method('put')
-
-                                                <label class="field" style="max-width: 180px;">
-                                                    <span class="field__label">تعداد</span>
-                                                    <input name="quantity" type="number" min="1" max="99" value="{{ $item->quantity }}">
-                                                </label>
-
-                                                <button class="btn btn--sm" type="submit">به‌روزرسانی</button>
-                                            </form>
-
                                             <form method="post" action="{{ route('cart.items.destroy', $item->id) }}">
                                                 @csrf
                                                 @method('delete')
                                                 <button class="btn btn--ghost btn--sm" type="submit">حذف</button>
                                             </form>
-                                        </div>
-
-                                        <div class="cluster" style="justify-content: space-between;">
-                                            <div class="field__label">جمع این آیتم</div>
-                                            <div>
-                                                <span class="price">{{ number_format($item->unit_price * $item->quantity) }}</span>
-                                                <span class="price__unit">تومان</span>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>

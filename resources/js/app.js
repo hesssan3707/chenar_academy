@@ -194,17 +194,21 @@ const attachOtpAjaxSend = (button) => {
 
         try {
             const appConfig = parseAppConfig();
-            const baseUrl = (appConfig?.base_url || '').toString().replace(/\/+$/, '');
-            let otpSendUrl = appConfig?.routes?.otp_send || '/otp/send';
-            otpSendUrl = otpSendUrl.toString();
-            if (otpSendUrl && !otpSendUrl.startsWith('http') && !otpSendUrl.startsWith('/')) {
-                otpSendUrl = `/${otpSendUrl}`;
-            }
-            if (baseUrl && otpSendUrl.startsWith('/')) {
-                otpSendUrl = `${baseUrl}${otpSendUrl}`;
+            const baseUrl = (appConfig?.base_url || window.location.origin).toString().replace(/\/+$/, '');
+            const otpSendUrlRaw = (appConfig?.routes?.otp_send || '').toString().trim();
+
+            let finalOtpSendUrl = '';
+            if (otpSendUrlRaw) {
+                try {
+                    finalOtpSendUrl = new URL(otpSendUrlRaw, `${baseUrl}/`).toString();
+                } catch {
+                    finalOtpSendUrl = `${baseUrl}/${otpSendUrlRaw.replace(/^\/+/, '')}`;
+                }
+            } else {
+                finalOtpSendUrl = `${baseUrl}/otp/send`;
             }
 
-            const response = await window.axios.post(otpSendUrl, { phone, purpose });
+            const response = await window.axios.post(finalOtpSendUrl, { phone, purpose });
             if (response?.data?.toast) {
                 showToast(response.data.toast);
             }
@@ -218,6 +222,11 @@ const attachOtpAjaxSend = (button) => {
                     (errors.phone && errors.phone[0]) ||
                     'خطا در ارسال کد.';
                 setOtpError(form, message);
+                return;
+            }
+
+            if (status === 404) {
+                showToast({ type: 'danger', message: 'مسیر ارسال کد پیدا نشد.' });
                 return;
             }
 
@@ -297,37 +306,36 @@ const attachLoginModeToggles = () => {
     }
 };
 
-const attachPasswordToggle = (button) => {
-    if (!button || button.__passwordToggleAttached) {
-        return;
-    }
+const attachPasswordToggles = () => {
+    document.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        const button = target ? target.closest('[data-password-toggle]') : null;
+        if (!button) {
+            return;
+        }
 
-    button.__passwordToggleAttached = true;
+        event.preventDefault();
 
-    const group = button.closest('.input-group');
-    const input = group ? group.querySelector('input') : null;
-    if (!input) {
-        return;
-    }
+        const group = button.closest('.input-group');
+        const input = group ? group.querySelector('input') : null;
+        if (!input) {
+            return;
+        }
 
-    const showIcon = button.querySelector('[data-password-icon="show"]');
-    const hideIcon = button.querySelector('[data-password-icon="hide"]');
+        const showIcon = button.querySelector('[data-password-icon="show"]');
+        const hideIcon = button.querySelector('[data-password-icon="hide"]');
 
-    const setState = (isVisible) => {
+        const isVisible = input.type === 'password';
         input.type = isVisible ? 'text' : 'password';
+
         if (showIcon) {
             showIcon.hidden = isVisible;
         }
         if (hideIcon) {
             hideIcon.hidden = !isVisible;
         }
+
         button.setAttribute('aria-label', isVisible ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور');
-    };
-
-    setState(false);
-
-    button.addEventListener('click', () => {
-        setState(input.type === 'password');
     });
 };
 
@@ -347,9 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
         attachOtpAjaxSend(button);
     });
 
-    document.querySelectorAll('[data-password-toggle]').forEach((button) => {
-        attachPasswordToggle(button);
-    });
-
     attachLoginModeToggles();
+    attachPasswordToggles();
 });
