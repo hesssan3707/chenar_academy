@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Role;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -50,6 +51,33 @@ class AccessControlTest extends TestCase
         $user->roles()->attach($adminRole->id);
 
         $this->actingAs($user)->get('/admin')->assertOk();
+    }
+
+    public function test_admin_can_update_about_page_content(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $this->actingAs($user)
+            ->put(route('admin.settings.update'), [
+                'theme' => 'default',
+                'about_title' => 'درباره ما',
+                'about_subtitle' => 'معرفی کوتاه',
+                'about_body' => 'متن درباره ما',
+            ])->assertRedirect(route('admin.settings.index'));
+
+        $setting = Setting::query()->where('key', 'page.about')->first();
+        $this->assertNotNull($setting);
+        $this->assertSame('pages', $setting->group);
+        $this->assertIsArray($setting->value);
+        $this->assertSame('درباره ما', $setting->value['title']);
+        $this->assertSame('معرفی کوتاه', $setting->value['subtitle']);
+        $this->assertSame('متن درباره ما', $setting->value['body']);
     }
 
     public function test_admin_cannot_access_user_panel_routes(): void

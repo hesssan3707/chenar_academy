@@ -101,6 +101,7 @@
         align-items: baseline;
         gap: 8px;
         font-weight: 800;
+        flex-shrink: 0;
     }
 
     .brand__mark {
@@ -146,6 +147,9 @@
         border: 1px solid var(--border);
         background: rgba(15, 26, 46, 0.6);
         border-radius: 16px;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow-x: auto;
     }
 
     .nav__link {
@@ -171,6 +175,7 @@
         display: flex;
         gap: 10px;
         align-items: center;
+        flex-shrink: 0;
     }
 
     .hero {

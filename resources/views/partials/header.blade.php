@@ -47,10 +47,10 @@
 
             <nav class="nav" data-nav>
                 <a class="nav__link is-active" href="{{ route('home') }}">خانه</a>
-                <a class="nav__link" href="{{ route('products.index', ['type' => 'note']) }}">جزوه‌های آموزشی</a>
-                <a class="nav__link" href="{{ route('products.index', ['type' => 'video']) }}">ویدیوهای آموزشی</a>
+                <a class="nav__link" href="{{ route('products.index', ['type' => 'note']) }}">جزوه‌ها</a>
+                <a class="nav__link" href="{{ route('products.index', ['type' => 'video']) }}">ویدیوها</a>
                 <a class="nav__link" href="{{ route('blog.index') }}">وبلاگ</a>
-                <a class="nav__link" href="{{ route('about') }}">درباره چنار آکادمی</a>
+                <a class="nav__link" href="{{ route('about') }}">درباره ما</a>
                 <a class="nav__link" href="{{ route('contact') }}">ارتباط با ما</a>
             </nav>
 

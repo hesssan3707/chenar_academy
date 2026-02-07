@@ -8,7 +8,7 @@
             <div class="hero__content">
                 <h1 class="hero__title">چنار آکادمی، فرصتی برای یادگیری و پیشرفت</h1>
                 <p class="hero__subtitle">
-                    آموزش ویدئویی، جزوه‌های آموزشی، وبینارهای آموزشی و محتوای تخصصی برای مسیر یادگیری شما.
+                    آموزش ویدئویی، جزوه‌ها، وبینارهای آموزشی و محتوای تخصصی برای مسیر یادگیری شما.
                 </p>
 
                 <div class="hero__cta">
@@ -36,13 +36,13 @@
                 @else
                     <div class="hero-card">
                         <div class="hero-card__badge">New</div>
-                        <div class="hero-card__title">ویدیوهای آموزشی</div>
+                        <div class="hero-card__title">ویدیوها</div>
                         <div class="hero-card__meta">مطالب جدید برای دانشگاه‌های مختلف</div>
                     </div>
                 @endif
                 <div class="hero-card hero-card--secondary">
                     <div class="hero-card__badge">PDF</div>
-                    <div class="hero-card__title">جزوه‌های آموزشی</div>
+                    <div class="hero-card__title">جزوه‌ها</div>
                     <div class="hero-card__meta">خلاصه، منظم، آماده مطالعه</div>
                 </div>
             </div>

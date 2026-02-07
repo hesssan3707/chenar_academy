@@ -6,7 +6,7 @@
     <section class="section">
         <div class="container">
             <h1 class="page-title">محصولات</h1>
-            <p class="page-subtitle">لیست جزوه‌ها و ویدیوهای آموزشی</p>
+            <p class="page-subtitle">لیست جزوه‌ها و ویدیوها</p>
 
             <div class="stack">
                 <div class="cluster">

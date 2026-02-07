@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\Post;
+use App\Models\PostBlock;
 use App\Models\Product;
 use App\Models\Video;
 use Illuminate\Database\Seeder;
@@ -126,16 +127,104 @@ class CatalogSeeder extends Seeder
 
     private function seedPosts(): void
     {
-        for ($i = 1; $i <= 5; $i++) {
-            Post::query()->firstOrCreate(['slug' => 'post-'.$i], [
+        $items = [
+            [
+                'slug' => 'how-to-plan-final-exam',
+                'title' => 'چطور برای امتحان پایان‌ترم برنامه‌ریزی کنیم؟',
+                'excerpt' => 'یک برنامه ساده و قابل اجرا برای جمع‌بندی، مرور، و تمرین در هفته‌های آخر.',
+                'category' => 'guide',
+                'days_ago' => 6,
+                'blocks' => [
+                    ['type' => 'text', 'text' => "اگر برای امتحان پایان‌ترم دیر شروع کرده‌اید، نگران نباشید.\n\nبا یک برنامه‌ی کوتاه و منظم، می‌توانید در چند روز آخر هم پیشرفت خوبی داشته باشید."],
+                    ['type' => 'heading', 'text' => '۱) هدف‌گذاری واقع‌بینانه'],
+                    ['type' => 'text', 'text' => "به جای اینکه «همه چیز را کامل» بخوانید، روی فصل‌های پرامتیاز تمرکز کنید.\n\nهر روز یک خروجی مشخص تعریف کنید: حل ۲۰ تست، مرور ۱۵ صفحه، یا نوشتن خلاصه‌ی یک فصل."],
+                    ['type' => 'heading', 'text' => '۲) تمرین و مرور را ترکیب کنید'],
+                    ['type' => 'text', 'text' => "مطالعه‌ی بدون تمرین، فراموشی را بالا می‌برد.\n\nبعد از هر بخش، چند سوال حل کنید و نکات را به خلاصه‌ی خود اضافه کنید."],
+                ],
+            ],
+            [
+                'slug' => 'study-notes-that-work',
+                'title' => 'جزوه‌نویسی مؤثر: چطور یادداشت‌های قابل مرور بسازیم؟',
+                'excerpt' => 'روش‌هایی برای نوشتن جزوه‌ای که شب امتحان واقعاً به کارتان بیاید.',
+                'category' => 'learning',
+                'days_ago' => 4,
+                'blocks' => [
+                    ['type' => 'text', 'text' => "جزوه‌ی خوب یعنی «قابل مرور بودن».\n\nاگر یادداشت‌های شما پر از جمله‌های طولانی و بدون ساختار است، مرور آن سخت می‌شود."],
+                    ['type' => 'heading', 'text' => 'قانون ۳ رنگ'],
+                    ['type' => 'text', 'text' => "یک رنگ برای تیتر، یک رنگ برای فرمول‌ها و نکات کلیدی، و یک رنگ برای خطاهای رایج.\n\nاین کار سرعت مرور را زیاد می‌کند."],
+                ],
+            ],
+            [
+                'slug' => 'how-to-learn-from-videos',
+                'title' => 'چطور از ویدیوهای آموزشی بیشترین نتیجه را بگیریم؟',
+                'excerpt' => 'تماشا کردن کافی نیست؛ نکات مهم برای تمرین، توقف، و یادگیری فعال.',
+                'category' => 'learning',
+                'days_ago' => 2,
+                'blocks' => [
+                    ['type' => 'text', 'text' => "ویدیو را مثل کلاس حضوری ببینید: توقف کنید، تمرین کنید، و دوباره ادامه دهید.\n\nیادگیری فعال یعنی شما همزمان درگیر حل مسئله باشید."],
+                    ['type' => 'heading', 'text' => 'توقف‌های برنامه‌ریزی‌شده'],
+                    ['type' => 'text', 'text' => "هر ۷ تا ۱۰ دقیقه یک توقف کوتاه داشته باشید و نکات را یادداشت کنید.\n\nاگر موضوع محاسباتی است، همان لحظه یک مثال حل کنید."],
+                ],
+            ],
+            [
+                'slug' => 'common-mistakes-in-math',
+                'title' => 'اشتباهات رایج در ریاضی (و چطور از آن‌ها جلوگیری کنیم)',
+                'excerpt' => 'چند خطای پرتکرار که می‌تواند نمره را کم کند و راهکارهای ساده برای پیشگیری.',
+                'category' => 'guide',
+                'days_ago' => 1,
+                'blocks' => [
+                    ['type' => 'text', 'text' => "بیشتر اشتباهات ریاضی از بی‌دقتی است، نه از ندانستن.\n\nبا چند عادت ساده می‌توانید درصد خطا را کم کنید."],
+                    ['type' => 'heading', 'text' => 'بازبینی واحدها و علامت‌ها'],
+                    ['type' => 'text', 'text' => "قبل از نهایی کردن جواب، واحدها و علامت‌های منفی/مثبت را سریع چک کنید.\n\nدر فیزیک و محاسبات، این مورد بسیار پرتکرار است."],
+                ],
+            ],
+            [
+                'slug' => 'exam-night-checklist',
+                'title' => 'چک‌لیست شب امتحان: چه کار کنیم و چه کار نکنیم؟',
+                'excerpt' => 'چند توصیه عملی برای شب امتحان تا تمرکز و انرژی را حفظ کنید.',
+                'category' => 'news',
+                'days_ago' => 0,
+                'blocks' => [
+                    ['type' => 'text', 'text' => "شب امتحان زمان یادگیری عمیق نیست؛ زمان مرور و جمع‌بندی است.\n\nروی خلاصه‌ها، نکات کلیدی، و نمونه سوال‌ها تمرکز کنید."],
+                    ['type' => 'heading', 'text' => 'خواب را قربانی نکنید'],
+                    ['type' => 'text', 'text' => "کم‌خوابی باعث کاهش دقت و افت عملکرد می‌شود.\n\nیک خواب کوتاه و باکیفیت ارزشمندتر از چند ساعت مطالعه‌ی بی‌تمرکز است."],
+                ],
+            ],
+        ];
+
+        foreach ($items as $item) {
+            $post = Post::query()->updateOrCreate(['slug' => $item['slug']], [
                 'author_user_id' => null,
-                'title' => 'مقاله نمونه شماره '.$i,
-                'excerpt' => 'خلاصه کوتاه برای مقاله نمونه شماره '.$i,
+                'title' => $item['title'],
+                'excerpt' => $item['excerpt'],
                 'status' => 'published',
-                'published_at' => now()->subDays(5 - $i),
+                'published_at' => now()->subDays((int) $item['days_ago']),
                 'cover_media_id' => null,
                 'meta' => [],
             ]);
+
+            $categorySlug = (string) ($item['category'] ?? '');
+            if ($categorySlug !== '') {
+                $category = Category::query()->where('type', 'post')->where('slug', $categorySlug)->first();
+                if ($category) {
+                    $post->categories()->syncWithoutDetaching([$category->id]);
+                }
+            }
+
+            foreach (($item['blocks'] ?? []) as $index => $block) {
+                $blockType = (string) ($block['type'] ?? 'text');
+                $text = (string) ($block['text'] ?? '');
+
+                PostBlock::query()->updateOrCreate([
+                    'post_id' => $post->id,
+                    'sort_order' => $index,
+                ], [
+                    'block_type' => $blockType,
+                    'text' => $text,
+                    'media_id' => null,
+                    'meta' => [],
+                ]);
+            }
         }
     }
 
