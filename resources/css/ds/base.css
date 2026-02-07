@@ -1,0 +1,105 @@
+body {
+    font-family: var(--ds-font-sans);
+    background: var(--ds-body-bg);
+    color: var(--ds-text);
+    line-height: 1.7;
+}
+
+::selection {
+    background: rgba(45, 212, 191, 0.25);
+}
+
+:focus-visible {
+    outline: 2px solid rgba(96, 165, 250, 0.8);
+    outline-offset: 2px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 0 0 0.6em;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+
+p {
+    margin: 0 0 1em;
+}
+
+small {
+    font-size: 12px;
+}
+
+code,
+pre {
+    font-family: var(--ds-font-mono);
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--ds-border);
+    margin: 1.5rem 0;
+}
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='tel'],
+input[type='number'],
+input[type='search'],
+input[type='url'],
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'],
+textarea,
+select {
+    width: 100%;
+    min-height: var(--ds-control-height);
+    border-radius: var(--ds-radius-md);
+    border: 1px solid var(--ds-border);
+    background: rgba(232, 238, 252, 0.04);
+    padding: 10px 12px;
+}
+
+html[data-theme='light'] input[type='text'],
+html[data-theme='light'] input[type='email'],
+html[data-theme='light'] input[type='password'],
+html[data-theme='light'] input[type='tel'],
+html[data-theme='light'] input[type='number'],
+html[data-theme='light'] input[type='search'],
+html[data-theme='light'] input[type='url'],
+html[data-theme='light'] input[type='date'],
+html[data-theme='light'] input[type='datetime-local'],
+html[data-theme='light'] input[type='time'],
+html[data-theme='light'] textarea,
+html[data-theme='light'] select {
+    background: rgba(11, 18, 32, 0.03);
+    border-color: rgba(11, 18, 32, 0.12);
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: rgba(232, 238, 252, 0.55);
+}
+
+html[data-theme='light'] input::placeholder,
+html[data-theme='light'] textarea::placeholder {
+    color: rgba(11, 18, 32, 0.45);
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

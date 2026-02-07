@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 
@@ -25,6 +26,18 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             //
+        });
+
+        $this->renderable(function (AuthenticationException $e, $request) {
+            if ($request->expectsJson()) {
+                return null;
+            }
+
+            return redirect()->guest(route('login'))->with('toast', [
+                'type' => 'danger',
+                'title' => 'نیاز به ورود',
+                'message' => 'برای انجام این کار باید وارد شوید.',
+            ]);
         });
     }
 }
