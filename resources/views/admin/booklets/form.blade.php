@@ -18,30 +18,55 @@
             @php($booklet = $booklet ?? null)
             @php($isEdit = $booklet && $booklet->exists)
 
-            <div class="panel max-w-md">
+            <div class="panel">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.booklets.update', $booklet->id) : route('admin.booklets.store') }}"
+                    enctype="multipart/form-data"
                     class="stack stack--sm">
                     @csrf
                     @if ($isEdit)
                         @method('put')
                     @endif
 
-                    <label class="field">
-                        <span class="field__label">عنوان</span>
-                        <input name="title" required value="{{ old('title', (string) ($booklet->title ?? '')) }}">
-                        @error('title')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
+                    <div class="grid admin-grid-2 admin-grid-2--flush">
+                        <label class="field">
+                            <span class="field__label">عنوان</span>
+                            <input name="title" required value="{{ old('title', (string) ($booklet->title ?? '')) }}">
+                            @error('title')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
 
-                    <label class="field">
-                        <span class="field__label">اسلاگ</span>
-                        <input name="slug" required value="{{ old('slug', (string) ($booklet->slug ?? '')) }}">
-                        @error('slug')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
+                        <label class="field">
+                            <span class="field__label">وضعیت</span>
+                            @php($statusValue = (string) old('status', (string) ($booklet->status ?? 'draft')))
+                            <select name="status" required>
+                                <option value="draft" @selected($statusValue === 'draft')>پیش‌نویس</option>
+                                <option value="published" @selected($statusValue === 'published')>منتشر شده</option>
+                            </select>
+                            @error('status')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+                    </div>
+
+                    <div class="grid admin-grid-2 admin-grid-2--flush">
+                        <label class="field">
+                            <span class="field__label">کاور (تصویر)</span>
+                            <input type="file" name="cover_image" accept="image/*">
+                            @error('cover_image')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+
+                        <label class="field">
+                            <span class="field__label">فایل جزوه</span>
+                            <input type="file" name="booklet_file">
+                            @error('booklet_file')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+                    </div>
 
                     <label class="field">
                         <span class="field__label">خلاصه</span>
@@ -66,28 +91,6 @@
                             <input type="number" name="sale_price" min="0" max="2000000000"
                                 value="{{ old('sale_price', (string) ($booklet->sale_price ?? '')) }}">
                             @error('sale_price')
-                                <div class="field__error">{{ $message }}</div>
-                            @enderror
-                        </label>
-                    </div>
-
-                    <div class="grid admin-grid-2 admin-grid-2--flush">
-                        <label class="field">
-                            <span class="field__label">واحد پول</span>
-                            <input name="currency" required value="{{ old('currency', (string) ($booklet->currency ?? 'IRR')) }}">
-                            @error('currency')
-                                <div class="field__error">{{ $message }}</div>
-                            @enderror
-                        </label>
-
-                        <label class="field">
-                            <span class="field__label">وضعیت</span>
-                            @php($statusValue = (string) old('status', (string) ($booklet->status ?? 'draft')))
-                            <select name="status" required>
-                                <option value="draft" @selected($statusValue === 'draft')>پیش‌نویس</option>
-                                <option value="published" @selected($statusValue === 'published')>منتشر شده</option>
-                            </select>
-                            @error('status')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>

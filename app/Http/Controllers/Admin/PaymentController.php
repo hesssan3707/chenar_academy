@@ -27,7 +27,7 @@ class PaymentController extends Controller
             'title' => 'ایجاد پرداخت',
             'payment' => new Payment([
                 'status' => 'initiated',
-                'currency' => 'IRR',
+                'currency' => $this->commerceCurrency(),
                 'amount' => 0,
             ]),
         ]);

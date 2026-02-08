@@ -51,6 +51,7 @@
                                 </div>
 
                                 <div class="form-actions">
+                                    <a class="btn btn--ghost" href="{{ route('admin.surveys.results', $survey->id) }}">نتایج</a>
                                     <a class="btn btn--ghost" href="{{ route('admin.surveys.edit', $survey->id) }}">ویرایش</a>
                                     <form method="post" action="{{ route('admin.surveys.destroy', $survey->id) }}">
                                         @csrf

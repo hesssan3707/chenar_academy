@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Catalog;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Media;
 use App\Models\Product;
 use App\Models\ProductReview;
 use App\Models\Setting;
@@ -11,7 +12,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProductController extends Controller
 {
@@ -179,6 +182,25 @@ class ProductController extends Controller
             'ratingCount' => $ratingCount,
             'reviews' => $reviews,
             'userReview' => $userReview,
+        ]);
+    }
+
+    public function streamPreview(string $slug): Response
+    {
+        $product = Product::query()
+            ->where('slug', $slug)
+            ->where('type', 'video')
+            ->firstOrFail();
+
+        $product->loadMissing('video');
+        abort_if(! $product->video?->preview_media_id, 404);
+
+        $media = Media::query()->findOrFail($product->video->preview_media_id);
+
+        return Storage::disk($media->disk)->response($media->path, null, [
+            'Content-Type' => $media->mime_type ?: 'application/octet-stream',
+            'Content-Disposition' => 'inline',
+            'Cache-Control' => 'public, max-age=3600',
         ]);
     }
 

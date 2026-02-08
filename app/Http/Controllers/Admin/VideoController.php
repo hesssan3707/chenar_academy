@@ -3,12 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Media;
 use App\Models\Product;
 use App\Models\Video;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class VideoController extends Controller
@@ -34,7 +39,7 @@ class VideoController extends Controller
             'videoProduct' => new Product([
                 'type' => 'video',
                 'status' => 'draft',
-                'currency' => 'IRR',
+                'currency' => $this->commerceCurrency(),
                 'base_price' => 0,
             ]),
             'video' => new Video([
@@ -53,19 +58,26 @@ class VideoController extends Controller
             'slug' => $validated['slug'],
             'excerpt' => $validated['excerpt'],
             'description' => null,
-            'thumbnail_media_id' => null,
+            'thumbnail_media_id' => $validated['thumbnail_media_id'],
             'status' => $validated['status'],
             'base_price' => $validated['base_price'],
             'sale_price' => $validated['sale_price'],
-            'currency' => $validated['currency'],
+            'currency' => $this->commerceCurrency(),
             'published_at' => $validated['published_at'],
             'meta' => [],
         ]);
 
+        $durationSeconds = null;
+        if (($validated['media_id'] ?? null) !== null) {
+            $fullMedia = Media::query()->findOrFail((int) $validated['media_id']);
+            $durationSeconds = $this->extractVideoDurationSecondsOrFail($fullMedia);
+        }
+
         Video::query()->create([
             'product_id' => $product->id,
-            'media_id' => null,
-            'duration_seconds' => $validated['duration_seconds'],
+            'media_id' => $validated['media_id'],
+            'preview_media_id' => $validated['preview_media_id'],
+            'duration_seconds' => $durationSeconds,
             'meta' => [],
         ]);
 
@@ -105,20 +117,30 @@ class VideoController extends Controller
 
         $product->forceFill([
             'title' => $validated['title'],
-            'slug' => $validated['slug'],
             'excerpt' => $validated['excerpt'],
             'status' => $validated['status'],
             'base_price' => $validated['base_price'],
             'sale_price' => $validated['sale_price'],
-            'currency' => $validated['currency'],
+            'currency' => $this->commerceCurrency(),
             'published_at' => $validated['published_at'],
+            'thumbnail_media_id' => $validated['thumbnail_media_id'] ?? $product->thumbnail_media_id,
         ])->save();
 
-        Video::query()->updateOrCreate(['product_id' => $product->id], [
-            'media_id' => null,
-            'duration_seconds' => $validated['duration_seconds'],
+        $videoPayload = [
             'meta' => [],
-        ]);
+        ];
+
+        if (($validated['media_id'] ?? null) !== null) {
+            $fullMedia = Media::query()->findOrFail((int) $validated['media_id']);
+            $videoPayload['duration_seconds'] = $this->extractVideoDurationSecondsOrFail($fullMedia);
+            $videoPayload['media_id'] = $validated['media_id'];
+        }
+
+        if (($validated['preview_media_id'] ?? null) !== null) {
+            $videoPayload['preview_media_id'] = $validated['preview_media_id'];
+        }
+
+        Video::query()->updateOrCreate(['product_id' => $product->id], $videoPayload);
 
         return redirect()->route('admin.videos.edit', $product->id);
     }
@@ -138,35 +160,123 @@ class VideoController extends Controller
     {
         $rules = [
             'title' => ['required', 'string', 'max:180'],
-            'slug' => [
-                'required',
-                'string',
-                'max:191',
-                Rule::unique('products', 'slug')->ignore($product?->id),
-            ],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'status' => ['required', 'string', Rule::in(['draft', 'published'])],
             'base_price' => ['required', 'integer', 'min:0', 'max:2000000000'],
             'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000'],
-            'currency' => ['required', 'string', 'size:3'],
             'published_at' => ['nullable', 'string', 'max:32'],
-            'duration_seconds' => ['nullable', 'integer', 'min:0', 'max:2000000000'],
+            'cover_image' => ['nullable', 'file', 'image', 'max:5120'],
+            'preview_video' => ['nullable', 'file', 'max:102400'],
+            'video_file' => ['nullable', 'file', 'max:512000'],
         ];
 
         $validated = $request->validate($rules);
 
-        $slug = Str::slug((string) ($validated['slug'] ?? ''), '-');
+        $baseSlug = Str::slug((string) $validated['title'], '-');
+        if ($baseSlug === '') {
+            $baseSlug = 'video-'.now()->format('YmdHis');
+        }
+        $slug = $product?->slug ?: $this->uniqueProductSlug($baseSlug, null);
+
+        $thumbnailMedia = $this->storeUploadedMedia($request->file('cover_image'), 'public', 'uploads/covers');
+        $previewMedia = $this->storeUploadedMedia($request->file('preview_video'), 'local', 'protected/previews');
+        $fullMedia = $this->storeUploadedMedia($request->file('video_file'), 'local', 'protected/videos');
 
         return [
             'title' => (string) $validated['title'],
-            'slug' => $slug !== '' ? $slug : Str::slug((string) $validated['title'], '-'),
+            'slug' => $slug,
             'excerpt' => isset($validated['excerpt']) && $validated['excerpt'] !== '' ? (string) $validated['excerpt'] : null,
             'status' => (string) $validated['status'],
             'base_price' => (int) $validated['base_price'],
             'sale_price' => ($validated['sale_price'] ?? null) !== null && (string) $validated['sale_price'] !== '' ? (int) $validated['sale_price'] : null,
-            'currency' => strtoupper((string) $validated['currency']),
             'published_at' => $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null),
-            'duration_seconds' => ($validated['duration_seconds'] ?? null) !== null && (string) $validated['duration_seconds'] !== '' ? (int) $validated['duration_seconds'] : null,
+            'thumbnail_media_id' => $thumbnailMedia?->id,
+            'preview_media_id' => $previewMedia?->id,
+            'media_id' => $fullMedia?->id,
         ];
+    }
+
+    private function extractVideoDurationSecondsOrFail(Media $media): int
+    {
+        $seconds = $this->extractVideoDurationSeconds($media);
+        if ($seconds === null) {
+            throw ValidationException::withMessages([
+                'video_file' => ['امکان استخراج مدت زمان ویدیو وجود ندارد.'],
+            ]);
+        }
+
+        $media->forceFill(['duration_seconds' => $seconds])->save();
+
+        return $seconds;
+    }
+
+    private function extractVideoDurationSeconds(Media $media): ?int
+    {
+        $absolutePath = Storage::disk($media->disk)->path($media->path);
+
+        $result = Process::timeout(30)->run([
+            'ffprobe',
+            '-v',
+            'error',
+            '-show_entries',
+            'format=duration',
+            '-of',
+            'default=noprint_wrappers=1:nokey=1',
+            $absolutePath,
+        ]);
+
+        if (! $result->successful()) {
+            return null;
+        }
+
+        $raw = trim($result->output());
+        if ($raw === '' || ! is_numeric($raw)) {
+            return null;
+        }
+
+        $seconds = (int) round((float) $raw);
+
+        return $seconds >= 0 ? $seconds : null;
+    }
+
+    private function uniqueProductSlug(string $baseSlug, ?int $ignoreProductId = null): string
+    {
+        $slug = $baseSlug;
+        $suffix = 2;
+
+        while (
+            Product::query()
+                ->where('slug', $slug)
+                ->when($ignoreProductId, fn ($q) => $q->where('id', '!=', $ignoreProductId))
+                ->exists()
+        ) {
+            $slug = $baseSlug.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $slug;
+    }
+
+    private function storeUploadedMedia(?UploadedFile $file, string $disk, string $directory): ?Media
+    {
+        if (! $file) {
+            return null;
+        }
+
+        $path = Storage::disk($disk)->putFile($directory, $file);
+
+        return Media::query()->create([
+            'uploaded_by_user_id' => request()->user()?->id,
+            'disk' => $disk,
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'sha1' => null,
+            'width' => null,
+            'height' => null,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
     }
 }

@@ -112,6 +112,7 @@ Route::prefix('admin')
         Route::get('settings', [AdminSettingController::class, 'index'])->name('settings.index');
         Route::put('settings', [AdminSettingController::class, 'update'])->name('settings.update');
         Route::resource('social-links', AdminSocialLinkController::class);
+        Route::get('surveys/{survey}/results', [AdminSurveyController::class, 'results'])->name('surveys.results');
         Route::resource('surveys', AdminSurveyController::class);
 
         Route::resource('tickets', AdminTicketController::class);
@@ -144,6 +145,7 @@ Route::prefix('courses')->name('courses.')->group(function () {
 
 Route::prefix('products')->name('products.')->group(function () {
     Route::get('/', [ProductController::class, 'index'])->name('index');
+    Route::get('/{slug}/preview', [ProductController::class, 'streamPreview'])->name('preview');
     Route::get('/{slug}', [ProductController::class, 'show'])->name('show');
     Route::post('/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('auth')->name('reviews.store');
 });

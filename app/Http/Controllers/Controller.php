@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Morilog\Jalali\CalendarUtils;
 
@@ -89,5 +91,41 @@ class Controller extends BaseController
                 $field => ['فرمت تاریخ نامعتبر است.'],
             ]);
         }
+    }
+
+    protected function settingString(string $key, string $default = ''): string
+    {
+        if (! Schema::hasTable('settings')) {
+            return $default;
+        }
+
+        $setting = Setting::query()->where('key', $key)->first();
+        if (! $setting) {
+            return $default;
+        }
+
+        $value = $setting->value;
+        if ($value === null) {
+            return $default;
+        }
+
+        if (is_string($value)) {
+            $normalized = trim($value);
+
+            return $normalized !== '' ? $normalized : $default;
+        }
+
+        if (is_numeric($value)) {
+            return (string) $value;
+        }
+
+        return $default;
+    }
+
+    protected function commerceCurrency(): string
+    {
+        $currency = strtoupper($this->settingString('commerce.currency', 'IRR'));
+
+        return strlen($currency) === 3 ? $currency : 'IRR';
     }
 }

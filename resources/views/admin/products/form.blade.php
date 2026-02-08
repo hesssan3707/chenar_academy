@@ -18,7 +18,7 @@
             @php($product = $product ?? null)
             @php($isEdit = $product && $product->exists)
 
-            <div class="panel max-w-md">
+            <div class="panel">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.products.update', $product->id) : route('admin.products.store') }}"
                     class="stack stack--sm">
@@ -63,14 +63,6 @@
                     </label>
 
                     <label class="field">
-                        <span class="field__label">اسلاگ</span>
-                        <input name="slug" required value="{{ old('slug', (string) ($product->slug ?? '')) }}">
-                        @error('slug')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
-
-                    <label class="field">
                         <span class="field__label">خلاصه</span>
                         <textarea name="excerpt">{{ old('excerpt', (string) ($product->excerpt ?? '')) }}</textarea>
                         @error('excerpt')
@@ -107,14 +99,6 @@
                     </div>
 
                     <div class="grid admin-grid-2 admin-grid-2--flush">
-                        <label class="field">
-                            <span class="field__label">ارز</span>
-                            <input name="currency" required value="{{ old('currency', (string) ($product->currency ?? 'IRR')) }}">
-                            @error('currency')
-                                <div class="field__error">{{ $message }}</div>
-                            @enderror
-                        </label>
-
                         <label class="field">
                             <span class="field__label">زمان انتشار</span>
                             <input name="published_at" data-jdp value="{{ old('published_at', $product?->published_at ? jdate($product->published_at)->format('Y/m/d H:i') : '') }}">

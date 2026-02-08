@@ -19,7 +19,7 @@
             @php($isEdit = $category && $category->exists)
             @php($parents = $parents ?? collect())
 
-            <div class="panel max-w-md">
+            <div class="panel">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.categories.update', $category->id) : route('admin.categories.store') }}"
                     class="stack stack--sm">
@@ -28,29 +28,23 @@
                         @method('put')
                     @endif
 
-                    <label class="field">
-                        <span class="field__label">نوع</span>
-                        <input name="type" required value="{{ old('type', (string) ($category->type ?? '')) }}">
-                        @error('type')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
+                    <div class="grid admin-grid-2 admin-grid-2--flush">
+                        <label class="field">
+                            <span class="field__label">نوع</span>
+                            <input name="type" required value="{{ old('type', (string) ($category->type ?? '')) }}">
+                            @error('type')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
 
-                    <label class="field">
-                        <span class="field__label">عنوان</span>
-                        <input name="title" required value="{{ old('title', (string) ($category->title ?? '')) }}">
-                        @error('title')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
-
-                    <label class="field">
-                        <span class="field__label">اسلاگ</span>
-                        <input name="slug" required value="{{ old('slug', (string) ($category->slug ?? '')) }}">
-                        @error('slug')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
+                        <label class="field">
+                            <span class="field__label">عنوان</span>
+                            <input name="title" required value="{{ old('title', (string) ($category->title ?? '')) }}">
+                            @error('title')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+                    </div>
 
                     <label class="field">
                         <span class="field__label">والد</span>

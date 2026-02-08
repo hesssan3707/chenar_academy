@@ -7,7 +7,6 @@ use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
@@ -75,7 +74,15 @@ class CategoryController extends Controller
 
         $validated = $this->validatePayload($request, $categoryModel);
 
-        $categoryModel->forceFill($validated)->save();
+        $categoryModel->forceFill([
+            'type' => $validated['type'],
+            'parent_id' => $validated['parent_id'],
+            'title' => $validated['title'],
+            'icon_key' => $validated['icon_key'],
+            'description' => $validated['description'],
+            'is_active' => $validated['is_active'],
+            'sort_order' => $validated['sort_order'],
+        ])->save();
 
         return redirect()->route('admin.categories.edit', $categoryModel->id);
     }
@@ -96,31 +103,40 @@ class CategoryController extends Controller
             'type' => ['required', 'string', 'max:20'],
             'parent_id' => ['nullable', 'integer', 'min:1', 'exists:categories,id'],
             'title' => ['required', 'string', 'max:190'],
-            'slug' => [
-                'required',
-                'string',
-                'max:191',
-                Rule::unique('categories', 'slug')
-                    ->where(fn ($q) => $q->where('type', $type))
-                    ->ignore($category?->id),
-            ],
             'icon_key' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
         ]);
 
-        $slug = Str::slug((string) ($validated['slug'] ?? ''), '-');
+        $baseSlug = Str::slug((string) $validated['title'], '-');
+        if ($baseSlug === '') {
+            $baseSlug = 'category-'.now()->format('YmdHis');
+        }
+        $slug = $category?->slug ?: $this->uniqueCategorySlug($type, $baseSlug);
 
         return [
             'type' => (string) $validated['type'],
             'parent_id' => ($validated['parent_id'] ?? null) !== null ? (int) $validated['parent_id'] : null,
             'title' => (string) $validated['title'],
-            'slug' => $slug !== '' ? $slug : Str::slug((string) $validated['title'], '-'),
+            'slug' => $slug,
             'icon_key' => isset($validated['icon_key']) && $validated['icon_key'] !== '' ? (string) $validated['icon_key'] : null,
             'description' => isset($validated['description']) && $validated['description'] !== '' ? (string) $validated['description'] : null,
             'is_active' => $request->boolean('is_active'),
             'sort_order' => ($validated['sort_order'] ?? null) !== null ? (int) $validated['sort_order'] : 0,
         ];
+    }
+
+    private function uniqueCategorySlug(string $type, string $baseSlug): string
+    {
+        $slug = $baseSlug;
+        $suffix = 2;
+
+        while (Category::query()->where('type', $type)->where('slug', $slug)->exists()) {
+            $slug = $baseSlug.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $slug;
     }
 }

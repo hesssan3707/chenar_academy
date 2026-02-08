@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Survey;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -33,6 +34,55 @@ class SurveyController extends Controller
         return view('admin.surveys.form', [
             'title' => 'ایجاد نظرسنجی',
             'survey' => $survey,
+        ]);
+    }
+
+    public function results(Survey $survey): View
+    {
+        $countsByAnswer = $survey->responses()
+            ->select('answer', DB::raw('COUNT(*) as count'))
+            ->groupBy('answer')
+            ->orderByDesc('count')
+            ->pluck('count', 'answer')
+            ->all();
+
+        $totalResponses = array_sum(array_map(fn ($value) => (int) $value, $countsByAnswer));
+        $options = collect($survey->options ?? [])->map(fn ($value) => (string) $value)->values();
+
+        $rows = $options->map(function (string $option) use ($countsByAnswer, $totalResponses) {
+            $count = (int) ($countsByAnswer[$option] ?? 0);
+
+            return [
+                'option' => $option,
+                'count' => $count,
+                'percentage' => $totalResponses > 0 ? ($count / $totalResponses) * 100 : 0,
+            ];
+        });
+
+        $otherRows = collect($countsByAnswer)
+            ->map(fn ($count, $answer) => ['answer' => (string) $answer, 'count' => (int) $count])
+            ->filter(fn ($row) => ! $options->contains($row['answer']))
+            ->values()
+            ->map(function (array $row) use ($totalResponses) {
+                $row['percentage'] = $totalResponses > 0 ? ($row['count'] / $totalResponses) * 100 : 0;
+
+                return $row;
+            });
+
+        $latestResponses = $survey->responses()
+            ->with('user')
+            ->orderByDesc('answered_at')
+            ->orderByDesc('id')
+            ->take(30)
+            ->get();
+
+        return view('admin.surveys.results', [
+            'title' => 'نتایج نظرسنجی',
+            'survey' => $survey,
+            'rows' => $rows,
+            'otherRows' => $otherRows,
+            'totalResponses' => $totalResponses,
+            'latestResponses' => $latestResponses,
         ]);
     }
 

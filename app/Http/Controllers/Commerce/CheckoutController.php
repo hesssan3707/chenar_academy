@@ -111,7 +111,7 @@ class CheckoutController extends Controller
                 'order_number' => $this->generateOrderNumber(),
                 'user_id' => $request->user()->id,
                 'status' => 'pending',
-                'currency' => 'IRR',
+                'currency' => $this->commerceCurrency(),
                 'subtotal_amount' => $subtotal,
                 'discount_amount' => $discountAmount,
                 'total_amount' => $total,
@@ -143,7 +143,7 @@ class CheckoutController extends Controller
                     'quantity' => $qty,
                     'unit_price' => $unit,
                     'total_price' => $unit * $qty,
-                    'currency' => $product->currency ?? 'IRR',
+                    'currency' => $product->currency ?? $this->commerceCurrency(),
                     'meta' => [],
                 ]);
             }
@@ -153,7 +153,7 @@ class CheckoutController extends Controller
                 'gateway' => app()->environment('production') ? 'gateway' : 'mock',
                 'status' => 'initiated',
                 'amount' => $total,
-                'currency' => 'IRR',
+                'currency' => $this->commerceCurrency(),
                 'authority' => null,
                 'reference_id' => null,
                 'paid_at' => null,

@@ -27,7 +27,7 @@ class OrderController extends Controller
             'title' => 'ایجاد سفارش',
             'order' => new Order([
                 'status' => 'pending',
-                'currency' => 'IRR',
+                'currency' => $this->commerceCurrency(),
                 'subtotal_amount' => 0,
                 'discount_amount' => 0,
                 'total_amount' => 0,

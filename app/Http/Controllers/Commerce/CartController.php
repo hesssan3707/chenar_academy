@@ -63,7 +63,7 @@ class CartController extends Controller
             $item->forceFill([
                 'quantity' => 1,
                 'unit_price' => $unitPrice,
-                'currency' => $product->currency ?? 'IRR',
+                'currency' => $product->currency ?? $this->commerceCurrency(),
             ])->save();
         } else {
             CartItem::query()->create([
@@ -71,7 +71,7 @@ class CartController extends Controller
                 'product_id' => $product->id,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
-                'currency' => $product->currency ?? 'IRR',
+                'currency' => $product->currency ?? $this->commerceCurrency(),
                 'meta' => [],
             ]);
         }
@@ -152,7 +152,7 @@ class CartController extends Controller
                 'status' => 'active',
             ], [
                 'session_id' => null,
-                'currency' => 'IRR',
+                'currency' => $this->commerceCurrency(),
                 'meta' => [],
             ]);
         }
@@ -164,7 +164,7 @@ class CartController extends Controller
             'status' => 'active',
         ], [
             'user_id' => null,
-            'currency' => 'IRR',
+            'currency' => $this->commerceCurrency(),
             'meta' => [],
         ]);
     }

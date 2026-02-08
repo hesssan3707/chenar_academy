@@ -32,7 +32,7 @@ class ProductController extends Controller
             'product' => new Product([
                 'type' => 'note',
                 'status' => 'draft',
-                'currency' => 'IRR',
+                'currency' => $this->commerceCurrency(),
                 'base_price' => 0,
             ]),
         ]);
@@ -86,35 +86,50 @@ class ProductController extends Controller
         $validated = $request->validate([
             'type' => ['required', 'string', 'max:20'],
             'title' => ['required', 'string', 'max:180'],
-            'slug' => [
-                'required',
-                'string',
-                'max:191',
-                Rule::unique('products', 'slug')->ignore($product?->id),
-            ],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'string', Rule::in(['draft', 'published'])],
             'base_price' => ['required', 'integer', 'min:0', 'max:2000000000'],
             'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000'],
-            'currency' => ['required', 'string', 'size:3'],
             'published_at' => ['nullable', 'string', 'max:32'],
         ]);
 
-        $slug = Str::slug((string) ($validated['slug'] ?? ''), '-');
+        $baseSlug = Str::slug((string) $validated['title'], '-');
+        if ($baseSlug === '') {
+            $baseSlug = 'product-'.now()->format('YmdHis');
+        }
+        $slug = $product?->slug ?: $this->uniqueProductSlug($baseSlug, null);
 
         return [
             'type' => (string) $validated['type'],
             'title' => (string) $validated['title'],
-            'slug' => $slug !== '' ? $slug : Str::slug((string) $validated['title'], '-'),
+            'slug' => $slug,
             'excerpt' => isset($validated['excerpt']) && $validated['excerpt'] !== '' ? (string) $validated['excerpt'] : null,
             'description' => isset($validated['description']) && $validated['description'] !== '' ? (string) $validated['description'] : null,
             'status' => (string) $validated['status'],
             'base_price' => (int) $validated['base_price'],
             'sale_price' => ($validated['sale_price'] ?? null) !== null && (string) $validated['sale_price'] !== '' ? (int) $validated['sale_price'] : null,
-            'currency' => strtoupper((string) $validated['currency']),
+            'currency' => $this->commerceCurrency(),
             'published_at' => $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null),
             'meta' => $product?->meta ?? [],
         ];
+    }
+
+    private function uniqueProductSlug(string $baseSlug, ?int $ignoreProductId = null): string
+    {
+        $slug = $baseSlug;
+        $suffix = 2;
+
+        while (
+            Product::query()
+                ->where('slug', $slug)
+                ->when($ignoreProductId, fn ($q) => $q->where('id', '!=', $ignoreProductId))
+                ->exists()
+        ) {
+            $slug = $baseSlug.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $slug;
     }
 }

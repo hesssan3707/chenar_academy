@@ -71,7 +71,6 @@ class PostController extends Controller
 
         $post->forceFill([
             'title' => $validated['title'],
-            'slug' => $validated['slug'],
             'excerpt' => $validated['excerpt'],
             'status' => $validated['status'],
             'published_at' => $validated['published_at'],
@@ -93,12 +92,6 @@ class PostController extends Controller
 
         $rules = [
             'title' => ['required', 'string', 'max:180'],
-            'slug' => [
-                'required',
-                'string',
-                'max:191',
-                Rule::unique('posts', 'slug')->ignore($post?->id),
-            ],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'status' => ['required', 'string', Rule::in($statusValues)],
             'published_at' => ['nullable', 'string', 'max:32'],
@@ -106,14 +99,31 @@ class PostController extends Controller
 
         $validated = $request->validate($rules);
 
-        $slug = Str::slug((string) ($validated['slug'] ?? ''), '-');
+        $baseSlug = Str::slug((string) $validated['title'], '-');
+        if ($baseSlug === '') {
+            $baseSlug = 'post-'.now()->format('YmdHis');
+        }
+        $slug = $post?->slug ?: $this->uniquePostSlug($baseSlug);
 
         return [
             'title' => (string) $validated['title'],
-            'slug' => $slug !== '' ? $slug : Str::slug((string) $validated['title'], '-'),
+            'slug' => $slug,
             'excerpt' => isset($validated['excerpt']) && $validated['excerpt'] !== '' ? (string) $validated['excerpt'] : null,
             'status' => (string) $validated['status'],
             'published_at' => $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null),
         ];
+    }
+
+    private function uniquePostSlug(string $baseSlug): string
+    {
+        $slug = $baseSlug;
+        $suffix = 2;
+
+        while (Post::query()->where('slug', $slug)->exists()) {
+            $slug = $baseSlug.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $slug;
     }
 }

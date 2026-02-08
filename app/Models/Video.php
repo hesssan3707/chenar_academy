@@ -19,6 +19,7 @@ class Video extends Model
     protected $fillable = [
         'product_id',
         'media_id',
+        'preview_media_id',
         'duration_seconds',
         'meta',
     ];
@@ -30,5 +31,10 @@ class Video extends Model
     public function media(): BelongsTo
     {
         return $this->belongsTo(Media::class, 'media_id');
+    }
+
+    public function previewMedia(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'preview_media_id');
     }
 }

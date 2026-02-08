@@ -12,22 +12,32 @@
                 </div>
             </div>
 
-            <div class="panel max-w-md">
+            <div class="panel">
                 <form method="post" action="{{ route('admin.settings.update') }}" class="stack stack--sm">
                     @csrf
                     @method('put')
 
-                    <label class="field">
-                        <span class="field__label">قالب (Theme)</span>
-                        <select name="theme" required>
-                            @foreach ($themes as $theme)
-                                <option value="{{ $theme }}" @selected($activeTheme === $theme)>{{ $theme }}</option>
-                            @endforeach
-                        </select>
-                        @error('theme')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
+                    <div class="grid admin-grid-2 admin-grid-2--flush">
+                        <label class="field">
+                            <span class="field__label">قالب (Theme)</span>
+                            <select name="theme" required>
+                                @foreach ($themes as $theme)
+                                    <option value="{{ $theme }}" @selected($activeTheme === $theme)>{{ $theme }}</option>
+                                @endforeach
+                            </select>
+                            @error('theme')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+
+                        <label class="field">
+                            <span class="field__label">واحد پول (کد ۳ حرفی)</span>
+                            <input name="currency" value="{{ old('currency', (string) ($currency ?? 'IRR')) }}">
+                            @error('currency')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+                    </div>
 
                     <div class="divider"></div>
 

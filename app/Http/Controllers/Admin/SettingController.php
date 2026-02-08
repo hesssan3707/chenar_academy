@@ -24,6 +24,7 @@ class SettingController extends Controller
         $reviewsArePublic = true;
         $ratingsArePublic = true;
         $accessExpirationDays = null;
+        $currency = 'IRR';
 
         if (Schema::hasTable('settings')) {
             $setting = Setting::query()->where('key', 'page.about')->first();
@@ -38,6 +39,7 @@ class SettingController extends Controller
             $reviewsArePublic = $this->settingBool('commerce.reviews.public', true);
             $ratingsArePublic = $this->settingBool('commerce.ratings.public', true);
             $accessExpirationDays = $this->settingInt('commerce.access_expiration_days');
+            $currency = $this->commerceCurrency();
         }
 
         return view('admin.settings.index', [
@@ -48,6 +50,7 @@ class SettingController extends Controller
             'reviewsArePublic' => $reviewsArePublic,
             'ratingsArePublic' => $ratingsArePublic,
             'accessExpirationDays' => $accessExpirationDays,
+            'currency' => $currency,
         ]);
     }
 
@@ -63,6 +66,7 @@ class SettingController extends Controller
             'reviews_public' => ['nullable', 'boolean'],
             'ratings_public' => ['nullable', 'boolean'],
             'access_expiration_days' => ['nullable', 'integer', 'min:0', 'max:36500'],
+            'currency' => ['nullable', 'string', 'size:3'],
         ]);
 
         if (Schema::hasTable('settings')) {
@@ -98,6 +102,12 @@ class SettingController extends Controller
             Setting::query()->updateOrCreate(
                 ['key' => 'commerce.access_expiration_days', 'group' => 'commerce'],
                 ['value' => $days > 0 ? $days : null]
+            );
+
+            $currency = strtoupper(trim((string) ($validated['currency'] ?? 'IRR')));
+            Setting::query()->updateOrCreate(
+                ['key' => 'commerce.currency', 'group' => 'commerce'],
+                ['value' => strlen($currency) === 3 ? $currency : 'IRR']
             );
         }
 

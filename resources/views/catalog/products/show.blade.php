@@ -10,6 +10,13 @@
 
             <div class="panel">
                 <div class="stack stack--sm">
+                    @if ($product->type === 'video' && ($product->video?->preview_media_id))
+                        <div class="field__label">پیش‌نمایش ویدیو</div>
+                        <video controls preload="metadata" style="width: 100%; border-radius: 14px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);">
+                            <source src="{{ route('products.preview', $product->slug) }}" type="video/mp4">
+                        </video>
+                    @endif
+
                     @if (($ratingsArePublic ?? false) && isset($avgRating) && $avgRating !== null)
                         @php($filledStars = (int) round((float) $avgRating))
                         <div class="field__label">امتیاز کاربران</div>

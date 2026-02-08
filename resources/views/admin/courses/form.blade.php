@@ -19,7 +19,7 @@
             @php($course = $course ?? null)
             @php($isEdit = $courseProduct && $courseProduct->exists)
 
-            <div class="panel max-w-md">
+            <div class="panel">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.courses.update', $courseProduct->id) : route('admin.courses.store') }}"
                     class="stack stack--sm">
@@ -32,14 +32,6 @@
                         <span class="field__label">عنوان</span>
                         <input name="title" required value="{{ old('title', (string) ($courseProduct->title ?? '')) }}">
                         @error('title')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
-
-                    <label class="field">
-                        <span class="field__label">اسلاگ</span>
-                        <input name="slug" required value="{{ old('slug', (string) ($courseProduct->slug ?? '')) }}">
-                        @error('slug')
                             <div class="field__error">{{ $message }}</div>
                         @enderror
                     </label>
@@ -88,14 +80,6 @@
                             <input type="number" name="base_price" required min="0" max="2000000000"
                                 value="{{ old('base_price', (string) ($courseProduct->base_price ?? 0)) }}">
                             @error('base_price')
-                                <div class="field__error">{{ $message }}</div>
-                            @enderror
-                        </label>
-
-                        <label class="field">
-                            <span class="field__label">ارز</span>
-                            <input name="currency" required value="{{ old('currency', (string) ($courseProduct->currency ?? 'IRR')) }}">
-                            @error('currency')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>

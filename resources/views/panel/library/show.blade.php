@@ -93,6 +93,11 @@
                                                 @endif
                                             @endforeach
                                         </div>
+                                    @elseif ($product->type === 'note' && $part->media_id)
+                                        <div class="form-actions">
+                                            <a class="btn btn--primary"
+                                                href="{{ route('panel.library.parts.stream', ['product' => $product->slug, 'part' => $part->id]) }}">دانلود</a>
+                                        </div>
                                     @else
                                         <div class="card__meta">محتوای این بخش در دسترس نیست.</div>
                                     @endif

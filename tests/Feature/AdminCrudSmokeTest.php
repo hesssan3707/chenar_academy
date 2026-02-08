@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
+use App\Models\Post;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\Ticket;
@@ -106,12 +108,10 @@ class AdminCrudSmokeTest extends TestCase
 
         $response = $this->actingAs($admin)->post(route('admin.booklets.store'), [
             'title' => 'Booklet 1',
-            'slug' => 'booklet-1',
             'excerpt' => 'Intro',
             'status' => 'draft',
             'base_price' => 1000,
             'sale_price' => 800,
-            'currency' => 'IRR',
             'published_at' => null,
         ]);
 
@@ -126,12 +126,10 @@ class AdminCrudSmokeTest extends TestCase
 
         $this->actingAs($admin)->put(route('admin.booklets.update', $bookletId), [
             'title' => 'Booklet 1 Updated',
-            'slug' => 'booklet-1',
             'excerpt' => 'Updated',
             'status' => 'published',
             'base_price' => 2000,
             'sale_price' => null,
-            'currency' => 'IRR',
             'published_at' => now()->toDateTimeString(),
         ])->assertRedirect(route('admin.booklets.edit', $bookletId));
 
@@ -150,14 +148,11 @@ class AdminCrudSmokeTest extends TestCase
 
         $response = $this->actingAs($admin)->post(route('admin.videos.store'), [
             'title' => 'Video 1',
-            'slug' => 'video-1',
             'excerpt' => 'Intro',
             'status' => 'draft',
             'base_price' => 1000,
             'sale_price' => null,
-            'currency' => 'IRR',
             'published_at' => null,
-            'duration_seconds' => 120,
         ]);
 
         $videoProductId = (int) Product::query()->where('slug', 'video-1')->value('id');
@@ -170,24 +165,19 @@ class AdminCrudSmokeTest extends TestCase
         ]);
         $this->assertDatabaseHas('videos', [
             'product_id' => $videoProductId,
-            'duration_seconds' => 120,
         ]);
 
         $this->actingAs($admin)->put(route('admin.videos.update', $videoProductId), [
             'title' => 'Video 1 Updated',
-            'slug' => 'video-1',
             'excerpt' => 'Updated',
             'status' => 'published',
             'base_price' => 2500,
             'sale_price' => 2000,
-            'currency' => 'IRR',
             'published_at' => now()->toDateTimeString(),
-            'duration_seconds' => 180,
         ])->assertRedirect(route('admin.videos.edit', $videoProductId));
 
         $this->assertDatabaseHas('videos', [
             'product_id' => $videoProductId,
-            'duration_seconds' => 180,
         ]);
     }
 
@@ -257,6 +247,70 @@ class AdminCrudSmokeTest extends TestCase
             'phone' => '09120000000',
             'name' => 'Test User',
         ]);
+    }
+
+    public function test_admin_can_create_and_update_post_without_slug(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $response = $this->actingAs($admin)->post(route('admin.posts.store'), [
+            'title' => 'My Post 1',
+            'excerpt' => 'Intro',
+            'status' => 'draft',
+            'published_at' => null,
+        ]);
+
+        $postId = (int) Post::query()->where('title', 'My Post 1')->value('id');
+        $response->assertRedirect(route('admin.posts.edit', $postId));
+
+        $post = Post::query()->findOrFail($postId);
+        $this->assertSame('my-post-1', $post->slug);
+
+        $this->actingAs($admin)->put(route('admin.posts.update', $postId), [
+            'title' => 'My Post 1 Updated',
+            'excerpt' => 'Updated',
+            'status' => 'published',
+            'published_at' => now()->toDateTimeString(),
+        ])->assertRedirect(route('admin.posts.edit', $postId));
+
+        $post->refresh();
+        $this->assertSame('my-post-1', $post->slug);
+    }
+
+    public function test_admin_can_create_and_update_category_without_slug(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $response = $this->actingAs($admin)->post(route('admin.categories.store'), [
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'Math 1',
+            'icon_key' => 'math',
+            'description' => '',
+            'is_active' => '1',
+            'sort_order' => 0,
+        ]);
+
+        $categoryId = (int) Category::query()->where('type', 'note')->where('title', 'Math 1')->value('id');
+        $response->assertRedirect(route('admin.categories.edit', $categoryId));
+
+        $category = Category::query()->findOrFail($categoryId);
+        $this->assertSame('math-1', $category->slug);
+
+        $this->actingAs($admin)->put(route('admin.categories.update', $categoryId), [
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'Math 1 Updated',
+            'icon_key' => 'math',
+            'description' => '',
+            'is_active' => '1',
+            'sort_order' => 0,
+        ])->assertRedirect(route('admin.categories.edit', $categoryId));
+
+        $category->refresh();
+        $this->assertSame('math-1', $category->slug);
     }
 
     public function test_admin_index_pages_paginate_40_items_per_page(): void
