@@ -28,6 +28,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Page\AboutController;
 use App\Http\Controllers\Page\ContactController;
 use App\Http\Controllers\Panel\DashboardController;
+use App\Http\Controllers\Panel\LibraryController;
 use App\Http\Controllers\Panel\OrderController;
 use App\Http\Controllers\Panel\TicketController;
 use Illuminate\Support\Facades\Route;
@@ -102,6 +103,11 @@ Route::prefix('panel')
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
         Route::put('/profile/password', [DashboardController::class, 'updatePassword'])->name('profile.password.update');
+        Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
+        Route::get('/library/{product:slug}', [LibraryController::class, 'show'])->name('library.show');
+        Route::get('/library/{product:slug}/stream', [LibraryController::class, 'streamVideo'])->name('library.video.stream');
+        Route::get('/library/{product:slug}/parts/{part}/stream', [LibraryController::class, 'streamPart'])->name('library.parts.stream');
+        Route::get('/library/{product:slug}/lessons/{lesson}/stream', [LibraryController::class, 'streamLesson'])->name('library.lessons.stream');
         Route::resource('orders', OrderController::class)->only(['index', 'show']);
         Route::resource('tickets', TicketController::class);
     });
@@ -114,6 +120,7 @@ Route::prefix('courses')->name('courses.')->group(function () {
 Route::prefix('products')->name('products.')->group(function () {
     Route::get('/', [ProductController::class, 'index'])->name('index');
     Route::get('/{slug}', [ProductController::class, 'show'])->name('show');
+    Route::post('/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('auth')->name('reviews.store');
 });
 
 Route::prefix('blog')->name('blog.')->group(function () {
@@ -128,4 +135,10 @@ Route::prefix('cart')->name('cart.')->group(function () {
     Route::delete('/items/{item}', [CartController::class, 'destroyItem'])->name('items.destroy');
 });
 
-Route::get('/checkout', [CheckoutController::class, 'index'])->middleware('auth')->name('checkout.index');
+Route::prefix('checkout')->name('checkout.')->middleware('auth')->group(function () {
+    Route::get('/', [CheckoutController::class, 'index'])->name('index');
+    Route::post('/coupon', [CheckoutController::class, 'applyCoupon'])->name('coupon.apply');
+    Route::post('/pay', [CheckoutController::class, 'pay'])->name('pay');
+    Route::get('/mock-gateway/{payment}', [CheckoutController::class, 'mockGateway'])->name('mock-gateway.show');
+    Route::post('/mock-gateway/{payment}/return', [CheckoutController::class, 'mockGatewayReturn'])->name('mock-gateway.return');
+});

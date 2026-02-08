@@ -44,6 +44,14 @@ class CartController extends Controller
         $product = Product::query()->where('status', 'published')->findOrFail($validated['product_id']);
         $quantity = 1;
 
+        if ($request->user() && $product->userHasAccess($request->user())) {
+            return redirect()->route('products.show', $product->slug)->with('toast', [
+                'type' => 'error',
+                'title' => 'قبلاً خریداری شده',
+                'message' => 'این محصول قبلاً خریداری شده است و نیازی به افزودن دوباره ندارد.',
+            ]);
+        }
+
         $guestToken = $this->getOrCreateGuestCartToken($request);
         $request->session()->put('cart_token', $guestToken);
         $cart = $this->getOrCreateCart($request, $guestToken);

@@ -59,12 +59,12 @@
 
                             <div class="form-actions">
                                 @auth
-                                    <a class="btn btn--primary" href="{{ route('checkout.index') }}">ادامه خرید</a>
+                                    <a class="btn btn--primary" href="{{ route('checkout.index') }}">ادامه به تسویه‌حساب</a>
                                 @else
                                     <div class="field__hint">برای ادامه و تسویه حساب نیاز به ورود دارید.</div>
                                     <a class="btn btn--primary" href="{{ route('login') }}">ورود</a>
                                 @endauth
-                                <a class="btn btn--ghost" href="{{ route('products.index') }}">ادامه خرید</a>
+                                <a class="btn btn--ghost" href="{{ route('products.index') }}">ادامه خرید از محصولات</a>
                             </div>
                         </div>
                     </div>

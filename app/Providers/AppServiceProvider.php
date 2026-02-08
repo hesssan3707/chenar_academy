@@ -4,6 +4,11 @@ namespace App\Providers;
 
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Models\Category;
+use App\Models\Post;
+use App\Models\Product;
+use App\Models\SocialLink;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -25,7 +30,61 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
+        $clearCacheGroup = function (string $group): void {
+            $keyListKey = "content_cache_keys.{$group}";
+
+            $keys = Cache::pull($keyListKey, []);
+            if (! is_array($keys)) {
+                $keys = [];
+            }
+
+            foreach ($keys as $cacheKey) {
+                if (is_string($cacheKey) && $cacheKey !== '') {
+                    Cache::forget($cacheKey);
+                }
+            }
+        };
+
+        Product::saved(function () use ($clearCacheGroup) {
+            $clearCacheGroup('products');
+            $clearCacheGroup('home');
+        });
+
+        Product::deleted(function () use ($clearCacheGroup) {
+            $clearCacheGroup('products');
+            $clearCacheGroup('home');
+        });
+
+        Category::saved(function () use ($clearCacheGroup) {
+            $clearCacheGroup('products');
+        });
+
+        Category::deleted(function () use ($clearCacheGroup) {
+            $clearCacheGroup('products');
+        });
+
+        Post::saved(function () use ($clearCacheGroup) {
+            $clearCacheGroup('posts');
+            $clearCacheGroup('home');
+        });
+
+        Post::deleted(function () use ($clearCacheGroup) {
+            $clearCacheGroup('posts');
+            $clearCacheGroup('home');
+        });
+
         View::composer('partials.header', function ($view) {
+            $socialLinks = collect();
+            if (Schema::hasTable('social_links')) {
+                $socialLinks = SocialLink::query()
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('id')
+                    ->get();
+            }
+
+            $view->with('socialLinks', $socialLinks);
+
             if (! Schema::hasTable('carts') || ! Schema::hasTable('cart_items')) {
                 $view->with('cartItemCount', 0);
 
@@ -62,6 +121,19 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $view->with('cartItemCount', $count);
+        });
+
+        View::composer('partials.footer', function ($view) {
+            $socialLinks = collect();
+            if (Schema::hasTable('social_links')) {
+                $socialLinks = SocialLink::query()
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('id')
+                    ->get();
+            }
+
+            $view->with('socialLinks', $socialLinks);
         });
     }
 }

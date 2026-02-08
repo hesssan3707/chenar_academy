@@ -6,6 +6,7 @@ use App\Models\Banner;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\Product;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -32,19 +33,56 @@ class HomeController extends Controller
             ],
         ];
 
-        $specialOffers = Product::query()
-            ->where('status', 'published')
-            ->whereNotNull('sale_price')
-            ->orderByDesc('published_at')
-            ->take(3)
-            ->get();
+        $specialOffersKey = 'content_cache.home.special_offers.v1.limit3';
+        $latestProductsKey = 'content_cache.home.latest_products.v1.limit6';
+        $latestPostsKey = 'content_cache.home.latest_posts.v1.limit3';
 
-        $latestProducts = Product::query()
-            ->where('status', 'published')
-            ->whereIn('type', ['note', 'video'])
-            ->orderByDesc('published_at')
-            ->take(6)
-            ->get();
+        $specialOfferIds = Cache::rememberForever($specialOffersKey, function () {
+            return Product::query()
+                ->where('status', 'published')
+                ->whereNotNull('sale_price')
+                ->orderByDesc('published_at')
+                ->take(3)
+                ->pluck('id')
+                ->all();
+        });
+
+        $latestProductIds = Cache::rememberForever($latestProductsKey, function () {
+            return Product::query()
+                ->where('status', 'published')
+                ->whereIn('type', ['note', 'video'])
+                ->orderByDesc('published_at')
+                ->take(6)
+                ->pluck('id')
+                ->all();
+        });
+
+        $latestPostIds = Cache::rememberForever($latestPostsKey, function () {
+            return Post::query()
+                ->where('status', 'published')
+                ->whereNotNull('published_at')
+                ->where('published_at', '<=', now())
+                ->orderByDesc('published_at')
+                ->take(3)
+                ->pluck('id')
+                ->all();
+        });
+
+        $trackedKeys = Cache::get('content_cache_keys.home', []);
+        foreach ([$specialOffersKey, $latestProductsKey, $latestPostsKey] as $key) {
+            if (! in_array($key, $trackedKeys, true)) {
+                $trackedKeys[] = $key;
+            }
+        }
+        Cache::forever('content_cache_keys.home', $trackedKeys);
+
+        $specialOffersById = Product::query()->whereIn('id', $specialOfferIds)->get()->keyBy('id');
+        $latestProductsById = Product::query()->whereIn('id', $latestProductIds)->get()->keyBy('id');
+        $latestPostsById = Post::query()->whereIn('id', $latestPostIds)->get()->keyBy('id');
+
+        $specialOffers = collect($specialOfferIds)->map(fn (int $id) => $specialOffersById->get($id))->filter();
+        $latestProducts = collect($latestProductIds)->map(fn (int $id) => $latestProductsById->get($id))->filter();
+        $latestPosts = collect($latestPostIds)->map(fn (int $id) => $latestPostsById->get($id))->filter();
 
         $homeBanner = Banner::query()
             ->where('position', 'home')
@@ -67,14 +105,6 @@ class HomeController extends Controller
                 $homeBannerImageUrl = Storage::disk($media->disk)->url($media->path);
             }
         }
-
-        $latestPosts = Post::query()
-            ->where('status', 'published')
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
-            ->orderByDesc('published_at')
-            ->take(3)
-            ->get();
 
         return view('home', [
             'featureItems' => $featureItems,

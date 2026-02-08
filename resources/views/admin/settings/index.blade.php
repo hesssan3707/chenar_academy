@@ -55,6 +55,34 @@
                         @enderror
                     </label>
 
+                    <div style="height: 1px; background: var(--border); margin: 8px 0;"></div>
+
+                    <div class="field__label">نظرات و امتیازدهی</div>
+
+                    <label class="field">
+                        <span class="field__label">نمایش نظرات برای کاربران</span>
+                        @php($reviewsPublicValue = (string) old('reviews_public', ($reviewsArePublic ?? true) ? '1' : '0'))
+                        <select name="reviews_public">
+                            <option value="1" @selected($reviewsPublicValue === '1')>نمایش عمومی</option>
+                            <option value="0" @selected($reviewsPublicValue === '0')>فقط برای ادمین</option>
+                        </select>
+                        @error('reviews_public')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
+                    <label class="field">
+                        <span class="field__label">نمایش امتیاز برای کاربران</span>
+                        @php($ratingsPublicValue = (string) old('ratings_public', ($ratingsArePublic ?? true) ? '1' : '0'))
+                        <select name="ratings_public">
+                            <option value="1" @selected($ratingsPublicValue === '1')>نمایش عمومی</option>
+                            <option value="0" @selected($ratingsPublicValue === '0')>فقط برای ادمین</option>
+                        </select>
+                        @error('ratings_public')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
                     <div class="form-actions">
                         <button class="btn btn--primary" type="submit">ذخیره</button>
                     </div>

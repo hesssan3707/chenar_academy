@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CourseLesson extends Model
 {
@@ -25,4 +26,14 @@ class CourseLesson extends Model
         'is_preview' => 'boolean',
         'meta' => 'array',
     ];
+
+    public function section(): BelongsTo
+    {
+        return $this->belongsTo(CourseSection::class, 'course_section_id');
+    }
+
+    public function media(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'media_id');
+    }
 }

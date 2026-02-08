@@ -117,8 +117,9 @@
 
                 <div class="grid grid--3">
                     @foreach ($products as $product)
+                        @php($purchased = in_array($product->id, ($purchasedProductIds ?? []), true))
                         <a class="card" href="{{ route('products.show', $product->slug) }}">
-                            <div class="card__badge">{{ $product->type === 'video' ? 'ویدیو' : 'جزوه' }}</div>
+                            <div class="card__badge">{{ $product->type === 'video' ? 'ویدیو' : 'جزوه' }}@if ($purchased) • خریداری شده @endif</div>
                             <div class="card__title">{{ $product->title }}</div>
                             <div class="card__price">
                                 <span class="price">{{ number_format($product->sale_price ?? $product->base_price) }}</span>

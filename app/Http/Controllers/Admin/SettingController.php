@@ -21,6 +21,9 @@ class SettingController extends Controller
             'body' => '',
         ];
 
+        $reviewsArePublic = true;
+        $ratingsArePublic = true;
+
         if (Schema::hasTable('settings')) {
             $setting = Setting::query()->where('key', 'page.about')->first();
 
@@ -30,6 +33,9 @@ class SettingController extends Controller
                 $about['subtitle'] = is_string($value['subtitle'] ?? null) ? (string) $value['subtitle'] : '';
                 $about['body'] = is_string($value['body'] ?? null) ? (string) $value['body'] : '';
             }
+
+            $reviewsArePublic = $this->settingBool('commerce.reviews.public', true);
+            $ratingsArePublic = $this->settingBool('commerce.ratings.public', true);
         }
 
         return view('admin.settings.index', [
@@ -37,6 +43,8 @@ class SettingController extends Controller
             'activeTheme' => app('theme')->active(),
             'themes' => app('theme')->available(),
             'about' => $about,
+            'reviewsArePublic' => $reviewsArePublic,
+            'ratingsArePublic' => $ratingsArePublic,
         ]);
     }
 
@@ -49,6 +57,8 @@ class SettingController extends Controller
             'about_title' => ['nullable', 'string', 'max:120'],
             'about_subtitle' => ['nullable', 'string', 'max:255'],
             'about_body' => ['nullable', 'string', 'max:10000'],
+            'reviews_public' => ['nullable', 'boolean'],
+            'ratings_public' => ['nullable', 'boolean'],
         ]);
 
         if (Schema::hasTable('settings')) {
@@ -69,10 +79,56 @@ class SettingController extends Controller
                     'body' => $body,
                 ]]
             );
+
+            Setting::query()->updateOrCreate(
+                ['key' => 'commerce.reviews.public', 'group' => 'commerce'],
+                ['value' => $request->boolean('reviews_public')]
+            );
+
+            Setting::query()->updateOrCreate(
+                ['key' => 'commerce.ratings.public', 'group' => 'commerce'],
+                ['value' => $request->boolean('ratings_public')]
+            );
         }
 
         Cache::forget('theme.active');
 
         return redirect()->route('admin.settings.index');
+    }
+
+    private function settingBool(string $key, bool $default): bool
+    {
+        $setting = Setting::query()->where('key', $key)->first();
+        if (! $setting) {
+            return $default;
+        }
+
+        $value = $setting->value;
+
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (bool) ((int) $value);
+        }
+
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+
+            if (in_array($normalized, ['1', 'true', 'yes', 'on'], true)) {
+                return true;
+            }
+
+            if (in_array($normalized, ['0', 'false', 'no', 'off'], true)) {
+                return false;
+            }
+        }
+
+        if (is_array($value) && array_key_exists('enabled', $value) && is_bool($value['enabled'])) {
+            return $value['enabled'];
+        }
+
+        return $default;
     }
 }
