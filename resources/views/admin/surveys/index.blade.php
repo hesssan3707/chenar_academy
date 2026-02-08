@@ -1,33 +1,33 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', $title ?? 'نظرسنجی‌ها')
 
 @section('content')
-    @include('admin.partials.nav')
-
     <section class="section">
         <div class="container">
-            <div class="cluster" style="justify-content: space-between; align-items: center;">
-                <div>
+            <div class="admin-page-header">
+                <div class="admin-page-header__titles">
                     <h1 class="page-title">{{ $title ?? 'نظرسنجی‌ها' }}</h1>
                     <p class="page-subtitle">مدیریت نظرسنجی‌های کاربران</p>
                 </div>
-                <a class="btn btn--primary" href="{{ route('admin.surveys.create') }}">ایجاد نظرسنجی</a>
+                <div class="admin-page-header__actions">
+                    <a class="btn btn--primary" href="{{ route('admin.surveys.create') }}">ایجاد نظرسنجی</a>
+                </div>
             </div>
 
             @php($surveys = $surveys ?? null)
 
             @if (! $surveys || $surveys->isEmpty())
-                <div class="panel max-w-md" style="margin-top: 18px;">
-                    <p class="page-subtitle" style="margin: 0;">هنوز نظرسنجی‌ای ایجاد نشده است.</p>
+                <div class="panel max-w-md">
+                    <p class="page-subtitle">هنوز نظرسنجی‌ای ایجاد نشده است.</p>
                 </div>
             @else
-                <div class="stack" style="margin-top: 18px;">
+                <div class="stack">
                     @foreach ($surveys as $survey)
                         <div class="panel">
                             <div class="stack stack--sm">
                                 <div class="field__label">{{ $survey->question }}</div>
-                                <div class="card__meta">
+                                <div class="admin-meta">
                                     @php($audience = (string) $survey->audience)
                                     <span>مخاطب: </span>
                                     <span>
@@ -39,9 +39,9 @@
                                             همه کاربران
                                         @endif
                                     </span>
-                                    <span style="margin: 0 8px;">•</span>
+                                    <span class="admin-meta__dot"></span>
                                     <span>وضعیت: {{ $survey->is_active ? 'فعال' : 'غیرفعال' }}</span>
-                                    <span style="margin: 0 8px;">•</span>
+                                    <span class="admin-meta__dot"></span>
                                     <span>
                                         بازه:
                                         {{ $survey->starts_at?->format('Y-m-d H:i') ?? 'از زمان ایجاد' }}
@@ -62,7 +62,7 @@
                         </div>
                     @endforeach
 
-                    <div>
+                    <div class="admin-pagination">
                         {{ $surveys->links() }}
                     </div>
                 </div>

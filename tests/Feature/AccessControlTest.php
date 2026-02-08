@@ -15,12 +15,43 @@ class AccessControlTest extends TestCase
 
     public function test_guest_cannot_access_admin_routes(): void
     {
-        $this->get('/admin')->assertRedirect(route('login'));
+        $this->get('/admin')->assertRedirect(route('admin.login'));
     }
 
     public function test_guest_cannot_access_user_panel_routes(): void
     {
         $this->get('/panel')->assertRedirect(route('login'));
+    }
+
+    public function test_guest_can_view_admin_login_page(): void
+    {
+        $this->get(route('admin.login'))->assertOk();
+    }
+
+    public function test_admin_can_login_from_admin_login_page(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        $this->post(route('admin.login.store'), [
+            'action' => 'login_password',
+            'phone' => $user->phone,
+            'password' => 'password',
+        ])->assertRedirect(route('admin.dashboard'));
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_regular_user_cannot_login_from_admin_login_page(): void
+    {
+        $user = User::factory()->create();
+
+        $this->post(route('admin.login.store'), [
+            'action' => 'login_password',
+            'phone' => $user->phone,
+            'password' => 'password',
+        ])->assertSessionHasErrors(['phone']);
     }
 
     public function test_guest_is_told_login_is_required_for_protected_routes(): void

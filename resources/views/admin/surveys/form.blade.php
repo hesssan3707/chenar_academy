@@ -1,14 +1,19 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', $title ?? 'نظرسنجی')
 
 @section('content')
-    @include('admin.partials.nav')
-
     <section class="section">
         <div class="container">
-            <h1 class="page-title">{{ $title ?? 'نظرسنجی' }}</h1>
-            <p class="page-subtitle">سوال و گزینه‌های پاسخ را تنظیم کنید</p>
+            <div class="admin-page-header">
+                <div class="admin-page-header__titles">
+                    <h1 class="page-title">{{ $title ?? 'نظرسنجی' }}</h1>
+                    <p class="page-subtitle">سوال و گزینه‌های پاسخ را تنظیم کنید</p>
+                </div>
+                <div class="admin-page-header__actions">
+                    <a class="btn btn--ghost" href="{{ route('admin.surveys.index') }}">بازگشت</a>
+                </div>
+            </div>
 
             @php($survey = $survey ?? null)
             @php($isEdit = $survey && $survey->exists)
@@ -83,11 +88,9 @@
 
                     <div class="form-actions">
                         <button class="btn btn--primary" type="submit">ذخیره</button>
-                        <a class="btn btn--ghost" href="{{ route('admin.surveys.index') }}">بازگشت</a>
                     </div>
                 </form>
             </div>
         </div>
     </section>
 @endsection
-

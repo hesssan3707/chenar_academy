@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\BannerController as AdminBannerController;
+use App\Http\Controllers\Admin\BookletController as AdminBookletController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\CourseController as AdminCourseController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Admin\SocialLinkController as AdminSocialLinkController
 use App\Http\Controllers\Admin\SurveyController as AdminSurveyController;
 use App\Http\Controllers\Admin\TicketController as AdminTicketController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\VideoController as AdminVideoController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -70,11 +72,28 @@ Route::post('/logout', [LoginController::class, 'logout'])
 
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'admin.panel'])
+    ->middleware('guest')
+    ->group(function () {
+        Route::get('/login', [LoginController::class, 'showAdmin'])->name('login');
+        Route::post('/login', [LoginController::class, 'authenticateAdmin'])->name('login.store');
+    });
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'admin.panel', 'admin.scope'])
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
+        Route::post('scope/user', [AdminUserController::class, 'scopeStore'])->name('scope.user.store');
+        Route::post('scope/clear', [AdminUserController::class, 'scopeClear'])->name('scope.clear');
+
         Route::resource('users', AdminUserController::class)->middleware('admin.users');
+        Route::post('users/{user}/accesses', [AdminUserController::class, 'accessStore'])
+            ->middleware('admin.users')
+            ->name('users.accesses.store');
+        Route::delete('users/{user}/accesses/{access}', [AdminUserController::class, 'accessDestroy'])
+            ->middleware('admin.users')
+            ->name('users.accesses.destroy');
 
         Route::resource('categories', AdminCategoryController::class);
         Route::resource('products', AdminProductController::class);
@@ -84,6 +103,9 @@ Route::prefix('admin')
         Route::resource('payments', AdminPaymentController::class);
         Route::resource('coupons', AdminCouponController::class);
 
+        Route::resource('booklets', AdminBookletController::class);
+        Route::resource('videos', AdminVideoController::class);
+
         Route::resource('posts', AdminPostController::class);
 
         Route::resource('banners', AdminBannerController::class);
@@ -92,7 +114,7 @@ Route::prefix('admin')
         Route::resource('social-links', AdminSocialLinkController::class);
         Route::resource('surveys', AdminSurveyController::class);
 
-        Route::resource('tickets', AdminTicketController::class)->only(['index', 'show', 'update']);
+        Route::resource('tickets', AdminTicketController::class);
         Route::resource('media', AdminMediaController::class);
 
         Route::resource('roles', AdminRoleController::class);

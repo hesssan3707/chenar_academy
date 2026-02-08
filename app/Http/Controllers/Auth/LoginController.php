@@ -20,6 +20,11 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
+    public function showAdmin(): View
+    {
+        return view('admin.auth.login');
+    }
+
     public function forgot(): View
     {
         return view('auth.forgot-password');
@@ -69,6 +74,57 @@ class LoginController extends Controller
         $request->session()->regenerate();
 
         return $this->redirectAfterAuth($user);
+    }
+
+    public function authenticateAdmin(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'action' => ['required', Rule::in(['login_password', 'login_otp'])],
+            'phone' => ['required', 'string', 'max:20'],
+            'password' => ['nullable', 'string', 'max:120'],
+            'otp_code' => ['nullable', 'string', 'max:10'],
+            'remember' => ['nullable'],
+        ]);
+
+        if ($validated['action'] === 'login_password') {
+            $request->validate([
+                'password' => ['required', 'string', 'max:120'],
+            ]);
+
+            if (! Auth::attempt(['phone' => $validated['phone'], 'password' => $validated['password']], $request->boolean('remember'))) {
+                throw ValidationException::withMessages([
+                    'phone' => 'اطلاعات ورود صحیح نیست.',
+                ]);
+            }
+
+            $request->session()->regenerate();
+
+            $user = $request->user();
+            $this->ensureAdminOrFail($request, $user);
+
+            return redirect()->route('admin.dashboard');
+        }
+
+        $request->validate([
+            'otp_code' => ['required', 'string', 'max:10'],
+        ]);
+
+        $user = User::query()->where('phone', $validated['phone'])->first();
+
+        if (! $user) {
+            throw ValidationException::withMessages([
+                'phone' => 'کاربری با این شماره تلفن پیدا نشد.',
+            ]);
+        }
+
+        $this->consumeOtpOrFail($validated['phone'], 'login', (string) $validated['otp_code']);
+
+        Auth::login($user, $request->boolean('remember'));
+        $request->session()->regenerate();
+
+        $this->ensureAdminOrFail($request, $user);
+
+        return redirect()->route('admin.dashboard');
     }
 
     public function forgotStore(Request $request): RedirectResponse
@@ -135,6 +191,22 @@ class LoginController extends Controller
         }
 
         $otp->forceFill(['consumed_at' => now()])->save();
+    }
+
+    private function ensureAdminOrFail(Request $request, ?User $user): void
+    {
+        if ($user && $user->hasRole('admin')) {
+            return;
+        }
+
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        throw ValidationException::withMessages([
+            'phone' => 'دسترسی ورود ادمین ندارید.',
+        ]);
     }
 
     private function redirectAfterAuth(?User $user): RedirectResponse

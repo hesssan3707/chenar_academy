@@ -33,6 +33,14 @@ class Handler extends ExceptionHandler
                 return null;
             }
 
+            if ($request->is('admin*')) {
+                return redirect()->guest(route('admin.login'))->with('toast', [
+                    'type' => 'danger',
+                    'title' => 'نیاز به ورود',
+                    'message' => 'برای ورود به پنل مدیریت باید وارد شوید.',
+                ]);
+            }
+
             return redirect()->guest(route('login'))->with('toast', [
                 'type' => 'danger',
                 'title' => 'نیاز به ورود',

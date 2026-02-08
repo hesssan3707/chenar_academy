@@ -15,7 +15,7 @@ class SurveyController extends Controller
 {
     public function index(): View
     {
-        $surveys = Survey::query()->orderByDesc('id')->paginate(20);
+        $surveys = Survey::query()->orderByDesc('id')->paginate(40);
 
         return view('admin.surveys.index', [
             'title' => 'نظرسنجی‌ها',

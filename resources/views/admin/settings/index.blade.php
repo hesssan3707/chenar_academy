@@ -1,14 +1,16 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'تنظیمات')
 
 @section('content')
-    @include('admin.partials.nav')
-
     <section class="section">
         <div class="container">
-            <h1 class="page-title">تنظیمات</h1>
-            <p class="page-subtitle">تنظیمات پایه سایت و قالب بصری</p>
+            <div class="admin-page-header">
+                <div class="admin-page-header__titles">
+                    <h1 class="page-title">تنظیمات</h1>
+                    <p class="page-subtitle">تنظیمات پایه سایت و قالب بصری</p>
+                </div>
+            </div>
 
             <div class="panel max-w-md">
                 <form method="post" action="{{ route('admin.settings.update') }}" class="stack stack--sm">
@@ -27,7 +29,7 @@
                         @enderror
                     </label>
 
-                    <div style="height: 1px; background: var(--border); margin: 8px 0;"></div>
+                    <div class="divider"></div>
 
                     <div class="field__label">صفحه درباره ما</div>
 
@@ -55,7 +57,7 @@
                         @enderror
                     </label>
 
-                    <div style="height: 1px; background: var(--border); margin: 8px 0;"></div>
+                    <div class="divider"></div>
 
                     <div class="field__label">نظرات و امتیازدهی</div>
 
@@ -83,7 +85,7 @@
                         @enderror
                     </label>
 
-                    <div style="height: 1px; background: var(--border); margin: 8px 0;"></div>
+                    <div class="divider"></div>
 
                     <div class="field__label">انقضای دسترسی پس از خرید</div>
 

@@ -3,44 +3,118 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class PostController extends Controller
 {
     public function index(): View
     {
-        return view('admin.stub', ['title' => 'مقالات']);
+        $posts = Post::query()->orderByDesc('published_at')->orderByDesc('id')->paginate(40);
+
+        return view('admin.posts.index', [
+            'title' => 'مقالات',
+            'posts' => $posts,
+        ]);
     }
 
     public function create(): View
     {
-        return view('admin.stub', ['title' => 'ایجاد مقاله']);
+        $post = new Post([
+            'status' => 'draft',
+        ]);
+
+        return view('admin.posts.form', [
+            'title' => 'ایجاد مقاله',
+            'post' => $post,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $validated = $this->validatePayload($request);
+
+        $post = Post::query()->create([
+            'author_user_id' => $request->user()?->id,
+            'title' => $validated['title'],
+            'slug' => $validated['slug'],
+            'excerpt' => $validated['excerpt'],
+            'status' => $validated['status'],
+            'published_at' => $validated['published_at'],
+            'cover_media_id' => null,
+            'meta' => [],
+        ]);
+
+        return redirect()->route('admin.posts.edit', $post->id);
+    }
+
+    public function show(Post $post): View
+    {
+        return redirect()->route('admin.posts.edit', $post->id);
+    }
+
+    public function edit(Post $post): View
+    {
+        return view('admin.posts.form', [
+            'title' => 'ویرایش مقاله',
+            'post' => $post,
+        ]);
+    }
+
+    public function update(Request $request, Post $post): RedirectResponse
+    {
+        $validated = $this->validatePayload($request, $post);
+
+        $post->forceFill([
+            'title' => $validated['title'],
+            'slug' => $validated['slug'],
+            'excerpt' => $validated['excerpt'],
+            'status' => $validated['status'],
+            'published_at' => $validated['published_at'],
+        ])->save();
+
+        return redirect()->route('admin.posts.edit', $post->id);
+    }
+
+    public function destroy(Post $post): RedirectResponse
+    {
+        $post->delete();
+
         return redirect()->route('admin.posts.index');
     }
 
-    public function show(int $post): View
+    private function validatePayload(Request $request, ?Post $post = null): array
     {
-        return view('admin.stub', ['title' => 'نمایش مقاله']);
-    }
+        $statusValues = ['draft', 'published'];
 
-    public function edit(int $post): View
-    {
-        return view('admin.stub', ['title' => 'ویرایش مقاله']);
-    }
+        $rules = [
+            'title' => ['required', 'string', 'max:180'],
+            'slug' => [
+                'required',
+                'string',
+                'max:191',
+                Rule::unique('posts', 'slug')->ignore($post?->id),
+            ],
+            'excerpt' => ['nullable', 'string', 'max:500'],
+            'status' => ['required', 'string', Rule::in($statusValues)],
+            'published_at' => ['nullable', 'date'],
+        ];
 
-    public function update(Request $request, int $post): RedirectResponse
-    {
-        return redirect()->route('admin.posts.index');
-    }
+        $validated = $request->validate($rules);
 
-    public function destroy(int $post): RedirectResponse
-    {
-        return redirect()->route('admin.posts.index');
+        $slug = Str::slug((string) ($validated['slug'] ?? ''), '-');
+
+        return [
+            'title' => (string) $validated['title'],
+            'slug' => $slug !== '' ? $slug : Str::slug((string) $validated['title'], '-'),
+            'excerpt' => isset($validated['excerpt']) && $validated['excerpt'] !== '' ? (string) $validated['excerpt'] : null,
+            'status' => (string) $validated['status'],
+            'published_at' => ($validated['published_at'] ?? null) !== null ? Carbon::parse((string) $validated['published_at']) : null,
+        ];
     }
 }

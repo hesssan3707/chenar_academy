@@ -63,6 +63,13 @@ html[data-theme='light'] textarea {
     background: rgba(255, 255, 255, 0.9);
 }
 
+html[data-theme='admin'] input:not([type='checkbox']):not([type='radio']),
+html[data-theme='admin'] select,
+html[data-theme='admin'] textarea {
+    background: rgba(255, 255, 255, 0.94);
+    color: rgba(15, 23, 42, 0.92);
+}
+
 input:not([type='checkbox']):not([type='radio']),
 select {
     height: var(--ds-control-height);
@@ -83,12 +90,24 @@ html[data-theme='light'] textarea::placeholder {
     color: rgba(11, 18, 32, 0.45);
 }
 
+html[data-theme='admin'] input::placeholder,
+html[data-theme='admin'] textarea::placeholder {
+    color: rgba(15, 23, 42, 0.45);
+}
+
 input:focus,
 select:focus,
 textarea:focus {
     outline: 2px solid rgba(45, 212, 191, 0.35);
     outline-offset: 2px;
     border-color: rgba(45, 212, 191, 0.35);
+}
+
+html[data-theme='admin'] input:focus,
+html[data-theme='admin'] select:focus,
+html[data-theme='admin'] textarea:focus {
+    outline: 2px solid rgba(124, 58, 237, 0.32);
+    border-color: rgba(124, 58, 237, 0.32);
 }
 
 input:disabled,
@@ -130,10 +149,22 @@ html[data-theme='light'] .badge {
     color: rgba(11, 18, 32, 0.72);
 }
 
+html[data-theme='admin'] .badge {
+    border-color: rgba(15, 23, 42, 0.12);
+    background: rgba(15, 23, 42, 0.04);
+    color: rgba(15, 23, 42, 0.72);
+}
+
 .badge--brand {
     background: rgba(45, 212, 191, 0.14);
     border: 1px solid rgba(45, 212, 191, 0.22);
     color: rgba(232, 238, 252, 0.92);
+}
+
+html[data-theme='admin'] .badge--brand {
+    background: rgba(124, 58, 237, 0.12);
+    border-color: rgba(124, 58, 237, 0.22);
+    color: rgba(15, 23, 42, 0.82);
 }
 
 .field {
@@ -211,6 +242,10 @@ html[data-theme='light'] .panel {
     background: rgba(255, 255, 255, 0.86);
 }
 
+html[data-theme='admin'] .panel {
+    background: rgba(255, 255, 255, 0.9);
+}
+
 .card {
     position: relative;
     border: 1px solid var(--ds-border);
@@ -225,6 +260,10 @@ html[data-theme='light'] .panel {
 
 html[data-theme='light'] .card {
     background: rgba(255, 255, 255, 0.86);
+}
+
+html[data-theme='admin'] .card {
+    background: rgba(255, 255, 255, 0.9);
 }
 
 .card:hover {
@@ -329,6 +368,10 @@ html[data-theme='light'] .card__action {
 }
 
 html[data-theme='light'] .toast {
+    background: rgba(255, 255, 255, 0.96);
+}
+
+html[data-theme='admin'] .toast {
     background: rgba(255, 255, 255, 0.96);
 }
 

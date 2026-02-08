@@ -3,44 +3,124 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
     public function index(): View
     {
-        return view('admin.stub', ['title' => 'دسته‌بندی‌ها']);
+        $categories = Category::query()
+            ->orderBy('type')
+            ->orderBy('parent_id')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->paginate(40);
+
+        return view('admin.categories.index', [
+            'title' => 'دسته‌بندی‌ها',
+            'categories' => $categories,
+        ]);
     }
 
     public function create(): View
     {
-        return view('admin.stub', ['title' => 'ایجاد دسته‌بندی']);
+        return view('admin.categories.form', [
+            'title' => 'ایجاد دسته‌بندی',
+            'category' => new Category([
+                'is_active' => true,
+                'sort_order' => 0,
+            ]),
+            'parents' => Category::query()->orderBy('type')->orderBy('title')->orderBy('id')->get(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        return redirect()->route('admin.categories.index');
+        $validated = $this->validatePayload($request);
+
+        $category = Category::query()->create($validated);
+
+        return redirect()->route('admin.categories.edit', $category->id);
     }
 
     public function show(int $category): View
     {
-        return view('admin.stub', ['title' => 'نمایش دسته‌بندی']);
+        return redirect()->route('admin.categories.edit', $category);
     }
 
     public function edit(int $category): View
     {
-        return view('admin.stub', ['title' => 'ویرایش دسته‌بندی']);
+        $categoryModel = Category::query()->findOrFail($category);
+
+        return view('admin.categories.form', [
+            'title' => 'ویرایش دسته‌بندی',
+            'category' => $categoryModel,
+            'parents' => Category::query()
+                ->where('id', '!=', $categoryModel->id)
+                ->orderBy('type')
+                ->orderBy('title')
+                ->orderBy('id')
+                ->get(),
+        ]);
     }
 
     public function update(Request $request, int $category): RedirectResponse
     {
-        return redirect()->route('admin.categories.index');
+        $categoryModel = Category::query()->findOrFail($category);
+
+        $validated = $this->validatePayload($request, $categoryModel);
+
+        $categoryModel->forceFill($validated)->save();
+
+        return redirect()->route('admin.categories.edit', $categoryModel->id);
     }
 
     public function destroy(int $category): RedirectResponse
     {
+        $categoryModel = Category::query()->findOrFail($category);
+        $categoryModel->delete();
+
         return redirect()->route('admin.categories.index');
+    }
+
+    private function validatePayload(Request $request, ?Category $category = null): array
+    {
+        $type = trim((string) $request->input('type', ''));
+
+        $validated = $request->validate([
+            'type' => ['required', 'string', 'max:20'],
+            'parent_id' => ['nullable', 'integer', 'min:1', 'exists:categories,id'],
+            'title' => ['required', 'string', 'max:190'],
+            'slug' => [
+                'required',
+                'string',
+                'max:191',
+                Rule::unique('categories', 'slug')
+                    ->where(fn ($q) => $q->where('type', $type))
+                    ->ignore($category?->id),
+            ],
+            'icon_key' => ['nullable', 'string', 'max:50'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['nullable'],
+            'sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+        ]);
+
+        $slug = Str::slug((string) ($validated['slug'] ?? ''), '-');
+
+        return [
+            'type' => (string) $validated['type'],
+            'parent_id' => ($validated['parent_id'] ?? null) !== null ? (int) $validated['parent_id'] : null,
+            'title' => (string) $validated['title'],
+            'slug' => $slug !== '' ? $slug : Str::slug((string) $validated['title'], '-'),
+            'icon_key' => isset($validated['icon_key']) && $validated['icon_key'] !== '' ? (string) $validated['icon_key'] : null,
+            'description' => isset($validated['description']) && $validated['description'] !== '' ? (string) $validated['description'] : null,
+            'is_active' => $request->boolean('is_active'),
+            'sort_order' => ($validated['sort_order'] ?? null) !== null ? (int) $validated['sort_order'] : 0,
+        ];
     }
 }
