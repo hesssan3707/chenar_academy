@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class TicketController extends Controller
@@ -27,8 +29,16 @@ class TicketController extends Controller
 
     public function create(): View
     {
+        $categories = Category::query()
+            ->where('type', 'ticket')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
         return view('panel.tickets.create', [
             'title' => 'ایجاد تیکت',
+            'ticketCategories' => $categories,
         ]);
     }
 
@@ -36,9 +46,29 @@ class TicketController extends Controller
     {
         $validated = $request->validate([
             'subject' => ['required', 'string', 'max:160'],
+            'category' => [
+                'required',
+                'string',
+                Rule::exists('categories', 'slug')
+                    ->where('type', 'ticket')
+                    ->where('is_active', true),
+            ],
             'priority' => ['required', 'string', 'in:low,normal,high'],
             'body' => ['required', 'string', 'max:5000'],
         ]);
+
+        $category = Category::query()
+            ->where('type', 'ticket')
+            ->where('slug', (string) $validated['category'])
+            ->where('is_active', true)
+            ->first();
+
+        if (! $category) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors(['category' => 'دسته‌بندی انتخاب‌شده معتبر نیست.']);
+        }
 
         $ticket = Ticket::query()->create([
             'user_id' => $request->user()->id,
@@ -46,6 +76,10 @@ class TicketController extends Controller
             'priority' => $validated['priority'],
             'status' => 'open',
             'last_message_at' => now(),
+            'meta' => [
+                'category_slug' => (string) $category->slug,
+                'category_title' => (string) $category->title,
+            ],
         ]);
 
         TicketMessage::query()->create([

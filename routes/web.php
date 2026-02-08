@@ -99,6 +99,13 @@ Route::prefix('admin')
         Route::resource('products', AdminProductController::class);
         Route::resource('courses', AdminCourseController::class);
 
+        Route::post('orders/{order}/card-to-card/approve', [AdminOrderController::class, 'approveCardToCard'])
+            ->name('orders.card-to-card.approve');
+        Route::post('orders/{order}/card-to-card/reject', [AdminOrderController::class, 'rejectCardToCard'])
+            ->name('orders.card-to-card.reject');
+        Route::get('orders/{order}/card-to-card/receipt', [AdminOrderController::class, 'receiptCardToCard'])
+            ->name('orders.card-to-card.receipt');
+
         Route::resource('orders', AdminOrderController::class);
         Route::resource('payments', AdminPaymentController::class);
         Route::resource('coupons', AdminCouponController::class);
@@ -170,6 +177,8 @@ Route::prefix('checkout')->name('checkout.')->middleware('auth')->group(function
     Route::get('/', [CheckoutController::class, 'index'])->name('index');
     Route::post('/coupon', [CheckoutController::class, 'applyCoupon'])->name('coupon.apply');
     Route::post('/pay', [CheckoutController::class, 'pay'])->name('pay');
+    Route::get('/card-to-card', [CheckoutController::class, 'cardToCard'])->name('card-to-card.show');
+    Route::post('/card-to-card', [CheckoutController::class, 'cardToCardStore'])->name('card-to-card.store');
     Route::get('/mock-gateway/{payment}', [CheckoutController::class, 'mockGateway'])->name('mock-gateway.show');
     Route::post('/mock-gateway/{payment}/return', [CheckoutController::class, 'mockGatewayReturn'])->name('mock-gateway.return');
 });

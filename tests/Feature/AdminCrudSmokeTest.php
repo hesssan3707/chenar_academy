@@ -313,6 +313,54 @@ class AdminCrudSmokeTest extends TestCase
         $this->assertSame('math-1', $category->slug);
     }
 
+    public function test_admin_categories_index_groups_by_type_and_shows_hierarchy(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $noteRoot = Category::query()->create([
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'Root',
+            'slug' => 'root',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        Category::query()->create([
+            'type' => 'note',
+            'parent_id' => $noteRoot->id,
+            'title' => 'Child',
+            'slug' => 'child',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'Uni',
+            'slug' => 'uni',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.categories.index'));
+
+        $response
+            ->assertOk()
+            ->assertSee('نوع: note')
+            ->assertSee('نوع: institution')
+            ->assertSeeInOrder(['Root', 'Child'])
+            ->assertSee('&nbsp;&nbsp;&nbsp;&nbsp;Child', false);
+    }
+
     public function test_admin_index_pages_paginate_40_items_per_page(): void
     {
         $admin = User::factory()->create();

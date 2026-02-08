@@ -25,6 +25,7 @@ class SettingController extends Controller
         $ratingsArePublic = true;
         $accessExpirationDays = null;
         $currency = 'IRR';
+        $taxPercent = 0;
 
         if (Schema::hasTable('settings')) {
             $setting = Setting::query()->where('key', 'page.about')->first();
@@ -40,6 +41,7 @@ class SettingController extends Controller
             $ratingsArePublic = $this->settingBool('commerce.ratings.public', true);
             $accessExpirationDays = $this->settingInt('commerce.access_expiration_days');
             $currency = $this->commerceCurrency();
+            $taxPercent = $this->settingIntAllowZero('commerce.tax_percent', 0);
         }
 
         return view('admin.settings.index', [
@@ -51,6 +53,7 @@ class SettingController extends Controller
             'ratingsArePublic' => $ratingsArePublic,
             'accessExpirationDays' => $accessExpirationDays,
             'currency' => $currency,
+            'taxPercent' => $taxPercent,
         ]);
     }
 
@@ -67,6 +70,7 @@ class SettingController extends Controller
             'ratings_public' => ['nullable', 'boolean'],
             'access_expiration_days' => ['nullable', 'integer', 'min:0', 'max:36500'],
             'currency' => ['nullable', 'string', 'size:3'],
+            'tax_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
         ]);
 
         if (Schema::hasTable('settings')) {
@@ -108,6 +112,12 @@ class SettingController extends Controller
             Setting::query()->updateOrCreate(
                 ['key' => 'commerce.currency', 'group' => 'commerce'],
                 ['value' => strlen($currency) === 3 ? $currency : 'IRR']
+            );
+
+            $taxPercent = (int) ($validated['tax_percent'] ?? 0);
+            Setting::query()->updateOrCreate(
+                ['key' => 'commerce.tax_percent', 'group' => 'commerce'],
+                ['value' => min(100, max(0, $taxPercent))]
             );
         }
 
@@ -188,5 +198,39 @@ class SettingController extends Controller
         }
 
         return null;
+    }
+
+    private function settingIntAllowZero(string $key, int $default): int
+    {
+        $setting = Setting::query()->where('key', $key)->first();
+        if (! $setting) {
+            return $default;
+        }
+
+        $value = $setting->value;
+        if ($value === null) {
+            return $default;
+        }
+
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value;
+        }
+
+        if (is_string($value)) {
+            $normalized = trim($value);
+            if ($normalized === '') {
+                return $default;
+            }
+
+            if (is_numeric($normalized)) {
+                return (int) $normalized;
+            }
+        }
+
+        return $default;
     }
 }

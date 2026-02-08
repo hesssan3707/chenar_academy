@@ -32,7 +32,7 @@
                                                 <div class="field__label">قیمت واحد</div>
                                                 <div>
                                                     <span class="price">{{ number_format($item->unit_price) }}</span>
-                                                    <span class="price__unit">تومان</span>
+                                                    <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
                                                 </div>
                                             </div>
                                             <form method="post" action="{{ route('cart.items.destroy', $item->id) }}">
@@ -53,7 +53,7 @@
                                 <div class="field__label">جمع سبد خرید</div>
                                 <div>
                                     <span class="price">{{ number_format($subtotal ?? 0) }}</span>
-                                    <span class="price__unit">تومان</span>
+                                    <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
                                 </div>
                             </div>
 

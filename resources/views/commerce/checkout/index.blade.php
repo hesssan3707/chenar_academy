@@ -29,7 +29,7 @@
                                             <div class="field__label">{{ $item->product?->title ?? 'محصول' }}</div>
                                             <div class="card__meta">
                                                 <span class="price">{{ number_format((int) $item->unit_price) }}</span>
-                                                <span class="price__unit">تومان</span>
+                                                <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
                                             </div>
                                         </div>
                                         <a class="btn btn--ghost btn--sm" href="{{ route('cart.index') }}">ویرایش سبد</a>
@@ -65,7 +65,7 @@
                                 <div class="field__label">جمع سبد خرید</div>
                                 <div>
                                     <span class="price">{{ number_format($subtotal ?? 0) }}</span>
-                                    <span class="price__unit">تومان</span>
+                                    <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
                                 </div>
                             </div>
 
@@ -73,23 +73,36 @@
                                 <div class="field__label">تخفیف</div>
                                 <div>
                                     <span class="price">{{ number_format($discountAmount ?? 0) }}</span>
-                                    <span class="price__unit">تومان</span>
+                                    <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
                                 </div>
                             </div>
+
+                            @if ((int) ($taxPercent ?? 0) > 0)
+                                <div class="cluster" style="justify-content: space-between;">
+                                    <div class="field__label">مالیات ({{ (int) ($taxPercent ?? 0) }}٪)</div>
+                                    <div>
+                                        <span class="price">{{ number_format($taxAmount ?? 0) }}</span>
+                                        <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
+                                    </div>
+                                </div>
+                            @endif
 
                             <div class="cluster" style="justify-content: space-between;">
                                 <div class="field__label">مبلغ قابل پرداخت</div>
                                 <div>
                                     <span class="price">{{ number_format($payableAmount ?? 0) }}</span>
-                                    <span class="price__unit">تومان</span>
+                                    <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
                                 </div>
                             </div>
 
-                            <form method="post" action="{{ route('checkout.pay') }}" class="form-actions">
-                                @csrf
-                                <button class="btn btn--primary" type="submit">پرداخت</button>
+                            <div class="form-actions">
+                                <form method="post" action="{{ route('checkout.pay') }}">
+                                    @csrf
+                                    <button class="btn btn--primary" type="submit">پرداخت آنلاین</button>
+                                </form>
+                                <a class="btn btn--ghost" href="{{ route('checkout.card-to-card.show') }}">پرداخت کارت‌به‌کارت</a>
                                 <a class="btn btn--ghost" href="{{ route('cart.index') }}">بازگشت</a>
-                            </form>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -28,6 +28,7 @@ class LibraryController extends Controller
         $products = Product::query()
             ->whereIn('id', $accesses->pluck('product_id')->all())
             ->orderByDesc('published_at')
+            ->with('thumbnailMedia')
             ->get()
             ->keyBy('id');
 
@@ -57,9 +58,9 @@ class LibraryController extends Controller
         abort_if(! $product->userHasAccess($request->user()), 403);
 
         if ($product->type === 'course') {
-            $product->load(['course.sections.lessons']);
+            $product->load(['thumbnailMedia', 'course.sections.lessons']);
         } else {
-            $product->load(['parts', 'video']);
+            $product->load(['thumbnailMedia', 'parts', 'video.media']);
         }
 
         $userReview = ProductReview::query()

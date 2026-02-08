@@ -34,7 +34,9 @@
                             @php($statusValue = old('status', (string) ($order->status ?? 'pending')))
                             <select name="status" required>
                                 <option value="pending" @selected($statusValue === 'pending')>pending</option>
+                                <option value="pending_review" @selected($statusValue === 'pending_review')>pending_review</option>
                                 <option value="paid" @selected($statusValue === 'paid')>paid</option>
+                                <option value="rejected" @selected($statusValue === 'rejected')>rejected</option>
                                 <option value="cancelled" @selected($statusValue === 'cancelled')>cancelled</option>
                             </select>
                             @error('status')

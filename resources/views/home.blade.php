@@ -62,8 +62,9 @@
                         <div class="card__badge">{{ $offer->meta['badge'] ?? 'فروش ویژه' }}</div>
                         <div class="card__title">{{ $offer->title }}</div>
                         <div class="card__price">
+                            @php($currencyUnit = (($offer->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($offer->currency ?? 'IRR'))
                             <span class="price">{{ number_format($offer->sale_price ?? $offer->base_price) }}</span>
-                            <span class="price__unit">تومان</span>
+                            <span class="price__unit">{{ $currencyUnit }}</span>
                         </div>
                         <div class="card__meta">برای مشاهده و خرید کلیک کنید</div>
                     </a>

@@ -99,6 +99,7 @@ class ProductController extends Controller
 
         $productsById = Product::query()
             ->whereIn('id', $productIds)
+            ->with('thumbnailMedia')
             ->get()
             ->keyBy('id');
 
@@ -133,6 +134,7 @@ class ProductController extends Controller
         $product = Product::query()
             ->where('slug', $slug)
             ->whereIn('type', ['note', 'video'])
+            ->with(['thumbnailMedia', 'video.previewMedia'])
             ->firstOrFail();
 
         $user = request()->user();

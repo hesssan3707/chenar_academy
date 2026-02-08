@@ -128,4 +128,14 @@ class Controller extends BaseController
 
         return strlen($currency) === 3 ? $currency : 'IRR';
     }
+
+    protected function commerceTaxPercent(): int
+    {
+        $raw = $this->settingString('commerce.tax_percent', '0');
+        if (! is_numeric($raw)) {
+            return 0;
+        }
+
+        return min(100, max(0, (int) $raw));
+    }
 }

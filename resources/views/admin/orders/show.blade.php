@@ -20,9 +20,16 @@
                 <div class="panel">
                     <h2 class="section-title">اطلاعات</h2>
                     <div class="stack stack--xs">
+                        @php($statusLabel = match ((string) ($order->status ?? '')) {
+                            'pending_review' => 'در انتظار تایید',
+                            'rejected' => 'رد شده',
+                            'paid' => 'تایید شده',
+                            'cancelled' => 'لغو شده',
+                            default => (string) ($order->status ?? '—'),
+                        })
                         <div>شناسه: {{ $order->id }}</div>
                         <div>کاربر: {{ $order->user_id ?? '—' }}</div>
-                        <div>وضعیت: {{ $order->status ?? '—' }}</div>
+                        <div>وضعیت: {{ $statusLabel }}</div>
                         <div>مبلغ: {{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }} {{ $order->currency ?? 'IRR' }}</div>
                         <div>ایجاد: {{ $order->created_at ? jdate($order->created_at)->format('Y/m/d H:i') : '—' }}</div>
                         <div>پرداخت: {{ $order->paid_at ? jdate($order->paid_at)->format('Y/m/d H:i') : '—' }}</div>
@@ -59,6 +66,44 @@
                     @endif
                 </div>
             </div>
+
+            @php($cardToCardPayment = $cardToCardPayment ?? null)
+            @php($cardToCardReceipt = $cardToCardReceipt ?? null)
+            @if ($cardToCardPayment)
+                <div class="panel" style="margin-top: 18px;">
+                    <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
+                        <div class="stack stack--sm">
+                            <h2 class="section-title" style="margin: 0;">کارت‌به‌کارت</h2>
+                            <div class="card__meta">وضعیت پرداخت: {{ $cardToCardPayment->status ?? '—' }}</div>
+                        </div>
+                        @if ((string) ($order->status ?? '') === 'pending_review')
+                            <div class="form-actions" style="margin: 0;">
+                                <form method="post" action="{{ route('admin.orders.card-to-card.approve', $order->id) }}">
+                                    @csrf
+                                    <button class="btn btn--primary btn--sm" type="submit">تایید</button>
+                                </form>
+                                <form method="post" action="{{ route('admin.orders.card-to-card.reject', $order->id) }}">
+                                    @csrf
+                                    <button class="btn btn--ghost btn--sm" type="submit">رد</button>
+                                </form>
+                            </div>
+                        @endif
+                    </div>
+
+                    @if ($cardToCardReceipt)
+                        @php($receiptMime = (string) ($cardToCardReceipt->mime_type ?? ''))
+                        <div style="margin-top: 12px;">
+                            @if (str_starts_with($receiptMime, 'image/'))
+                                <img src="{{ route('admin.orders.card-to-card.receipt', $order->id) }}" alt="receipt" style="max-width: 520px; width: 100%; border-radius: 12px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);" loading="lazy">
+                            @else
+                                <a class="btn btn--ghost btn--sm" href="{{ route('admin.orders.card-to-card.receipt', $order->id) }}" target="_blank" rel="noopener">مشاهده رسید</a>
+                            @endif
+                        </div>
+                    @else
+                        <p class="page-subtitle" style="margin-top: 10px;">رسید پرداخت موجود نیست.</p>
+                    @endif
+                </div>
+            @endif
 
             <div class="panel">
                 <h2 class="section-title">پرداخت‌ها</h2>

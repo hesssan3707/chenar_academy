@@ -17,6 +17,11 @@
                             باز
                         @endif
                         <span class="footer__sep">|</span>
+                        @php($categoryTitle = ($ticket->meta ?? [])['category_title'] ?? null)
+                        @if ($categoryTitle)
+                            {{ $categoryTitle }}
+                            <span class="footer__sep">|</span>
+                        @endif
                         @if ($ticket->priority === 'high')
                             فوری
                         @elseif ($ticket->priority === 'low')

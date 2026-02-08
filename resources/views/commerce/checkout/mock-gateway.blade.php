@@ -12,6 +12,7 @@
                 <div class="panel">
                     <div class="stack stack--sm">
                         <div class="section__title" style="font-size: 18px;">اطلاعات پرداخت</div>
+                        @php($currencyUnit = (($payment->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($payment->currency ?? 'IRR'))
 
                         <div class="cluster" style="justify-content: space-between;">
                             <div class="field__label">شماره سفارش</div>
@@ -22,7 +23,7 @@
                             <div class="field__label">مبلغ قابل پرداخت</div>
                             <div>
                                 <span class="price">{{ number_format((int) $payment->amount) }}</span>
-                                <span class="price__unit">تومان</span>
+                                <span class="price__unit">{{ $currencyUnit }}</span>
                             </div>
                         </div>
                     </div>
@@ -54,4 +55,3 @@
         </div>
     </section>
 @endsection
-

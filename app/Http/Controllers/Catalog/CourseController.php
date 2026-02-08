@@ -14,6 +14,7 @@ class CourseController extends Controller
             ->where('status', 'published')
             ->where('type', 'course')
             ->orderByDesc('published_at')
+            ->with('thumbnailMedia')
             ->get();
 
         return view('catalog.courses.index', ['courses' => $courses]);
@@ -24,6 +25,7 @@ class CourseController extends Controller
         $course = Product::query()
             ->where('slug', $slug)
             ->where('type', 'course')
+            ->with('thumbnailMedia')
             ->firstOrFail();
 
         return view('catalog.courses.show', ['course' => $course]);

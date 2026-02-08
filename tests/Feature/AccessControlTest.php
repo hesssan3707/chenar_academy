@@ -111,6 +111,28 @@ class AccessControlTest extends TestCase
         $this->assertSame('متن درباره ما', $setting->value['body']);
     }
 
+    public function test_admin_can_update_tax_percent_setting(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $this->actingAs($user)
+            ->put(route('admin.settings.update'), [
+                'theme' => 'default',
+                'tax_percent' => 9,
+            ])->assertRedirect(route('admin.settings.index'));
+
+        $setting = Setting::query()->where('key', 'commerce.tax_percent')->first();
+        $this->assertNotNull($setting);
+        $this->assertSame('commerce', $setting->group);
+        $this->assertSame(9, $setting->value);
+    }
+
     public function test_admin_cannot_access_user_panel_routes(): void
     {
         $user = User::factory()->create();

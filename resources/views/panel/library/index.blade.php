@@ -29,6 +29,10 @@
                                 @foreach ($videoItems as $row)
                                     @php($product = $row['product'])
                                     <a class="card" href="{{ route('panel.library.show', $product->slug) }}">
+                                        @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : null)
+                                        @if ($thumbUrl)
+                                            <img class="card__thumb" src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy">
+                                        @endif
                                         <div class="card__badge">{{ $product->type === 'course' ? 'دوره' : 'ویدیو' }}</div>
                                         <div class="card__title">{{ $product->title }}</div>
                                         <div class="card__meta">{{ $product->excerpt ?? 'برای مشاهده کلیک کنید' }}</div>
@@ -48,6 +52,10 @@
                                 @foreach ($noteItems as $row)
                                     @php($product = $row['product'])
                                     <a class="card" href="{{ route('panel.library.show', $product->slug) }}">
+                                        @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : null)
+                                        @if ($thumbUrl)
+                                            <img class="card__thumb" src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy">
+                                        @endif
                                         <div class="card__badge">جزوه</div>
                                         <div class="card__title">{{ $product->title }}</div>
                                         <div class="card__meta">{{ $product->excerpt ?? 'برای مشاهده کلیک کنید' }}</div>

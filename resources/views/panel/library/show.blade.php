@@ -18,6 +18,13 @@
                 @endif
             </p>
 
+            @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : null)
+            @if ($thumbUrl)
+                <div class="panel" style="margin-top: 18px;">
+                    <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" style="width: 100%; max-height: 360px; object-fit: cover; border-radius: 14px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);" loading="lazy">
+                </div>
+            @endif
+
             @if ($product->type === 'course')
                 @php($sections = $product->course?->sections ?? collect())
                 @if ($sections->isEmpty())

@@ -10,6 +10,11 @@
 
             <div class="panel">
                 <div class="stack stack--sm">
+                    @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : null)
+                    @if ($thumbUrl)
+                        <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" style="width: 100%; max-height: 360px; object-fit: cover; border-radius: 14px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);" loading="lazy">
+                    @endif
+
                     @if ($product->type === 'video' && ($product->video?->preview_media_id))
                         <div class="field__label">پیش‌نمایش ویدیو</div>
                         <video controls preload="metadata" style="width: 100%; border-radius: 14px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);">
@@ -31,8 +36,9 @@
                     @endif
 
                     <div class="card__price">
+                        @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
                         <span class="price">{{ number_format($product->sale_price ?? $product->base_price) }}</span>
-                        <span class="price__unit">تومان</span>
+                        <span class="price__unit">{{ $currencyUnit }}</span>
                     </div>
 
                     @if ($product->excerpt)

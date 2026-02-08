@@ -15,54 +15,62 @@
                 </div>
             </div>
 
-            @php($categories = $categories ?? null)
+            @php($categoryGroups = $categoryGroups ?? [])
 
-            @if (! $categories || $categories->isEmpty())
+            @if (empty($categoryGroups))
                 <div class="panel max-w-md">
                     <p class="page-subtitle">هنوز دسته‌بندی ثبت نشده است.</p>
                 </div>
             @else
-                <div class="table-wrap">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>شناسه</th>
-                                <th>نوع</th>
-                                <th>عنوان</th>
-                                <th>اسلاگ</th>
-                                <th>والد</th>
-                                <th>فعال</th>
-                                <th>ترتیب</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($categories as $category)
-                                <tr>
-                                    <td>{{ $category->id }}</td>
-                                    <td class="admin-nowrap">{{ $category->type }}</td>
-                                    <td class="admin-min-w-240">{{ $category->title }}</td>
-                                    <td class="admin-nowrap">{{ $category->slug }}</td>
-                                    <td>{{ $category->parent_id ?: '—' }}</td>
-                                    <td>{{ $category->is_active ? 'بله' : 'خیر' }}</td>
-                                    <td>{{ $category->sort_order }}</td>
-                                    <td class="admin-nowrap">
-                                        <a class="btn btn--ghost btn--sm" href="{{ route('admin.categories.edit', $category->id) }}">ویرایش</a>
-                                        <form method="post" action="{{ route('admin.categories.destroy', $category->id) }}" class="inline-form">
-                                            @csrf
-                                            @method('delete')
-                                            <button class="btn btn--ghost btn--sm" type="submit">حذف</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                @foreach ($categoryGroups as $type => $nodes)
+                    @if (! empty($nodes))
+                        <div class="panel" style="margin-top: 18px;">
+                            <div class="stack stack--xs">
+                                <div class="field__label">نوع: {{ $type }}</div>
+                            </div>
 
-                <div class="admin-pagination">
-                    {{ $categories->links() }}
-                </div>
+                            <div class="divider"></div>
+
+                            <div class="table-wrap">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>شناسه</th>
+                                            <th>عنوان</th>
+                                            <th>فعال</th>
+                                            <th>ترتیب</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($nodes as $node)
+                                            @php($category = $node['category'])
+                                            @php($depth = (int) ($node['depth'] ?? 0))
+                                            @php($indent = str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', max(0, $depth)))
+                                            <tr>
+                                                <td>{{ $category->id }}</td>
+                                                <td class="admin-min-w-260">
+                                                    <div class="admin-row-title">{!! $indent !!}{{ $category->title }}</div>
+                                                    <div class="card__meta">{!! $indent !!}{{ $category->slug }}</div>
+                                                </td>
+                                                <td>{{ $category->is_active ? 'بله' : 'خیر' }}</td>
+                                                <td>{{ $category->sort_order }}</td>
+                                                <td class="admin-nowrap">
+                                                    <a class="btn btn--ghost btn--sm" href="{{ route('admin.categories.edit', $category->id) }}">ویرایش</a>
+                                                    <form method="post" action="{{ route('admin.categories.destroy', $category->id) }}" class="inline-form">
+                                                        @csrf
+                                                        @method('delete')
+                                                        <button class="btn btn--ghost btn--sm" type="submit">حذف</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
             @endif
         </div>
     </section>

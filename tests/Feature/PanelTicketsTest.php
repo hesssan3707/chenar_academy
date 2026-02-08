@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
@@ -16,9 +17,21 @@ class PanelTicketsTest extends TestCase
     {
         $user = User::factory()->create();
 
+        $category = Category::query()->create([
+            'type' => 'ticket',
+            'parent_id' => null,
+            'title' => 'پشتیبانی فنی',
+            'slug' => 'technical',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
         $this->actingAs($user)
             ->post(route('panel.tickets.store'), [
                 'subject' => 'مشکل ورود',
+                'category' => $category->slug,
                 'priority' => 'normal',
                 'body' => 'سلام، نمی‌توانم وارد حساب کاربری شوم.',
             ])
@@ -26,6 +39,7 @@ class PanelTicketsTest extends TestCase
 
         $ticket = Ticket::query()->where('user_id', $user->id)->firstOrFail();
         $this->assertSame('مشکل ورود', $ticket->subject);
+        $this->assertSame('technical', (string) (($ticket->meta ?? [])['category_slug'] ?? ''));
 
         $this->assertDatabaseHas('ticket_messages', [
             'ticket_id' => $ticket->id,

@@ -119,11 +119,16 @@
                     @foreach ($products as $product)
                         @php($purchased = in_array($product->id, ($purchasedProductIds ?? []), true))
                         <a class="card" href="{{ route('products.show', $product->slug) }}">
+                            @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : null)
+                            @if ($thumbUrl)
+                                <img class="card__thumb" src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy">
+                            @endif
                             <div class="card__badge">{{ $product->type === 'video' ? 'ویدیو' : 'جزوه' }}@if ($purchased) • خریداری شده @endif</div>
                             <div class="card__title">{{ $product->title }}</div>
+                            @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
                             <div class="card__price">
                                 <span class="price">{{ number_format($product->sale_price ?? $product->base_price) }}</span>
-                                <span class="price__unit">تومان</span>
+                                <span class="price__unit">{{ $currencyUnit }}</span>
                             </div>
                             <div class="card__meta">{{ $product->excerpt ?? 'برای مشاهده جزئیات کلیک کنید' }}</div>
                         </a>

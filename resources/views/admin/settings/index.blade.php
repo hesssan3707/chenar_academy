@@ -37,6 +37,15 @@
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>
+
+                        <label class="field">
+                            <span class="field__label">درصد مالیات</span>
+                            <input type="number" name="tax_percent" min="0" max="100"
+                                value="{{ old('tax_percent', (string) ($taxPercent ?? 0)) }}">
+                            @error('tax_percent')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
                     </div>
 
                     <div class="divider"></div>

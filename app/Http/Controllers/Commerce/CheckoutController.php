@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
+use App\Models\Media;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
@@ -14,8 +15,10 @@ use App\Models\ProductAccess;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class CheckoutController extends Controller
@@ -25,24 +28,12 @@ class CheckoutController extends Controller
         $cart = $this->findActiveUserCart($request);
         $items = $this->getCartItems($cart);
 
-        $subtotal = (int) $items->sum(fn (CartItem $item) => (int) $item->unit_price * (int) $item->quantity);
-
-        $couponCode = (string) $request->session()->get('checkout_coupon_code', '');
-        $coupon = $couponCode !== '' ? $this->findValidCouponForUser($request, $couponCode) : null;
-
-        $discountAmount = $coupon ? $this->calculateDiscountAmount($subtotal, $coupon) : 0;
-        $discountAmount = min($discountAmount, $subtotal);
-
-        $total = max(0, $subtotal - $discountAmount);
+        $invoice = $this->invoiceData($request, $items);
 
         return view('commerce.checkout.index', [
             'cart' => $cart,
             'items' => $items,
-            'couponCode' => $couponCode,
-            'coupon' => $coupon,
-            'subtotal' => $subtotal,
-            'discountAmount' => $discountAmount,
-            'payableAmount' => $total,
+            ...$invoice,
         ]);
     }
 
@@ -96,17 +87,16 @@ class CheckoutController extends Controller
             ]);
         }
 
-        $subtotal = (int) $items->sum(fn (CartItem $item) => (int) $item->unit_price * (int) $item->quantity);
+        $invoice = $this->invoiceData($request, $items);
+        $subtotal = (int) $invoice['subtotal'];
+        $discountAmount = (int) $invoice['discountAmount'];
+        $taxPercent = (int) $invoice['taxPercent'];
+        $taxAmount = (int) $invoice['taxAmount'];
+        $total = (int) $invoice['payableAmount'];
+        $coupon = $invoice['coupon'] ?? null;
+        $couponCode = (string) ($invoice['couponCode'] ?? '');
 
-        $couponCode = (string) $request->session()->get('checkout_coupon_code', '');
-        $coupon = $couponCode !== '' ? $this->findValidCouponForUser($request, $couponCode) : null;
-
-        $discountAmount = $coupon ? $this->calculateDiscountAmount($subtotal, $coupon) : 0;
-        $discountAmount = min($discountAmount, $subtotal);
-
-        $total = max(0, $subtotal - $discountAmount);
-
-        $payment = DB::transaction(function () use ($request, $cart, $items, $subtotal, $discountAmount, $total, $coupon, $couponCode) {
+        $payment = DB::transaction(function () use ($request, $cart, $items, $subtotal, $discountAmount, $total, $coupon, $couponCode, $taxPercent, $taxAmount) {
             $order = Order::query()->create([
                 'order_number' => $this->generateOrderNumber(),
                 'user_id' => $request->user()->id,
@@ -123,6 +113,8 @@ class CheckoutController extends Controller
                     'cart_id' => $cart->id,
                     'coupon_code' => $coupon ? $couponCode : null,
                     'coupon_id' => $coupon?->id,
+                    'tax_percent' => $taxPercent,
+                    'tax_amount' => $taxAmount,
                 ],
             ]);
 
@@ -166,6 +158,136 @@ class CheckoutController extends Controller
         }
 
         abort(501);
+    }
+
+    public function cardToCard(Request $request): View
+    {
+        $cart = $this->findActiveUserCart($request);
+        $items = $this->getCartItems($cart);
+
+        if (! $cart || $items->isEmpty()) {
+            return view('commerce.checkout.card-to-card', [
+                'cart' => $cart,
+                'items' => $items,
+                ...$this->invoiceData($request, $items),
+            ]);
+        }
+
+        return view('commerce.checkout.card-to-card', [
+            'cart' => $cart,
+            'items' => $items,
+            ...$this->invoiceData($request, $items),
+        ]);
+    }
+
+    public function cardToCardStore(Request $request): RedirectResponse
+    {
+        $cart = $this->findActiveUserCart($request);
+        $items = $this->getCartItems($cart);
+
+        if (! $cart || $items->isEmpty()) {
+            return redirect()->route('cart.index')->with('toast', [
+                'type' => 'error',
+                'title' => 'سبد خرید خالی است',
+                'message' => 'برای ثبت سفارش ابتدا یک محصول به سبد خرید اضافه کنید.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'receipt' => ['required', 'file', 'max:5120', 'mimes:jpg,jpeg,png,pdf'],
+        ]);
+
+        $receiptFile = $validated['receipt'] instanceof UploadedFile ? $validated['receipt'] : null;
+        if (! $receiptFile) {
+            return redirect()->back()->withInput()->withErrors(['receipt' => 'رسید پرداخت معتبر نیست.']);
+        }
+
+        $invoice = $this->invoiceData($request, $items);
+        $subtotal = (int) $invoice['subtotal'];
+        $discountAmount = (int) $invoice['discountAmount'];
+        $taxPercent = (int) $invoice['taxPercent'];
+        $taxAmount = (int) $invoice['taxAmount'];
+        $total = (int) $invoice['payableAmount'];
+        $coupon = $invoice['coupon'] ?? null;
+        $couponCode = (string) ($invoice['couponCode'] ?? '');
+
+        $media = $this->storeUploadedMedia($receiptFile, 'local', 'receipts');
+
+        $order = DB::transaction(function () use ($request, $cart, $items, $subtotal, $discountAmount, $total, $coupon, $couponCode, $taxPercent, $taxAmount, $media) {
+            $order = Order::query()->create([
+                'order_number' => $this->generateOrderNumber(),
+                'user_id' => $request->user()->id,
+                'status' => 'pending_review',
+                'currency' => $this->commerceCurrency(),
+                'subtotal_amount' => $subtotal,
+                'discount_amount' => $discountAmount,
+                'total_amount' => $total,
+                'payable_amount' => $total,
+                'placed_at' => now(),
+                'paid_at' => null,
+                'cancelled_at' => null,
+                'meta' => [
+                    'cart_id' => $cart->id,
+                    'coupon_code' => $coupon ? $couponCode : null,
+                    'coupon_id' => $coupon?->id,
+                    'tax_percent' => $taxPercent,
+                    'tax_amount' => $taxAmount,
+                    'payment_method' => 'card_to_card',
+                    'receipt_media_id' => $media?->id,
+                ],
+            ]);
+
+            foreach ($items as $item) {
+                $product = $item->product;
+                if (! $product) {
+                    continue;
+                }
+
+                $qty = max(1, (int) $item->quantity);
+                $unit = max(0, (int) $item->unit_price);
+
+                OrderItem::query()->create([
+                    'order_id' => $order->id,
+                    'product_id' => $product->id,
+                    'product_type' => (string) $product->type,
+                    'product_title' => (string) $product->title,
+                    'quantity' => $qty,
+                    'unit_price' => $unit,
+                    'total_price' => $unit * $qty,
+                    'currency' => $product->currency ?? $this->commerceCurrency(),
+                    'meta' => [],
+                ]);
+            }
+
+            Payment::query()->create([
+                'order_id' => $order->id,
+                'gateway' => 'card_to_card',
+                'status' => 'pending_review',
+                'amount' => $total,
+                'currency' => $this->commerceCurrency(),
+                'authority' => null,
+                'reference_id' => null,
+                'paid_at' => null,
+                'meta' => [
+                    'receipt_media_id' => $media?->id,
+                ],
+            ]);
+
+            Cart::query()->where('id', $cart->id)->where('user_id', $request->user()->id)->update([
+                'status' => 'checked_out',
+            ]);
+            CartItem::query()->where('cart_id', $cart->id)->delete();
+
+            return $order;
+        });
+
+        $request->session()->forget('checkout_coupon_code');
+
+        return redirect()->route('panel.orders.show', $order->id)->with('toast', [
+            'type' => 'success',
+            'title' => 'ثبت شد',
+            'message' => 'سفارش شما ثبت شد و پس از بررسی رسید تایید خواهد شد.',
+        ]);
     }
 
     public function mockGateway(Request $request, Payment $payment): View
@@ -271,6 +393,58 @@ class CheckoutController extends Controller
             'type' => 'success',
             'title' => 'پرداخت موفق',
             'message' => 'پرداخت با موفقیت انجام شد و دسترسی شما فعال شد.',
+        ]);
+    }
+
+    private function invoiceData(Request $request, $items): array
+    {
+        $subtotal = (int) ($items ?? collect())->sum(fn (CartItem $item) => (int) $item->unit_price * (int) $item->quantity);
+
+        $couponCode = (string) $request->session()->get('checkout_coupon_code', '');
+        $coupon = $couponCode !== '' ? $this->findValidCouponForUser($request, $couponCode) : null;
+
+        $discountAmount = $coupon ? $this->calculateDiscountAmount($subtotal, $coupon) : 0;
+        $discountAmount = min($discountAmount, $subtotal);
+
+        $netTotal = max(0, $subtotal - $discountAmount);
+        $taxPercent = $this->commerceTaxPercent();
+        $taxAmount = (int) floor($netTotal * $taxPercent / 100);
+        $total = $netTotal + $taxAmount;
+
+        $currency = $this->commerceCurrency();
+
+        return [
+            'couponCode' => $couponCode,
+            'coupon' => $coupon,
+            'subtotal' => $subtotal,
+            'discountAmount' => $discountAmount,
+            'taxPercent' => $taxPercent,
+            'taxAmount' => $taxAmount,
+            'payableAmount' => $total,
+            'currencyUnit' => $currency === 'IRR' ? 'تومان' : $currency,
+        ];
+    }
+
+    private function storeUploadedMedia(?UploadedFile $file, string $disk, string $directory): ?Media
+    {
+        if (! $file) {
+            return null;
+        }
+
+        $path = Storage::disk($disk)->putFile($directory, $file);
+
+        return Media::query()->create([
+            'uploaded_by_user_id' => request()->user()?->id,
+            'disk' => $disk,
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'sha1' => null,
+            'width' => null,
+            'height' => null,
+            'duration_seconds' => null,
+            'meta' => [],
         ]);
     }
 

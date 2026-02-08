@@ -32,6 +32,9 @@ class CartController extends Controller
             'cart' => $cart,
             'items' => $items,
             'subtotal' => $subtotal,
+            'currencyUnit' => (($cart?->currency ?: $this->commerceCurrency()) === 'IRR')
+                ? 'تومان'
+                : ($cart?->currency ?: $this->commerceCurrency()),
         ]);
     }
 

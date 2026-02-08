@@ -293,10 +293,24 @@ html[data-theme='light'] .card:hover {
     font-size: 16px;
     margin-bottom: 10px;
     padding-left: 90px;
+    padding-right: 90px;
 }
 
 .card--compact .card__title {
     padding-left: 0;
+    padding-right: 0;
+}
+
+.card__thumb {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    object-fit: cover;
+    border: 1px solid rgba(232, 238, 252, 0.16);
+    background: rgba(0, 0, 0, 0.18);
 }
 
 .card__meta {

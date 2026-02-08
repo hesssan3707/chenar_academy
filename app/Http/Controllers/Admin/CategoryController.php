@@ -15,14 +15,77 @@ class CategoryController extends Controller
     {
         $categories = Category::query()
             ->orderBy('type')
-            ->orderBy('parent_id')
             ->orderBy('sort_order')
+            ->orderBy('title')
             ->orderBy('id')
-            ->paginate(40);
+            ->get();
+
+        $categoryGroups = [];
+
+        foreach ($categories->groupBy('type') as $type => $typeCategories) {
+            $childrenByParent = [];
+            foreach ($typeCategories as $category) {
+                $key = $category->parent_id ?: 0;
+                $childrenByParent[$key] ??= [];
+                $childrenByParent[$key][] = $category;
+            }
+
+            foreach ($childrenByParent as $parentKey => $children) {
+                usort($children, function (Category $a, Category $b): int {
+                    $sortOrder = ((int) $a->sort_order) <=> ((int) $b->sort_order);
+                    if ($sortOrder !== 0) {
+                        return $sortOrder;
+                    }
+
+                    $titleOrder = strcmp((string) $a->title, (string) $b->title);
+                    if ($titleOrder !== 0) {
+                        return $titleOrder;
+                    }
+
+                    return ((int) $a->id) <=> ((int) $b->id);
+                });
+
+                $childrenByParent[$parentKey] = $children;
+            }
+
+            $flattened = [];
+            $visited = [];
+
+            $flatten = function (int $parentId, int $depth) use (&$flatten, &$flattened, &$childrenByParent, &$visited): void {
+                foreach (($childrenByParent[$parentId] ?? []) as $child) {
+                    if (isset($visited[$child->id])) {
+                        continue;
+                    }
+                    $visited[$child->id] = true;
+
+                    $flattened[] = [
+                        'category' => $child,
+                        'depth' => $depth,
+                    ];
+
+                    $flatten((int) $child->id, $depth + 1);
+                }
+            };
+
+            $flatten(0, 0);
+
+            foreach ($typeCategories as $category) {
+                if (isset($visited[$category->id])) {
+                    continue;
+                }
+                $flattened[] = [
+                    'category' => $category,
+                    'depth' => 0,
+                ];
+                $flatten((int) $category->id, 1);
+            }
+
+            $categoryGroups[(string) $type] = $flattened;
+        }
 
         return view('admin.categories.index', [
             'title' => 'دسته‌بندی‌ها',
-            'categories' => $categories,
+            'categoryGroups' => $categoryGroups,
         ]);
     }
 

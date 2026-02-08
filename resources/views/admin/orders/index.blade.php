@@ -25,6 +25,7 @@
                             <tr>
                                 <th>شناسه</th>
                                 <th>کاربر</th>
+                                <th>روش پرداخت</th>
                                 <th>وضعیت</th>
                                 <th>مبلغ</th>
                                 <th>ایجاد</th>
@@ -33,10 +34,20 @@
                         </thead>
                         <tbody>
                             @foreach ($orders as $order)
+                                @php($gateway = ($order->payments ?? collect())->first()?->gateway)
+                                @php($methodLabel = $gateway === 'card_to_card' ? 'کارت‌به‌کارت' : 'درگاه')
+                                @php($statusLabel = match ((string) ($order->status ?? '')) {
+                                    'pending_review' => 'در انتظار تایید',
+                                    'rejected' => 'رد شده',
+                                    'paid' => 'تایید شده',
+                                    'cancelled' => 'لغو شده',
+                                    default => (string) ($order->status ?? '—'),
+                                })
                                 <tr>
                                     <td>{{ $order->id }}</td>
                                     <td class="admin-nowrap">{{ $order->user_id ?? '—' }}</td>
-                                    <td class="admin-nowrap">{{ $order->status ?? '—' }}</td>
+                                    <td class="admin-nowrap">{{ $methodLabel }}</td>
+                                    <td class="admin-nowrap">{{ $statusLabel }}</td>
                                     <td class="admin-nowrap">{{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }} {{ $order->currency ?? 'IRR' }}</td>
                                     <td class="admin-nowrap">{{ $order->created_at ? jdate($order->created_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">

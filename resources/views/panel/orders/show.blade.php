@@ -12,16 +12,24 @@
 
             <div class="panel" style="margin-top: 18px;">
                 <div class="stack stack--sm">
+                    @php($currencyUnit = (($order->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($order->currency ?? 'IRR'))
+                    @php($statusLabel = match ((string) ($order->status ?? '')) {
+                        'pending_review' => 'در انتظار تایید',
+                        'rejected' => 'رد شده',
+                        'paid' => 'تایید شده',
+                        'cancelled' => 'لغو شده',
+                        default => (string) ($order->status ?? ''),
+                    })
                     <div class="cluster" style="justify-content:space-between;">
                         <div class="stack stack--sm">
                             <div class="field__label">وضعیت</div>
-                            <div>{{ $order->status }}</div>
+                            <div>{{ $statusLabel }}</div>
                         </div>
                         <div class="stack stack--sm" style="text-align:left;">
                             <div class="field__label">مبلغ قابل پرداخت</div>
                             <div class="card__price">
                                 <span class="price">{{ number_format((int) $order->payable_amount) }}</span>
-                                <span class="price__unit">تومان</span>
+                                <span class="price__unit">{{ $currencyUnit }}</span>
                             </div>
                         </div>
                     </div>
@@ -52,7 +60,7 @@
                                 <div class="stack stack--sm" style="text-align:left;">
                                     <div class="card__price">
                                         <span class="price">{{ number_format((int) $item->total_price) }}</span>
-                                        <span class="price__unit">تومان</span>
+                                        <span class="price__unit">{{ $currencyUnit }}</span>
                                     </div>
                                     @if ($item->product)
                                         <a class="btn btn--sm btn--ghost" href="{{ route('panel.library.show', $item->product->slug) }}">مشاهده در کتابخانه</a>
