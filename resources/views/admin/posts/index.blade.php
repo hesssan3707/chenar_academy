@@ -40,7 +40,7 @@
                                         <div class="card__meta">{{ $post->slug }}</div>
                                     </td>
                                     <td>{{ $post->status }}</td>
-                                    <td class="admin-nowrap">{{ $post->published_at?->format('Y-m-d H:i') ?? '—' }}</td>
+                                    <td class="admin-nowrap">{{ $post->published_at ? jdate($post->published_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.posts.edit', $post->id) }}">ویرایش</a>
                                     </td>

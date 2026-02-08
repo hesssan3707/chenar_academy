@@ -28,7 +28,7 @@
                     <div>مبلغ: {{ number_format((int) ($payment->amount ?? 0)) }} {{ $payment->currency ?? 'IRR' }}</div>
                     <div>Authority: {{ $payment->authority ?? '—' }}</div>
                     <div>Reference ID: {{ $payment->reference_id ?? '—' }}</div>
-                    <div>پرداخت: {{ $payment->paid_at ? $payment->paid_at->format('Y-m-d H:i') : '—' }}</div>
+                    <div>پرداخت: {{ $payment->paid_at ? jdate($payment->paid_at)->format('Y/m/d H:i') : '—' }}</div>
                 </div>
             </div>
         </div>

@@ -61,7 +61,7 @@
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
                             <span class="field__label">شروع</span>
-                            <input name="starts_at" value="{{ old('starts_at', $coupon?->starts_at ? $coupon->starts_at->format('Y-m-d H:i') : '') }}">
+                            <input name="starts_at" data-jdp value="{{ old('starts_at', $coupon?->starts_at ? jdate($coupon->starts_at)->format('Y/m/d H:i') : '') }}">
                             @error('starts_at')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
@@ -69,7 +69,7 @@
 
                         <label class="field">
                             <span class="field__label">پایان</span>
-                            <input name="ends_at" value="{{ old('ends_at', $coupon?->ends_at ? $coupon->ends_at->format('Y-m-d H:i') : '') }}">
+                            <input name="ends_at" data-jdp value="{{ old('ends_at', $coupon?->ends_at ? jdate($coupon->ends_at)->format('Y/m/d H:i') : '') }}">
                             @error('ends_at')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror

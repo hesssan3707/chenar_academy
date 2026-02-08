@@ -44,7 +44,7 @@
                                         @endif
                                         @if ($ticket->last_message_at)
                                             <span class="footer__sep">|</span>
-                                            آخرین پیام: {{ $ticket->last_message_at->diffForHumans() }}
+                                            آخرین پیام: {{ jdate($ticket->last_message_at)->ago() }}
                                         @endif
                                     </div>
                                 </div>

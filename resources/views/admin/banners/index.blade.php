@@ -44,8 +44,8 @@
                                     <td class="admin-min-w-240">{{ $banner->title ?? '—' }}</td>
                                     <td>{{ $banner->is_active ? 'بله' : 'خیر' }}</td>
                                     <td>{{ $banner->sort_order ?? 0 }}</td>
-                                    <td class="admin-nowrap">{{ $banner->starts_at ? $banner->starts_at->format('Y-m-d H:i') : '—' }}</td>
-                                    <td class="admin-nowrap">{{ $banner->ends_at ? $banner->ends_at->format('Y-m-d H:i') : '—' }}</td>
+                                    <td class="admin-nowrap">{{ $banner->starts_at ? jdate($banner->starts_at)->format('Y/m/d H:i') : '—' }}</td>
+                                    <td class="admin-nowrap">{{ $banner->ends_at ? jdate($banner->ends_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.banners.edit', $banner->id) }}">ویرایش</a>
                                         <form method="post" action="{{ route('admin.banners.destroy', $banner->id) }}" class="inline-form">

@@ -58,8 +58,8 @@
 
                     <label class="field">
                         <span class="field__label">شروع نمایش</span>
-                        @php($startsAtValue = old('starts_at', $survey?->starts_at ? $survey->starts_at->format('Y-m-d\\TH:i') : ''))
-                        <input type="datetime-local" name="starts_at" value="{{ $startsAtValue }}">
+                        @php($startsAtValue = old('starts_at', $survey?->starts_at ? jdate($survey->starts_at)->format('Y/m/d H:i') : ''))
+                        <input name="starts_at" data-jdp value="{{ $startsAtValue }}">
                         @error('starts_at')
                             <div class="field__error">{{ $message }}</div>
                         @enderror
@@ -67,8 +67,8 @@
 
                     <label class="field">
                         <span class="field__label">پایان نمایش</span>
-                        @php($endsAtValue = old('ends_at', $survey?->ends_at ? $survey->ends_at->format('Y-m-d\\TH:i') : ''))
-                        <input type="datetime-local" name="ends_at" value="{{ $endsAtValue }}">
+                        @php($endsAtValue = old('ends_at', $survey?->ends_at ? jdate($survey->ends_at)->format('Y/m/d H:i') : ''))
+                        <input name="ends_at" data-jdp value="{{ $endsAtValue }}">
                         @error('ends_at')
                             <div class="field__error">{{ $message }}</div>
                         @enderror

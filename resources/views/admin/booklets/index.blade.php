@@ -46,7 +46,7 @@
                                         {{ number_format($price) }} {{ $booklet->currency ?? 'IRR' }}
                                     </td>
                                     <td class="admin-nowrap">
-                                        {{ $booklet->published_at?->format('Y-m-d H:i') ?? '—' }}
+                                        {{ $booklet->published_at ? jdate($booklet->published_at)->format('Y/m/d H:i') : '—' }}
                                     </td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.booklets.edit', $booklet->id) }}">ویرایش</a>

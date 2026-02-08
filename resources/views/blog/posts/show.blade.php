@@ -6,7 +6,7 @@
     <section class="section">
         <div class="container">
             <h1 class="page-title">{{ $post->title }}</h1>
-            <p class="page-subtitle">{{ $post->published_at?->format('Y-m-d') }}</p>
+            <p class="page-subtitle">{{ $post->published_at ? jdate($post->published_at)->format('Y/m/d') : '' }}</p>
 
             <div class="panel max-w-md">
                 <div class="stack stack--sm">

@@ -44,9 +44,9 @@
                                     <span class="admin-meta__dot"></span>
                                     <span>
                                         بازه:
-                                        {{ $survey->starts_at?->format('Y-m-d H:i') ?? 'از زمان ایجاد' }}
+                                        {{ $survey->starts_at ? jdate($survey->starts_at)->format('Y/m/d H:i') : 'از زمان ایجاد' }}
                                         تا
-                                        {{ $survey->ends_at?->format('Y-m-d H:i') ?? 'بدون پایان' }}
+                                        {{ $survey->ends_at ? jdate($survey->ends_at)->format('Y/m/d H:i') : 'بدون پایان' }}
                                     </span>
                                 </div>
 

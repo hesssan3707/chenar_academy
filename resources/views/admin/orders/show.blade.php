@@ -24,9 +24,9 @@
                         <div>کاربر: {{ $order->user_id ?? '—' }}</div>
                         <div>وضعیت: {{ $order->status ?? '—' }}</div>
                         <div>مبلغ: {{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }} {{ $order->currency ?? 'IRR' }}</div>
-                        <div>ایجاد: {{ $order->created_at ? $order->created_at->format('Y-m-d H:i') : '—' }}</div>
-                        <div>پرداخت: {{ $order->paid_at ? $order->paid_at->format('Y-m-d H:i') : '—' }}</div>
-                        <div>لغو: {{ $order->cancelled_at ? $order->cancelled_at->format('Y-m-d H:i') : '—' }}</div>
+                        <div>ایجاد: {{ $order->created_at ? jdate($order->created_at)->format('Y/m/d H:i') : '—' }}</div>
+                        <div>پرداخت: {{ $order->paid_at ? jdate($order->paid_at)->format('Y/m/d H:i') : '—' }}</div>
+                        <div>لغو: {{ $order->cancelled_at ? jdate($order->cancelled_at)->format('Y/m/d H:i') : '—' }}</div>
                     </div>
                 </div>
 

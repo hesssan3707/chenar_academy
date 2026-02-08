@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Survey;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -91,8 +90,8 @@ class SurveyController extends Controller
             'question' => ['required', 'string', 'max:500'],
             'options_raw' => ['required', 'string', 'max:5000'],
             'audience' => ['required', 'string', Rule::in(['all', 'authenticated', 'purchasers'])],
-            'starts_at' => ['nullable', 'date'],
-            'ends_at' => ['nullable', 'date'],
+            'starts_at' => ['nullable', 'string', 'max:32'],
+            'ends_at' => ['nullable', 'string', 'max:32'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -108,15 +107,8 @@ class SurveyController extends Controller
             ]);
         }
 
-        $startsAt = null;
-        if (($validated['starts_at'] ?? null) !== null) {
-            $startsAt = Carbon::parse($validated['starts_at']);
-        }
-
-        $endsAt = null;
-        if (($validated['ends_at'] ?? null) !== null) {
-            $endsAt = Carbon::parse($validated['ends_at']);
-        }
+        $startsAt = $this->parseDateTimeOrFail('starts_at', $validated['starts_at'] ?? null);
+        $endsAt = $this->parseDateTimeOrFail('ends_at', $validated['ends_at'] ?? null);
 
         if ($startsAt && $endsAt && $endsAt->lessThan($startsAt)) {
             throw ValidationException::withMessages([

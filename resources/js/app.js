@@ -1,4 +1,6 @@
 import './bootstrap';
+import '@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css';
+import '@majidh1/jalalidatepicker/dist/jalalidatepicker.min.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const toggleButton = document.querySelector('[data-nav-toggle]');
@@ -26,6 +28,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (event.key === 'Escape' && !surveyModal.hidden) {
                 close();
             }
+        });
+    }
+
+    if (window.jalaliDatepicker) {
+        window.jalaliDatepicker.startWatch({
+            time: true,
+            hasSecond: false,
+            persianDigits: true,
+            separatorChars: { date: '/', between: ' ', time: ':' },
         });
     }
 });

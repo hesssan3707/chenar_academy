@@ -46,8 +46,8 @@
                                     <td class="admin-nowrap">{{ number_format((int) $coupon->discount_value) }}</td>
                                     <td>{{ $coupon->is_active ? 'بله' : 'خیر' }}</td>
                                     <td class="admin-nowrap">{{ $coupon->used_count ?? 0 }} / {{ $coupon->usage_limit ?? '—' }}</td>
-                                    <td class="admin-nowrap">{{ $coupon->starts_at ? $coupon->starts_at->format('Y-m-d H:i') : '—' }}</td>
-                                    <td class="admin-nowrap">{{ $coupon->ends_at ? $coupon->ends_at->format('Y-m-d H:i') : '—' }}</td>
+                                    <td class="admin-nowrap">{{ $coupon->starts_at ? jdate($coupon->starts_at)->format('Y/m/d H:i') : '—' }}</td>
+                                    <td class="admin-nowrap">{{ $coupon->ends_at ? jdate($coupon->ends_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.coupons.edit', $coupon->id) }}">ویرایش</a>
                                         <form method="post" action="{{ route('admin.coupons.destroy', $coupon->id) }}" class="inline-form">

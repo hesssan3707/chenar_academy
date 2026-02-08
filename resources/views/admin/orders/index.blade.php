@@ -38,7 +38,7 @@
                                     <td class="admin-nowrap">{{ $order->user_id ?? '—' }}</td>
                                     <td class="admin-nowrap">{{ $order->status ?? '—' }}</td>
                                     <td class="admin-nowrap">{{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }} {{ $order->currency ?? 'IRR' }}</td>
-                                    <td class="admin-nowrap">{{ $order->created_at ? $order->created_at->format('Y-m-d H:i') : '—' }}</td>
+                                    <td class="admin-nowrap">{{ $order->created_at ? jdate($order->created_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.orders.show', $order->id) }}">نمایش</a>
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.orders.edit', $order->id) }}">ویرایش</a>

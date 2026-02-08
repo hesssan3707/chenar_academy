@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -99,7 +98,7 @@ class ProductController extends Controller
             'base_price' => ['required', 'integer', 'min:0', 'max:2000000000'],
             'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000'],
             'currency' => ['required', 'string', 'size:3'],
-            'published_at' => ['nullable', 'date'],
+            'published_at' => ['nullable', 'string', 'max:32'],
         ]);
 
         $slug = Str::slug((string) ($validated['slug'] ?? ''), '-');
@@ -114,7 +113,7 @@ class ProductController extends Controller
             'base_price' => (int) $validated['base_price'],
             'sale_price' => ($validated['sale_price'] ?? null) !== null && (string) $validated['sale_price'] !== '' ? (int) $validated['sale_price'] : null,
             'currency' => strtoupper((string) $validated['currency']),
-            'published_at' => ($validated['published_at'] ?? null) !== null && (string) $validated['published_at'] !== '' ? Carbon::parse((string) $validated['published_at']) : null,
+            'published_at' => $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null),
             'meta' => $product?->meta ?? [],
         ];
     }

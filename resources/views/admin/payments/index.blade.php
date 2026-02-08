@@ -45,7 +45,7 @@
                                     <td class="admin-nowrap">{{ $payment->status ?? '—' }}</td>
                                     <td class="admin-nowrap">{{ number_format((int) ($payment->amount ?? 0)) }} {{ $payment->currency ?? 'IRR' }}</td>
                                     <td class="admin-nowrap">{{ $payment->reference_id ?? '—' }}</td>
-                                    <td class="admin-nowrap">{{ $payment->paid_at ? $payment->paid_at->format('Y-m-d H:i') : '—' }}</td>
+                                    <td class="admin-nowrap">{{ $payment->paid_at ? jdate($payment->paid_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.payments.show', $payment->id) }}">نمایش</a>
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.payments.edit', $payment->id) }}">ویرایش</a>

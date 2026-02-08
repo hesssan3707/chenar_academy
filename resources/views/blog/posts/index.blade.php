@@ -17,7 +17,7 @@
                     @foreach ($posts as $post)
                         <a class="card post" href="{{ route('blog.show', $post->slug) }}">
                             <div class="post__title">{{ $post->title }}</div>
-                            <div class="post__date">{{ $post->published_at?->format('Y-m-d') }}</div>
+                            <div class="post__date">{{ $post->published_at ? jdate($post->published_at)->format('Y/m/d') : '' }}</div>
                             <div class="post__excerpt">{{ $post->excerpt ?? '' }}</div>
                             <div class="card__action">ادامه مطلب</div>
                         </a>

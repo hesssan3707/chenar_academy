@@ -45,7 +45,7 @@
                                     <td class="admin-nowrap">{{ $product->slug }}</td>
                                     <td>{{ $product->status }}</td>
                                     <td class="admin-nowrap">{{ number_format((int) $product->base_price) }} {{ $product->currency }}</td>
-                                    <td class="admin-nowrap">{{ $product->published_at ? $product->published_at->format('Y-m-d H:i') : '—' }}</td>
+                                    <td class="admin-nowrap">{{ $product->published_at ? jdate($product->published_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.products.edit', $product->id) }}">ویرایش</a>
                                         <form method="post" action="{{ route('admin.products.destroy', $product->id) }}" class="inline-form">

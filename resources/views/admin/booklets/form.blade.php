@@ -95,8 +95,8 @@
 
                     <label class="field">
                         <span class="field__label">تاریخ انتشار</span>
-                        @php($publishedAtValue = old('published_at', $booklet?->published_at ? $booklet->published_at->format('Y-m-d\\TH:i') : ''))
-                        <input type="datetime-local" name="published_at" value="{{ $publishedAtValue }}">
+                        @php($publishedAtValue = old('published_at', $booklet?->published_at ? jdate($booklet->published_at)->format('Y/m/d H:i') : ''))
+                        <input name="published_at" data-jdp value="{{ $publishedAtValue }}">
                         @error('published_at')
                             <div class="field__error">{{ $message }}</div>
                         @enderror

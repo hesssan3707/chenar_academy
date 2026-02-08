@@ -61,7 +61,7 @@
                                     <td class="admin-min-w-200">{{ $user->name ?: '—' }}</td>
                                     <td class="admin-nowrap">{{ $user->phone ?: '—' }}</td>
                                     <td>{{ $user->is_active ? 'بله' : 'خیر' }}</td>
-                                    <td class="admin-nowrap">{{ $user->created_at?->format('Y-m-d H:i') ?? '—' }}</td>
+                                    <td class="admin-nowrap">{{ $user->created_at ? jdate($user->created_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         @if (($adminScopedUser ?? null) && $adminScopedUser->id === $user->id)
                                             <span class="badge badge--brand">فعال</span>

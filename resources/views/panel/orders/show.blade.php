@@ -29,11 +29,11 @@
                     <div class="cluster" style="justify-content:space-between;">
                         <div class="stack stack--sm">
                             <div class="field__label">تاریخ ثبت</div>
-                            <div>{{ $order->placed_at ? $order->placed_at->format('Y-m-d H:i') : '—' }}</div>
+                            <div>{{ $order->placed_at ? jdate($order->placed_at)->format('Y/m/d H:i') : '—' }}</div>
                         </div>
                         <div class="stack stack--sm" style="text-align:left;">
                             <div class="field__label">تاریخ پرداخت</div>
-                            <div>{{ $order->paid_at ? $order->paid_at->format('Y-m-d H:i') : '—' }}</div>
+                            <div>{{ $order->paid_at ? jdate($order->paid_at)->format('Y/m/d H:i') : '—' }}</div>
                         </div>
                     </div>
                 </div>
@@ -70,4 +70,3 @@
         </div>
     </section>
 @endsection
-

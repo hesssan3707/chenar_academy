@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -102,7 +101,7 @@ class PostController extends Controller
             ],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'status' => ['required', 'string', Rule::in($statusValues)],
-            'published_at' => ['nullable', 'date'],
+            'published_at' => ['nullable', 'string', 'max:32'],
         ];
 
         $validated = $request->validate($rules);
@@ -114,7 +113,7 @@ class PostController extends Controller
             'slug' => $slug !== '' ? $slug : Str::slug((string) $validated['title'], '-'),
             'excerpt' => isset($validated['excerpt']) && $validated['excerpt'] !== '' ? (string) $validated['excerpt'] : null,
             'status' => (string) $validated['status'],
-            'published_at' => ($validated['published_at'] ?? null) !== null ? Carbon::parse((string) $validated['published_at']) : null,
+            'published_at' => $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null),
         ];
     }
 }

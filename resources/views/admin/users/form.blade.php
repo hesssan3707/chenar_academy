@@ -163,10 +163,10 @@
                                                     {{ $access->product?->title ?: ('#' . $access->product_id) }}
                                                 </td>
                                                 <td class="admin-nowrap">
-                                                    {{ $access->granted_at?->format('Y-m-d H:i') ?? '—' }}
+                                                    {{ $access->granted_at ? jdate($access->granted_at)->format('Y/m/d H:i') : '—' }}
                                                 </td>
                                                 <td class="admin-nowrap">
-                                                    {{ $access->expires_at?->format('Y-m-d') ?? 'بدون انقضا' }}
+                                                    {{ $access->expires_at ? jdate($access->expires_at)->format('Y/m/d') : 'بدون انقضا' }}
                                                 </td>
                                                 <td class="admin-nowrap">
                                                     <form method="post"

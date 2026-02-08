@@ -45,7 +45,7 @@
                                     <td class="admin-nowrap">{{ $ticket->user_id }}</td>
                                     <td>{{ $ticket->priority }}</td>
                                     <td>{{ $ticket->status }}</td>
-                                    <td class="admin-nowrap">{{ $ticket->last_message_at?->format('Y-m-d H:i') ?? '—' }}</td>
+                                    <td class="admin-nowrap">{{ $ticket->last_message_at ? jdate($ticket->last_message_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.tickets.show', $ticket->id) }}">نمایش</a>
                                     </td>

@@ -59,7 +59,7 @@
 
                         <label class="field">
                             <span class="field__label">زمان انتشار</span>
-                            <input name="published_at" value="{{ old('published_at', $courseProduct?->published_at ? $courseProduct->published_at->format('Y-m-d H:i') : '') }}">
+                            <input name="published_at" data-jdp value="{{ old('published_at', $courseProduct?->published_at ? jdate($courseProduct->published_at)->format('Y/m/d H:i') : '') }}">
                             @error('published_at')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror

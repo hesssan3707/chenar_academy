@@ -24,7 +24,7 @@
                                     <div class="card__meta">
                                         وضعیت: {{ $order->status }}
                                         @if ($order->placed_at)
-                                            • ثبت: {{ $order->placed_at->format('Y-m-d H:i') }}
+                                            • ثبت: {{ jdate($order->placed_at)->format('Y/m/d H:i') }}
                                         @endif
                                     </div>
                                 </div>
@@ -43,4 +43,3 @@
         </div>
     </section>
 @endsection
-

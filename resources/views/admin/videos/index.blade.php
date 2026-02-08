@@ -46,7 +46,7 @@
                                         {{ number_format($price) }} {{ $video->currency ?? 'IRR' }}
                                     </td>
                                     <td class="admin-nowrap">
-                                        {{ $video->published_at?->format('Y-m-d H:i') ?? '—' }}
+                                        {{ $video->published_at ? jdate($video->published_at)->format('Y/m/d H:i') : '—' }}
                                     </td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.videos.edit', $video->id) }}">ویرایش</a>

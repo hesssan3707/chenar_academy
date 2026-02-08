@@ -39,7 +39,7 @@
                         </div>
                         <div class="admin-kv">
                             <div class="card__meta">آخرین پیام</div>
-                            <div class="admin-kv__value">{{ $ticket->last_message_at?->format('Y-m-d H:i') ?? '—' }}</div>
+                            <div class="admin-kv__value">{{ $ticket->last_message_at ? jdate($ticket->last_message_at)->format('Y/m/d H:i') : '—' }}</div>
                         </div>
                     </div>
                 </div>
@@ -59,7 +59,7 @@
                                     <div class="stack stack--xs">
                                         <div class="admin-kv">
                                             <div class="card__meta">{{ $isUserMessage ? 'کاربر' : 'ادمین' }}</div>
-                                            <div class="card__meta">{{ $message->created_at?->format('Y-m-d H:i') ?? '—' }}</div>
+                                            <div class="card__meta">{{ $message->created_at ? jdate($message->created_at)->format('Y/m/d H:i') : '—' }}</div>
                                         </div>
                                         <div class="admin-pre-wrap">{{ $message->body }}</div>
                                     </div>

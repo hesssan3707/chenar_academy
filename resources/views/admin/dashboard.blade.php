@@ -44,9 +44,10 @@
                         <div class="admin-chart">
                             @foreach ($series as $point)
                                 @php($height = (int) round(((int) ($point['total'] ?? 0) / $maxValue) * 100))
+                                @php($pointDate = \Illuminate\Support\Carbon::parse((string) ($point['date'] ?? now()->toDateString())))
                                 <div class="admin-chart__bar-wrap">
                                     <div class="admin-chart__bar" style="height: {{ max(4, $height) }}%;"></div>
-                                    <div class="card__meta admin-chart__label">{{ substr((string) ($point['date'] ?? ''), 5) }}</div>
+                                    <div class="card__meta admin-chart__label">{{ jdate($pointDate)->format('m/d') }}</div>
                                 </div>
                             @endforeach
                         </div>

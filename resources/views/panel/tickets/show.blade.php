@@ -39,7 +39,7 @@
                             <div class="cluster" style="justify-content: space-between;">
                                 <div class="field__label">{{ $isUser ? 'شما' : 'پشتیبانی' }}</div>
                                 @if ($message->created_at)
-                                    <div class="card__meta">{{ $message->created_at->diffForHumans() }}</div>
+                                    <div class="card__meta">{{ jdate($message->created_at)->ago() }}</div>
                                 @endif
                             </div>
                             <div style="white-space: pre-wrap;">{{ $message->body }}</div>
@@ -71,4 +71,3 @@
         </div>
     </section>
 @endsection
-

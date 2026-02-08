@@ -7,7 +7,6 @@ use App\Models\Product;
 use App\Models\Video;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -150,7 +149,7 @@ class VideoController extends Controller
             'base_price' => ['required', 'integer', 'min:0', 'max:2000000000'],
             'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000'],
             'currency' => ['required', 'string', 'size:3'],
-            'published_at' => ['nullable', 'date'],
+            'published_at' => ['nullable', 'string', 'max:32'],
             'duration_seconds' => ['nullable', 'integer', 'min:0', 'max:2000000000'],
         ];
 
@@ -166,7 +165,7 @@ class VideoController extends Controller
             'base_price' => (int) $validated['base_price'],
             'sale_price' => ($validated['sale_price'] ?? null) !== null && (string) $validated['sale_price'] !== '' ? (int) $validated['sale_price'] : null,
             'currency' => strtoupper((string) $validated['currency']),
-            'published_at' => ($validated['published_at'] ?? null) !== null && (string) $validated['published_at'] !== '' ? Carbon::parse((string) $validated['published_at']) : null,
+            'published_at' => $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null),
             'duration_seconds' => ($validated['duration_seconds'] ?? null) !== null && (string) $validated['duration_seconds'] !== '' ? (int) $validated['duration_seconds'] : null,
         ];
     }
