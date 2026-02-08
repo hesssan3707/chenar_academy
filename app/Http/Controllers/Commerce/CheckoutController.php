@@ -11,9 +11,11 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\ProductAccess;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class CheckoutController extends Controller
@@ -203,7 +205,9 @@ class CheckoutController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($payment) {
+        $expirationDays = $this->accessExpirationDays();
+
+        DB::transaction(function () use ($payment, $expirationDays) {
             $order = $payment->order;
 
             $payment->forceFill([
@@ -235,13 +239,18 @@ class CheckoutController extends Controller
                     continue;
                 }
 
+                $expiresAt = null;
+                if ($expirationDays > 0) {
+                    $expiresAt = now()->addDays($expirationDays);
+                }
+
                 ProductAccess::query()->firstOrCreate([
                     'user_id' => $order->user_id,
                     'product_id' => $item->product_id,
                 ], [
                     'order_item_id' => $item->id,
                     'granted_at' => now(),
-                    'expires_at' => null,
+                    'expires_at' => $expiresAt,
                     'meta' => [],
                 ]);
             }
@@ -263,6 +272,41 @@ class CheckoutController extends Controller
             'title' => 'پرداخت موفق',
             'message' => 'پرداخت با موفقیت انجام شد و دسترسی شما فعال شد.',
         ]);
+    }
+
+    private function accessExpirationDays(): int
+    {
+        if (! Schema::hasTable('settings')) {
+            return 0;
+        }
+
+        $setting = Setting::query()->where('key', 'commerce.access_expiration_days')->first();
+        if (! $setting) {
+            return 0;
+        }
+
+        $value = $setting->value;
+
+        if (is_int($value)) {
+            return max(0, $value);
+        }
+
+        if (is_numeric($value)) {
+            return max(0, (int) $value);
+        }
+
+        if (is_string($value)) {
+            $normalized = trim($value);
+            if ($normalized === '') {
+                return 0;
+            }
+
+            if (is_numeric($normalized)) {
+                return max(0, (int) $normalized);
+            }
+        }
+
+        return 0;
     }
 
     private function findActiveUserCart(Request $request): ?Cart

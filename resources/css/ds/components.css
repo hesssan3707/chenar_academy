@@ -352,3 +352,32 @@ html[data-theme='light'] .toast {
 .toast--danger {
     border-color: rgba(251, 113, 133, 0.28);
 }
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+}
+
+.modal[hidden] {
+    display: none;
+}
+
+.modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(3, 7, 18, 0.78);
+}
+
+html[data-theme='light'] .modal__backdrop {
+    background: rgba(15, 23, 42, 0.38);
+}
+
+.modal__dialog {
+    position: relative;
+    width: min(520px, 100%);
+    box-shadow: var(--ds-shadow);
+}

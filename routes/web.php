@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\SocialLinkController as AdminSocialLinkController;
+use App\Http\Controllers\Admin\SurveyController as AdminSurveyController;
 use App\Http\Controllers\Admin\TicketController as AdminTicketController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\Panel\DashboardController;
 use App\Http\Controllers\Panel\LibraryController;
 use App\Http\Controllers\Panel\OrderController;
 use App\Http\Controllers\Panel\TicketController;
+use App\Http\Controllers\SurveyResponseController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -88,6 +90,7 @@ Route::prefix('admin')
         Route::get('settings', [AdminSettingController::class, 'index'])->name('settings.index');
         Route::put('settings', [AdminSettingController::class, 'update'])->name('settings.update');
         Route::resource('social-links', AdminSocialLinkController::class);
+        Route::resource('surveys', AdminSurveyController::class);
 
         Route::resource('tickets', AdminTicketController::class)->only(['index', 'show', 'update']);
         Route::resource('media', AdminMediaController::class);
@@ -121,6 +124,10 @@ Route::prefix('products')->name('products.')->group(function () {
     Route::get('/', [ProductController::class, 'index'])->name('index');
     Route::get('/{slug}', [ProductController::class, 'show'])->name('show');
     Route::post('/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('auth')->name('reviews.store');
+});
+
+Route::prefix('surveys')->name('surveys.')->group(function () {
+    Route::post('/{survey}/responses', [SurveyResponseController::class, 'store'])->name('responses.store');
 });
 
 Route::prefix('blog')->name('blog.')->group(function () {

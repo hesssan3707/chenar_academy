@@ -4,13 +4,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleButton = document.querySelector('[data-nav-toggle]');
     const header = document.querySelector('.site-header');
 
-    if (!toggleButton || !header) {
-        return;
+    if (toggleButton && header) {
+        toggleButton.addEventListener('click', () => {
+            header.classList.toggle('is-open');
+        });
     }
 
-    toggleButton.addEventListener('click', () => {
-        header.classList.toggle('is-open');
-    });
+    const surveyModal = document.querySelector('[data-survey-modal]');
+    if (surveyModal) {
+        surveyModal.hidden = false;
+
+        const close = () => {
+            surveyModal.hidden = true;
+        };
+
+        surveyModal.querySelectorAll('[data-survey-close]').forEach((node) => {
+            node.addEventListener('click', close);
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !surveyModal.hidden) {
+                close();
+            }
+        });
+    }
 });
 
 const parseFlashes = () => {

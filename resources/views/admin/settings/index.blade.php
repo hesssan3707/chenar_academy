@@ -83,6 +83,19 @@
                         @enderror
                     </label>
 
+                    <div style="height: 1px; background: var(--border); margin: 8px 0;"></div>
+
+                    <div class="field__label">انقضای دسترسی پس از خرید</div>
+
+                    <label class="field">
+                        <span class="field__label">مدت اعتبار دسترسی (روز)</span>
+                        <input type="number" name="access_expiration_days" min="0" max="36500" value="{{ old('access_expiration_days', (string) ($accessExpirationDays ?? '')) }}" placeholder="بدون انقضا">
+                        <div class="field__hint">برای فعال‌سازی، تعداد روز را وارد کنید. مقدار ۰ یا خالی یعنی بدون انقضا.</div>
+                        @error('access_expiration_days')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
                     <div class="form-actions">
                         <button class="btn btn--primary" type="submit">ذخیره</button>
                     </div>

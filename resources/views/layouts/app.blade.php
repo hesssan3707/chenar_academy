@@ -21,6 +21,44 @@
 
         @include('partials.footer')
 
+        @if (($activeSurvey ?? null) && is_array($activeSurvey->options ?? null))
+            <div class="modal" data-survey-modal hidden>
+                <div class="modal__backdrop" data-survey-close></div>
+                <div class="modal__dialog panel">
+                    <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
+                        <div class="field__label">{{ $activeSurvey->question }}</div>
+                        <button class="btn btn--ghost btn--sm" type="button" data-survey-close>بستن</button>
+                    </div>
+
+                    <form method="post" action="{{ route('surveys.responses.store', $activeSurvey->id) }}" class="stack stack--sm"
+                        style="margin-top: 12px;">
+                        @csrf
+                        <input type="hidden" name="redirect_to" value="{{ url()->current() }}">
+
+                        <div class="stack stack--xs">
+                            @foreach ($activeSurvey->options as $option)
+                                @php($option = is_string($option) ? trim($option) : '')
+                                @if ($option !== '')
+                                    <label class="cluster" style="gap: 10px; align-items: center;">
+                                        <input type="radio" name="answer" value="{{ $option }}" required>
+                                        <span>{{ $option }}</span>
+                                    </label>
+                                @endif
+                            @endforeach
+                        </div>
+
+                        @error('answer')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+
+                        <div class="form-actions" style="margin-top: 10px;">
+                            <button class="btn btn--primary" type="submit">ثبت پاسخ</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
+
         <div class="toast-host" data-toast-host></div>
 
         <script type="application/json" data-app-config>

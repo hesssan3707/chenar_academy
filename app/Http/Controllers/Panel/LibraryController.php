@@ -7,6 +7,7 @@ use App\Models\CourseLesson;
 use App\Models\Media;
 use App\Models\Product;
 use App\Models\ProductPart;
+use App\Models\ProductReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -61,9 +62,15 @@ class LibraryController extends Controller
             $product->load(['parts', 'video']);
         }
 
+        $userReview = ProductReview::query()
+            ->where('product_id', $product->id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
         return view('panel.library.show', [
             'title' => $product->title,
             'product' => $product,
+            'userReview' => $userReview,
         ]);
     }
 

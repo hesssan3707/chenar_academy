@@ -205,7 +205,21 @@ class ProductController extends Controller
             ]
         );
 
-        return redirect()->route('products.show', $product->slug)->with('toast', [
+        $redirectTo = $request->input('redirect_to');
+
+        $response = redirect()->route('products.show', $product->slug);
+        if (is_string($redirectTo) && $redirectTo !== '') {
+            $baseUrl = url('/');
+
+            if (
+                str_starts_with($redirectTo, $baseUrl) ||
+                (str_starts_with($redirectTo, '/') && ! str_starts_with($redirectTo, '//'))
+            ) {
+                $response = redirect()->to($redirectTo);
+            }
+        }
+
+        return $response->with('toast', [
             'type' => 'success',
             'title' => 'ثبت شد',
             'message' => 'نظر و امتیاز شما ثبت شد.',

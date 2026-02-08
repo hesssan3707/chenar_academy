@@ -23,6 +23,7 @@ class SettingController extends Controller
 
         $reviewsArePublic = true;
         $ratingsArePublic = true;
+        $accessExpirationDays = null;
 
         if (Schema::hasTable('settings')) {
             $setting = Setting::query()->where('key', 'page.about')->first();
@@ -36,6 +37,7 @@ class SettingController extends Controller
 
             $reviewsArePublic = $this->settingBool('commerce.reviews.public', true);
             $ratingsArePublic = $this->settingBool('commerce.ratings.public', true);
+            $accessExpirationDays = $this->settingInt('commerce.access_expiration_days');
         }
 
         return view('admin.settings.index', [
@@ -45,6 +47,7 @@ class SettingController extends Controller
             'about' => $about,
             'reviewsArePublic' => $reviewsArePublic,
             'ratingsArePublic' => $ratingsArePublic,
+            'accessExpirationDays' => $accessExpirationDays,
         ]);
     }
 
@@ -59,6 +62,7 @@ class SettingController extends Controller
             'about_body' => ['nullable', 'string', 'max:10000'],
             'reviews_public' => ['nullable', 'boolean'],
             'ratings_public' => ['nullable', 'boolean'],
+            'access_expiration_days' => ['nullable', 'integer', 'min:0', 'max:36500'],
         ]);
 
         if (Schema::hasTable('settings')) {
@@ -88,6 +92,12 @@ class SettingController extends Controller
             Setting::query()->updateOrCreate(
                 ['key' => 'commerce.ratings.public', 'group' => 'commerce'],
                 ['value' => $request->boolean('ratings_public')]
+            );
+
+            $days = (int) ($validated['access_expiration_days'] ?? 0);
+            Setting::query()->updateOrCreate(
+                ['key' => 'commerce.access_expiration_days', 'group' => 'commerce'],
+                ['value' => $days > 0 ? $days : null]
             );
         }
 
@@ -130,5 +140,43 @@ class SettingController extends Controller
         }
 
         return $default;
+    }
+
+    private function settingInt(string $key): ?int
+    {
+        $setting = Setting::query()->where('key', $key)->first();
+        if (! $setting) {
+            return null;
+        }
+
+        $value = $setting->value;
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            $intValue = (int) $value;
+
+            return $intValue > 0 ? $intValue : null;
+        }
+
+        if (is_string($value)) {
+            $normalized = trim($value);
+            if ($normalized === '') {
+                return null;
+            }
+
+            if (is_numeric($normalized)) {
+                $intValue = (int) $normalized;
+
+                return $intValue > 0 ? $intValue : null;
+            }
+        }
+
+        return null;
     }
 }

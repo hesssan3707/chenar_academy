@@ -58,65 +58,78 @@
                     </div>
 
                     @auth
-                        <div style="height: 1px; background: var(--border); margin: 8px 0;"></div>
+                        @if (! $userReview)
+                            <div style="height: 1px; background: var(--border); margin: 8px 0;"></div>
 
-                        <div class="field__label">ثبت نظر و امتیاز</div>
+                            <div class="field__label">ثبت نظر و امتیاز</div>
 
-                        @if (($isPurchased ?? false))
-                            <form method="post" action="{{ route('products.reviews.store', $product->slug) }}" class="stack stack--sm">
-                                @csrf
+                            @if (($isPurchased ?? false))
+                                <form method="post" action="{{ route('products.reviews.store', $product->slug) }}" class="stack stack--sm">
+                                    @csrf
+                                    <input type="hidden" name="redirect_to" value="{{ url()->current() }}">
 
-                                <label class="field">
-                                    <span class="field__label">امتیاز (۱ تا ۵)</span>
-                                    <select name="rating" required>
-                                        @for ($i = 5; $i >= 1; $i--)
-                                            <option value="{{ $i }}" @selected((int) old('rating', (int) ($userReview?->rating ?? 5)) === $i)>{{ $i }}</option>
-                                        @endfor
-                                    </select>
-                                    @error('rating')
-                                        <div class="field__error">{{ $message }}</div>
-                                    @enderror
-                                </label>
+                                    <label class="field">
+                                        <span class="field__label">امتیاز (۱ تا ۵)</span>
+                                        <select name="rating" required>
+                                            @for ($i = 5; $i >= 1; $i--)
+                                                <option value="{{ $i }}" @selected((int) old('rating', 5) === $i)>{{ $i }}</option>
+                                            @endfor
+                                        </select>
+                                        @error('rating')
+                                            <div class="field__error">{{ $message }}</div>
+                                        @enderror
+                                    </label>
 
-                                <label class="field">
-                                    <span class="field__label">نظر (اختیاری)</span>
-                                    <textarea name="body" rows="4">{{ old('body', (string) ($userReview?->body ?? '')) }}</textarea>
-                                    @error('body')
-                                        <div class="field__error">{{ $message }}</div>
-                                    @enderror
-                                </label>
+                                    <label class="field">
+                                        <span class="field__label">نظر (اختیاری)</span>
+                                        <textarea name="body" rows="4">{{ old('body', '') }}</textarea>
+                                        @error('body')
+                                            <div class="field__error">{{ $message }}</div>
+                                        @enderror
+                                    </label>
 
-                                <div class="form-actions">
-                                    <button class="btn btn--primary" type="submit">ثبت</button>
-                                </div>
-                            </form>
-                        @else
-                            <div class="field__hint">برای ثبت نظر ابتدا محصول را خریداری کنید.</div>
+                                    <div class="form-actions">
+                                        <button class="btn btn--primary" type="submit">ثبت</button>
+                                    </div>
+                                </form>
+                            @else
+                                <div class="field__hint">برای ثبت نظر ابتدا محصول را خریداری کنید.</div>
+                            @endif
                         @endif
                     @endauth
 
-                    @if (($reviewsArePublic ?? false) && ($reviews ?? collect())->isNotEmpty())
+                    @if (($reviewsArePublic ?? false))
                         <div style="height: 1px; background: var(--border); margin: 8px 0;"></div>
 
                         <div class="field__label">نظرات کاربران</div>
-                        <div class="stack stack--sm">
-                            @foreach ($reviews as $review)
-                                <div class="panel">
-                                    @php($name = (string) (($review->user->name ?? '') ?: 'کاربر'))
-                                    <div class="cluster" style="justify-content: space-between;">
-                                        <div>{{ $review->user_id === auth()->id() ? 'شما' : $name }}</div>
-                                        <div aria-label="امتیاز {{ (int) $review->rating }} از ۵" style="letter-spacing: 2px;">
-                                            @for ($i = 1; $i <= 5; $i++)
-                                                {{ $i <= (int) $review->rating ? '★' : '☆' }}
-                                            @endfor
+                        @if (($reviews ?? collect())->isNotEmpty())
+                            <div class="stack stack--sm">
+                                @foreach ($reviews as $review)
+                                    <div class="panel">
+                                        @php($name = (string) (($review->user->name ?? '') ?: 'کاربر'))
+                                        <div class="cluster" style="justify-content: space-between;">
+                                            <div>{{ $review->user_id === auth()->id() ? 'شما' : $name }}</div>
+                                            <div aria-label="امتیاز {{ (int) $review->rating }} از ۵" style="letter-spacing: 2px;">
+                                                @for ($i = 1; $i <= 5; $i++)
+                                                    {{ $i <= (int) $review->rating ? '★' : '☆' }}
+                                                @endfor
+                                            </div>
                                         </div>
+                                        @if ($review->body)
+                                            <div style="margin-top: 8px;">{{ $review->body }}</div>
+                                        @endif
                                     </div>
-                                    @if ($review->body)
-                                        <div style="margin-top: 8px;">{{ $review->body }}</div>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="field__hint">
+                                @if ($product->type === 'video')
+                                    اولین نفری باشید که این ویدیو را بررسی می‌کند.
+                                @else
+                                    اولین نفری باشید که این جزوه را بررسی می‌کند.
+                                @endif
+                            </div>
+                        @endif
                     @endif
                 </div>
             </div>

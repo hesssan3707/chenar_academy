@@ -7,7 +7,10 @@ use App\Models\CartItem;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\Product;
+use App\Models\ProductAccess;
 use App\Models\SocialLink;
+use App\Models\Survey;
+use App\Models\SurveyResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -134,6 +137,78 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $view->with('socialLinks', $socialLinks);
+        });
+
+        View::composer('layouts.app', function ($view) {
+            if (! Schema::hasTable('surveys') || ! Schema::hasTable('survey_responses')) {
+                return;
+            }
+
+            $now = now();
+
+            $survey = Survey::query()
+                ->where('is_active', true)
+                ->where(function ($query) use ($now) {
+                    $query->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
+                })
+                ->where(function ($query) use ($now) {
+                    $query->whereNull('ends_at')->orWhere('ends_at', '>=', $now);
+                })
+                ->orderByDesc('id')
+                ->first();
+
+            if (! $survey) {
+                return;
+            }
+
+            $audience = (string) $survey->audience;
+            $user = auth()->user();
+
+            if ($audience === 'authenticated' && ! $user) {
+                return;
+            }
+
+            if ($audience === 'purchasers') {
+                if (! $user) {
+                    return;
+                }
+
+                $isPurchaser = ProductAccess::query()->where('user_id', $user->id)->exists();
+                if (! $isPurchaser) {
+                    return;
+                }
+            }
+
+            $hasResponse = false;
+
+            if ($user) {
+                $hasResponse = SurveyResponse::query()
+                    ->where('survey_id', $survey->id)
+                    ->where('user_id', $user->id)
+                    ->exists();
+            } else {
+                $token = request()->cookie('survey_anon_token');
+                if (is_string($token) && $token !== '') {
+                    try {
+                        $decrypted = app('encrypter')->decrypt($token, false);
+                        if (is_string($decrypted) && $decrypted !== '') {
+                            $token = \Illuminate\Cookie\CookieValuePrefix::remove($decrypted, 'survey_anon_token');
+                        }
+                    } catch (\Throwable) {
+                    }
+
+                    $hasResponse = SurveyResponse::query()
+                        ->where('survey_id', $survey->id)
+                        ->where('anon_token', $token)
+                        ->exists();
+                }
+            }
+
+            if ($hasResponse) {
+                return;
+            }
+
+            $view->with('activeSurvey', $survey);
         });
     }
 }

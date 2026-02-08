@@ -56,7 +56,8 @@ class ProductReviewsAndRepurchaseTest extends TestCase
             ->assertOk()
             ->assertSee('امتیاز کاربران')
             ->assertSee('نظرات کاربران')
-            ->assertSee('خیلی خوب بود');
+            ->assertSee('خیلی خوب بود')
+            ->assertDontSee('ثبت نظر و امتیاز');
     }
 
     public function test_user_without_purchase_cannot_submit_review(): void
@@ -117,6 +118,123 @@ class ProductReviewsAndRepurchaseTest extends TestCase
             ->assertDontSee('امتیاز کاربران')
             ->assertDontSee('نظرات کاربران')
             ->assertDontSee('نظر مخفی');
+    }
+
+    public function test_user_can_submit_review_when_feature_is_disabled_but_it_is_not_publicly_visible(): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.reviews.public', 'group' => 'commerce'],
+            ['value' => false]
+        );
+
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.ratings.public', 'group' => 'commerce'],
+            ['value' => false]
+        );
+
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو غیرعمومی',
+            'slug' => 'video-private-review',
+            'status' => 'published',
+            'base_price' => 25000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        ProductAccess::query()->create([
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+            'order_item_id' => null,
+            'granted_at' => now(),
+            'expires_at' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('products.reviews.store', $product->slug), [
+                'rating' => 3,
+                'body' => 'این نظر نباید عمومی باشد',
+                'redirect_to' => route('products.show', $product->slug),
+            ])
+            ->assertRedirect(route('products.show', $product->slug))
+            ->assertSessionHas('toast');
+
+        $this->assertDatabaseHas('product_reviews', [
+            'product_id' => $product->id,
+            'user_id' => $user->id,
+            'rating' => 3,
+            'body' => 'این نظر نباید عمومی باشد',
+        ]);
+
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertDontSee('امتیاز کاربران')
+            ->assertDontSee('نظرات کاربران')
+            ->assertDontSee('این نظر نباید عمومی باشد');
+    }
+
+    public function test_reviews_placeholder_is_shown_when_no_reviews_exist_and_reviews_are_public(): void
+    {
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو بدون نظر',
+            'slug' => 'video-no-reviews',
+            'status' => 'published',
+            'base_price' => 20000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertSee('نظرات کاربران')
+            ->assertSee('اولین نفری باشید که این ویدیو را بررسی می‌کند.');
+    }
+
+    public function test_user_can_submit_review_from_library_and_form_is_hidden_after_submission(): void
+    {
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه کتابخانه',
+            'slug' => 'note-library-review',
+            'status' => 'published',
+            'base_price' => 20000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        ProductAccess::query()->create([
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+            'order_item_id' => null,
+            'granted_at' => now(),
+            'expires_at' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('panel.library.show', $product->slug))
+            ->assertOk()
+            ->assertSee('ثبت نظر و امتیاز');
+
+        $this->actingAs($user)
+            ->post(route('products.reviews.store', $product->slug), [
+                'rating' => 5,
+                'body' => 'از داخل کتابخانه',
+                'redirect_to' => route('panel.library.show', $product->slug),
+            ])
+            ->assertRedirect(route('panel.library.show', $product->slug))
+            ->assertSessionHas('toast');
+
+        $this->actingAs($user)
+            ->get(route('panel.library.show', $product->slug))
+            ->assertOk()
+            ->assertDontSee('ثبت نظر و امتیاز');
     }
 
     public function test_purchased_label_shown_and_user_cannot_add_purchased_product_to_cart(): void

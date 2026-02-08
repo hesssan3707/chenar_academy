@@ -125,6 +125,42 @@
                 @endif
             @endif
 
+            @if (in_array($product->type, ['note', 'video'], true) && ! ($userReview ?? null))
+                <div class="panel" style="margin-top: 18px;">
+                    <div class="stack stack--sm">
+                        <div class="field__label">ثبت نظر و امتیاز</div>
+                        <form method="post" action="{{ route('products.reviews.store', $product->slug) }}" class="stack stack--sm">
+                            @csrf
+                            <input type="hidden" name="redirect_to" value="{{ url()->current() }}">
+
+                            <label class="field">
+                                <span class="field__label">امتیاز (۱ تا ۵)</span>
+                                <select name="rating" required>
+                                    @for ($i = 5; $i >= 1; $i--)
+                                        <option value="{{ $i }}" @selected((int) old('rating', 5) === $i)>{{ $i }}</option>
+                                    @endfor
+                                </select>
+                                @error('rating')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                            </label>
+
+                            <label class="field">
+                                <span class="field__label">نظر (اختیاری)</span>
+                                <textarea name="body" rows="4">{{ old('body', '') }}</textarea>
+                                @error('body')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                            </label>
+
+                            <div class="form-actions">
+                                <button class="btn btn--primary" type="submit">ثبت</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endif
+
             <div class="form-actions" style="margin-top: 18px;">
                 <a class="btn btn--ghost" href="{{ route('panel.library.index') }}">بازگشت به کتابخانه</a>
             </div>
