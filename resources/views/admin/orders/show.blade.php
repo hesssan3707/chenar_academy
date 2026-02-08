@@ -21,6 +21,7 @@
                     <h2 class="section-title">اطلاعات</h2>
                     <div class="stack stack--xs">
                         @php($statusLabel = match ((string) ($order->status ?? '')) {
+                            'pending' => 'در انتظار پرداخت',
                             'pending_review' => 'در انتظار تایید',
                             'rejected' => 'رد شده',
                             'paid' => 'تایید شده',
@@ -70,11 +71,19 @@
             @php($cardToCardPayment = $cardToCardPayment ?? null)
             @php($cardToCardReceipt = $cardToCardReceipt ?? null)
             @if ($cardToCardPayment)
+                @php($cardToCardPaymentStatusLabel = match ((string) ($cardToCardPayment->status ?? '')) {
+                    'initiated' => 'در انتظار پرداخت',
+                    'pending_review' => 'در انتظار تایید',
+                    'paid' => 'پرداخت شده',
+                    'failed' => 'ناموفق',
+                    'rejected' => 'رد شده',
+                    default => (string) ($cardToCardPayment->status ?? '—'),
+                })
                 <div class="panel" style="margin-top: 18px;">
                     <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
                         <div class="stack stack--sm">
                             <h2 class="section-title" style="margin: 0;">کارت‌به‌کارت</h2>
-                            <div class="card__meta">وضعیت پرداخت: {{ $cardToCardPayment->status ?? '—' }}</div>
+                            <div class="card__meta">وضعیت پرداخت: {{ $cardToCardPaymentStatusLabel }}</div>
                         </div>
                         @if ((string) ($order->status ?? '') === 'pending_review')
                             <div class="form-actions" style="margin: 0;">
@@ -124,9 +133,17 @@
                             </thead>
                             <tbody>
                                 @foreach ($payments as $payment)
+                                    @php($paymentStatusLabel = match ((string) ($payment->status ?? '')) {
+                                        'initiated' => 'در انتظار پرداخت',
+                                        'pending_review' => 'در انتظار تایید',
+                                        'paid' => 'پرداخت شده',
+                                        'failed' => 'ناموفق',
+                                        'rejected' => 'رد شده',
+                                        default => (string) ($payment->status ?? '—'),
+                                    })
                                     <tr>
                                         <td>{{ $payment->id }}</td>
-                                        <td class="admin-nowrap">{{ $payment->status ?? '—' }}</td>
+                                        <td class="admin-nowrap">{{ $paymentStatusLabel }}</td>
                                         <td class="admin-nowrap">{{ number_format((int) ($payment->amount ?? 0)) }} {{ $payment->currency ?? ($order->currency ?? 'IRR') }}</td>
                                         <td class="admin-nowrap">{{ $payment->reference_id ?? '—' }}</td>
                                         <td class="admin-nowrap">

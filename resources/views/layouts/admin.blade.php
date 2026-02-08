@@ -20,12 +20,39 @@
                     <span class="admin-brand__name">مدیریت</span>
                 </a>
 
+                @php
+                    $pendingOrdersCount = \App\Models\Order::query()->whereIn('status', ['pending', 'pending_review'])->count();
+                    $unreadTicketsCount = \App\Models\Ticket::query()
+                        ->where('status', 'open')
+                        ->whereNotNull('last_message_at')
+                        ->get(['id', 'last_message_at', 'meta'])
+                        ->filter(function ($ticket) {
+                            $meta = is_array($ticket->meta) ? $ticket->meta : [];
+                            $lastReadAt = $meta['admin_last_read_at'] ?? null;
+                            if (! $lastReadAt) {
+                                return true;
+                            }
+
+                            try {
+                                return \Illuminate\Support\Carbon::parse((string) $lastReadAt)->lt($ticket->last_message_at);
+                            } catch (\Throwable) {
+                                return true;
+                            }
+                        })
+                        ->count();
+                @endphp
+
                 <nav class="admin-menu">
                     <a class="admin-menu__link @if (request()->routeIs('admin.dashboard')) is-active @endif" href="{{ route('admin.dashboard') }}">داشبورد</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.users.*')) is-active @endif" href="{{ route('admin.users.index') }}">کاربران</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.booklets.*')) is-active @endif" href="{{ route('admin.booklets.index') }}">جزوه‌ها</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.videos.*')) is-active @endif" href="{{ route('admin.videos.index') }}">ویدیوها</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.tickets.*')) is-active @endif" href="{{ route('admin.tickets.index') }}">تیکت‌ها</a>
+                    <a class="admin-menu__link @if (request()->routeIs('admin.tickets.*')) is-active @endif" href="{{ route('admin.tickets.index') }}">
+                        تیکت‌ها
+                        @if (($unreadTicketsCount ?? 0) > 0)
+                            <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $unreadTicketsCount }}</span>
+                        @endif
+                    </a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.surveys.*')) is-active @endif" href="{{ route('admin.surveys.index') }}">نظرسنجی‌ها</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.posts.*')) is-active @endif" href="{{ route('admin.posts.index') }}">مقالات</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.settings.*')) is-active @endif" href="{{ route('admin.settings.index') }}">تنظیمات</a>
@@ -35,7 +62,12 @@
                     <a class="admin-menu__link @if (request()->routeIs('admin.categories.*')) is-active @endif" href="{{ route('admin.categories.index') }}">دسته‌بندی‌ها</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.products.*')) is-active @endif" href="{{ route('admin.products.index') }}">محصولات</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.courses.*')) is-active @endif" href="{{ route('admin.courses.index') }}">دوره‌ها</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.orders.*')) is-active @endif" href="{{ route('admin.orders.index') }}">سفارش‌ها</a>
+                    <a class="admin-menu__link @if (request()->routeIs('admin.orders.*')) is-active @endif" href="{{ route('admin.orders.index') }}">
+                        سفارش‌ها
+                        @if (($pendingOrdersCount ?? 0) > 0)
+                            <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $pendingOrdersCount }}</span>
+                        @endif
+                    </a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.payments.*')) is-active @endif" href="{{ route('admin.payments.index') }}">پرداخت‌ها</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.media.*')) is-active @endif" href="{{ route('admin.media.index') }}">رسانه‌ها</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.roles.*')) is-active @endif" href="{{ route('admin.roles.index') }}">نقش‌ها</a>

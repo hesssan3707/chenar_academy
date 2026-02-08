@@ -61,7 +61,9 @@ class TicketController extends Controller
             'priority' => (string) $validated['priority'],
             'status' => 'open',
             'last_message_at' => now(),
-            'meta' => [],
+            'meta' => [
+                'admin_last_read_at' => now()->toDateTimeString(),
+            ],
         ]);
 
         TicketMessage::query()->create([
@@ -81,6 +83,10 @@ class TicketController extends Controller
         if (is_int($scopedUserId) && $scopedUserId > 0 && (int) $ticketModel->user_id !== $scopedUserId) {
             abort(404);
         }
+
+        $meta = is_array($ticketModel->meta) ? $ticketModel->meta : [];
+        $meta['admin_last_read_at'] = now()->toDateTimeString();
+        $ticketModel->forceFill(['meta' => $meta])->save();
 
         $user = User::query()->find($ticketModel->user_id);
 
@@ -143,6 +149,10 @@ class TicketController extends Controller
                 'closed_at' => now(),
             ])->save();
         }
+
+        $meta = is_array($ticketModel->meta) ? $ticketModel->meta : [];
+        $meta['admin_last_read_at'] = now()->toDateTimeString();
+        $ticketModel->forceFill(['meta' => $meta])->save();
 
         return redirect()->route('admin.tickets.show', $ticketModel->id);
     }

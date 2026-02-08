@@ -44,7 +44,6 @@
                                     <td class="admin-nowrap">{{ $media->size ? number_format((int) $media->size) : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.media.show', $media->id) }}">نمایش</a>
-                                        <a class="btn btn--ghost btn--sm" href="{{ route('admin.media.edit', $media->id) }}">ویرایش</a>
                                         <form method="post" action="{{ route('admin.media.destroy', $media->id) }}" class="inline-form">
                                             @csrf
                                             @method('delete')

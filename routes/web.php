@@ -123,7 +123,7 @@ Route::prefix('admin')
         Route::resource('surveys', AdminSurveyController::class);
 
         Route::resource('tickets', AdminTicketController::class);
-        Route::resource('media', AdminMediaController::class);
+        Route::resource('media', AdminMediaController::class)->except(['edit', 'update']);
 
         Route::resource('roles', AdminRoleController::class);
         Route::resource('permissions', AdminPermissionController::class);

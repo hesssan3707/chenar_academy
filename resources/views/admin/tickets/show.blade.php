@@ -18,6 +18,17 @@
             @php($ticket = $ticket ?? null)
             @php($ticketUser = $ticketUser ?? null)
             @php($messages = $messages ?? collect())
+            @php($statusLabel = match ((string) ($ticket->status ?? '')) {
+                'open' => 'باز',
+                'closed' => 'بسته',
+                default => (string) ($ticket->status ?? '—'),
+            })
+            @php($priorityLabel = match ((string) ($ticket->priority ?? '')) {
+                'low' => 'کم',
+                'normal' => 'معمولی',
+                'high' => 'بالا',
+                default => (string) ($ticket->priority ?? '—'),
+            })
 
             <div class="grid admin-grid-2">
                 <div class="panel">
@@ -31,11 +42,11 @@
                     <div class="stack stack--xs">
                         <div class="admin-kv">
                             <div class="card__meta">وضعیت</div>
-                            <div class="admin-kv__value">{{ $ticket->status }}</div>
+                            <div class="admin-kv__value">{{ $statusLabel }}</div>
                         </div>
                         <div class="admin-kv">
                             <div class="card__meta">اولویت</div>
-                            <div class="admin-kv__value">{{ $ticket->priority }}</div>
+                            <div class="admin-kv__value">{{ $priorityLabel }}</div>
                         </div>
                         <div class="admin-kv">
                             <div class="card__meta">آخرین پیام</div>

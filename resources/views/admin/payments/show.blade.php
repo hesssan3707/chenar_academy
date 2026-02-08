@@ -21,10 +21,24 @@
 
             <div class="panel max-w-md">
                 <div class="stack stack--xs">
+                    @php($gatewayLabel = match ((string) ($payment->gateway ?? '')) {
+                        'card_to_card' => 'کارت‌به‌کارت',
+                        'mock' => 'درگاه آزمایشی',
+                        'gateway' => 'درگاه',
+                        default => (string) ($payment->gateway ?? '—'),
+                    })
+                    @php($statusLabel = match ((string) ($payment->status ?? '')) {
+                        'initiated' => 'در انتظار پرداخت',
+                        'pending_review' => 'در انتظار تایید',
+                        'paid' => 'پرداخت شده',
+                        'failed' => 'ناموفق',
+                        'rejected' => 'رد شده',
+                        default => (string) ($payment->status ?? '—'),
+                    })
                     <div>شناسه: {{ $payment->id }}</div>
                     <div>سفارش: {{ $payment->order_id ?? '—' }}</div>
-                    <div>درگاه: {{ $payment->gateway ?? '—' }}</div>
-                    <div>وضعیت: {{ $payment->status ?? '—' }}</div>
+                    <div>درگاه: {{ $gatewayLabel }}</div>
+                    <div>وضعیت: {{ $statusLabel }}</div>
                     <div>مبلغ: {{ number_format((int) ($payment->amount ?? 0)) }} {{ $payment->currency ?? 'IRR' }}</div>
                     <div>Authority: {{ $payment->authority ?? '—' }}</div>
                     <div>Reference ID: {{ $payment->reference_id ?? '—' }}</div>

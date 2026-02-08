@@ -313,6 +313,59 @@ html[data-theme='light'] .card:hover {
     background: rgba(0, 0, 0, 0.18);
 }
 
+.card--media {
+    padding: 0;
+    overflow: hidden;
+    display: block;
+    aspect-ratio: 4 / 3;
+}
+
+.card__cover {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.02);
+    transition: transform 240ms ease;
+}
+
+.card--media:hover .card__cover {
+    transform: scale(1.06);
+}
+
+.card__hover {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px;
+    background: linear-gradient(180deg, rgba(3, 7, 18, 0) 32%, rgba(3, 7, 18, 0.86) 92%);
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+        opacity 200ms ease,
+        transform 200ms ease;
+}
+
+.card--media:hover .card__hover,
+.card--media:focus-visible .card__hover {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.card--media .card__title {
+    padding-left: 0;
+    padding-right: 0;
+    margin-bottom: 0;
+}
+
+.card--media .card__price {
+    margin-top: 0;
+}
+
 .card__meta {
     color: var(--ds-muted);
     font-size: 13px;
@@ -437,4 +490,130 @@ html[data-theme='light'] .modal__backdrop {
     position: relative;
     width: min(520px, 100%);
     box-shadow: var(--ds-shadow);
+}
+
+.upload {
+    position: relative;
+    display: grid;
+    gap: 10px;
+}
+
+.upload__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    inset: 0;
+    pointer-events: none;
+}
+
+.upload__drop {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+    text-align: center;
+    padding: 16px;
+    border-radius: var(--ds-radius-lg);
+    border: 1px dashed var(--ds-border);
+    background: rgba(232, 238, 252, 0.02);
+    color: inherit;
+    cursor: pointer;
+}
+
+.upload.is-dragover .upload__drop {
+    border-color: rgba(45, 212, 191, 0.55);
+    background: rgba(45, 212, 191, 0.06);
+}
+
+html[data-theme='admin'] .upload.is-dragover .upload__drop {
+    border-color: rgba(124, 58, 237, 0.5);
+    background: rgba(124, 58, 237, 0.06);
+}
+
+.upload__title {
+    font-weight: 900;
+}
+
+.upload__meta {
+    font-size: 13px;
+    color: var(--ds-muted);
+}
+
+.upload__preview {
+    display: grid;
+    gap: 10px;
+    border-radius: var(--ds-radius-lg);
+    border: 1px solid var(--ds-border);
+    padding: 12px;
+    background: rgba(15, 26, 46, 0.24);
+}
+
+html[data-theme='light'] .upload__preview {
+    background: rgba(255, 255, 255, 0.75);
+}
+
+html[data-theme='admin'] .upload__preview {
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.upload__preview-media {
+    display: grid;
+    gap: 8px;
+}
+
+.upload__preview-image,
+.upload__preview-video {
+    width: 100%;
+    max-height: 260px;
+    object-fit: cover;
+    border-radius: 14px;
+    border: 1px solid var(--ds-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.upload__preview-file {
+    font-size: 13px;
+    color: var(--ds-muted);
+    overflow-wrap: anywhere;
+}
+
+.upload__preview-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.upload__progress {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.upload__progress-bar {
+    height: 10px;
+    border-radius: 999px;
+    border: 1px solid var(--ds-border);
+    overflow: hidden;
+    background: rgba(232, 238, 252, 0.04);
+}
+
+.upload__progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.95), rgba(96, 165, 250, 0.9));
+    transition: width 120ms linear;
+}
+
+html[data-theme='admin'] .upload__progress-fill {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.85), rgba(96, 165, 250, 0.85));
+}
+
+.upload__progress-text {
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--ds-muted);
+    min-width: 44px;
+    text-align: left;
+    direction: ltr;
 }

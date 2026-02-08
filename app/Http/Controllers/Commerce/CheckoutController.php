@@ -165,10 +165,29 @@ class CheckoutController extends Controller
         $cart = $this->findActiveUserCart($request);
         $items = $this->getCartItems($cart);
 
+        $cards = [];
+        if (Schema::hasTable('settings')) {
+            $cards = [
+                [
+                    'name' => $this->settingString('commerce.card_to_card.card1.name'),
+                    'number' => $this->settingString('commerce.card_to_card.card1.number'),
+                ],
+                [
+                    'name' => $this->settingString('commerce.card_to_card.card2.name'),
+                    'number' => $this->settingString('commerce.card_to_card.card2.number'),
+                ],
+            ];
+
+            $cards = array_values(array_filter($cards, function (array $card) {
+                return trim((string) ($card['number'] ?? '')) !== '';
+            }));
+        }
+
         if (! $cart || $items->isEmpty()) {
             return view('commerce.checkout.card-to-card', [
                 'cart' => $cart,
                 'items' => $items,
+                'cardToCardCards' => $cards,
                 ...$this->invoiceData($request, $items),
             ]);
         }
@@ -176,6 +195,7 @@ class CheckoutController extends Controller
         return view('commerce.checkout.card-to-card', [
             'cart' => $cart,
             'items' => $items,
+            'cardToCardCards' => $cards,
             ...$this->invoiceData($request, $items),
         ]);
     }

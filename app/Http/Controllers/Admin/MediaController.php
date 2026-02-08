@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Media;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class MediaController extends Controller
@@ -60,6 +61,7 @@ class MediaController extends Controller
         return view('admin.media.show', [
             'title' => 'نمایش رسانه',
             'media' => $mediaModel,
+            'mediaUrl' => $mediaModel->disk && $mediaModel->path ? Storage::disk($mediaModel->disk)->url($mediaModel->path) : null,
         ]);
     }
 

@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Post;
 use App\Models\Product;
 use App\Models\Role;
@@ -359,6 +361,166 @@ class AdminCrudSmokeTest extends TestCase
             ->assertSee('نوع: institution')
             ->assertSeeInOrder(['Root', 'Child'])
             ->assertSee('&nbsp;&nbsp;&nbsp;&nbsp;Child', false);
+    }
+
+    public function test_admin_sidebar_shows_unread_tickets_and_pending_orders_badges(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $customer = User::factory()->create();
+
+        Ticket::query()->create([
+            'user_id' => $customer->id,
+            'subject' => 'A',
+            'status' => 'open',
+            'priority' => 'normal',
+            'last_message_at' => now(),
+            'closed_at' => null,
+            'meta' => [],
+        ]);
+
+        Ticket::query()->create([
+            'user_id' => $customer->id,
+            'subject' => 'B',
+            'status' => 'open',
+            'priority' => 'normal',
+            'last_message_at' => now(),
+            'closed_at' => null,
+            'meta' => [],
+        ]);
+
+        foreach (range(1, 3) as $i) {
+            Order::query()->create([
+                'order_number' => 'ORD-'.$i,
+                'user_id' => $customer->id,
+                'status' => 'pending',
+                'currency' => 'IRR',
+                'subtotal_amount' => 1000,
+                'discount_amount' => 0,
+                'total_amount' => 1000,
+                'payable_amount' => 1000,
+                'placed_at' => now(),
+                'paid_at' => null,
+                'cancelled_at' => null,
+                'meta' => [],
+            ]);
+        }
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('<span class="badge badge--brand" style="margin-right: 8px;">2</span>', false)
+            ->assertSee('<span class="badge badge--brand" style="margin-right: 8px;">3</span>', false);
+    }
+
+    public function test_admin_order_edit_page_localizes_status_options(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $customer = User::factory()->create();
+
+        $order = Order::query()->create([
+            'order_number' => 'ORD-LOCALIZE-1',
+            'user_id' => $customer->id,
+            'status' => 'pending',
+            'currency' => 'IRR',
+            'subtotal_amount' => 1000,
+            'discount_amount' => 0,
+            'total_amount' => 1000,
+            'payable_amount' => 1000,
+            'placed_at' => now(),
+            'paid_at' => null,
+            'cancelled_at' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.edit', $order->id))
+            ->assertOk()
+            ->assertSee('در انتظار پرداخت')
+            ->assertSee('در انتظار تایید')
+            ->assertSee('تایید شده')
+            ->assertSee('رد شده')
+            ->assertSee('لغو شده');
+    }
+
+    public function test_admin_payment_pages_localize_gateway_and_status(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $customer = User::factory()->create();
+
+        $order = Order::query()->create([
+            'order_number' => 'ORD-LOCALIZE-2',
+            'user_id' => $customer->id,
+            'status' => 'pending',
+            'currency' => 'IRR',
+            'subtotal_amount' => 1000,
+            'discount_amount' => 0,
+            'total_amount' => 1000,
+            'payable_amount' => 1000,
+            'placed_at' => now(),
+            'paid_at' => null,
+            'cancelled_at' => null,
+            'meta' => [],
+        ]);
+
+        $payment = Payment::query()->create([
+            'order_id' => $order->id,
+            'gateway' => 'mock',
+            'status' => 'initiated',
+            'amount' => 1000,
+            'currency' => 'IRR',
+            'authority' => null,
+            'reference_id' => null,
+            'paid_at' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.payments.index'))
+            ->assertOk()
+            ->assertSee('درگاه آزمایشی')
+            ->assertSee('در انتظار پرداخت');
+
+        $this->actingAs($admin)
+            ->get(route('admin.payments.show', $payment->id))
+            ->assertOk()
+            ->assertSee('درگاه آزمایشی')
+            ->assertSee('در انتظار پرداخت');
+    }
+
+    public function test_admin_ticket_pages_localize_status_and_priority(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $customer = User::factory()->create();
+
+        $ticket = Ticket::query()->create([
+            'user_id' => $customer->id,
+            'subject' => 'A',
+            'status' => 'open',
+            'priority' => 'normal',
+            'last_message_at' => now(),
+            'closed_at' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.tickets.index'))
+            ->assertOk()
+            ->assertSee('باز')
+            ->assertSee('معمولی');
+
+        $this->actingAs($admin)
+            ->get(route('admin.tickets.show', $ticket->id))
+            ->assertOk()
+            ->assertSee('باز')
+            ->assertSee('معمولی');
     }
 
     public function test_admin_index_pages_paginate_40_items_per_page(): void

@@ -25,10 +25,16 @@
                 @if (! $isEdit)
                     <p class="page-subtitle">ثبت پرداخت از طریق فرآیند پرداخت انجام می‌شود.</p>
                 @else
+                    @php($gatewayLabel = match ((string) ($payment->gateway ?? '')) {
+                        'card_to_card' => 'کارت‌به‌کارت',
+                        'mock' => 'درگاه آزمایشی',
+                        'gateway' => 'درگاه',
+                        default => (string) ($payment->gateway ?? '—'),
+                    })
                     <div class="stack stack--xs">
                         <div>شناسه: {{ $payment->id }}</div>
                         <div>سفارش: {{ $payment->order_id ?? '—' }}</div>
-                        <div>درگاه: {{ $payment->gateway ?? '—' }}</div>
+                        <div>درگاه: {{ $gatewayLabel }}</div>
                         <div>مبلغ: {{ number_format((int) ($payment->amount ?? 0)) }} {{ $payment->currency ?? 'IRR' }}</div>
                         <div>Authority: {{ $payment->authority ?? '—' }}</div>
                         <div>پرداخت: {{ $payment->paid_at ? jdate($payment->paid_at)->format('Y/m/d H:i') : '—' }}</div>
@@ -44,9 +50,9 @@
                             <span class="field__label">وضعیت</span>
                             @php($statusValue = old('status', (string) ($payment->status ?? 'initiated')))
                             <select name="status" required>
-                                <option value="initiated" @selected($statusValue === 'initiated')>initiated</option>
-                                <option value="paid" @selected($statusValue === 'paid')>paid</option>
-                                <option value="failed" @selected($statusValue === 'failed')>failed</option>
+                                <option value="initiated" @selected($statusValue === 'initiated')>در انتظار پرداخت</option>
+                                <option value="paid" @selected($statusValue === 'paid')>پرداخت شده</option>
+                                <option value="failed" @selected($statusValue === 'failed')>ناموفق</option>
                             </select>
                             @error('status')
                                 <div class="field__error">{{ $message }}</div>

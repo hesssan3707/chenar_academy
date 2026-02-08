@@ -225,6 +225,67 @@ class CheckoutFlowTest extends TestCase
         Storage::disk('local')->assertExists($receipt->path);
     }
 
+    public function test_card_to_card_page_shows_configured_destination_cards_with_copy_action(): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.card_to_card.card1.name', 'group' => 'commerce'],
+            ['value' => 'چنار آکادمی']
+        );
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.card_to_card.card1.number', 'group' => 'commerce'],
+            ['value' => '6037991812345678']
+        );
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.card_to_card.card2.name', 'group' => 'commerce'],
+            ['value' => 'حساب پشتیبان']
+        );
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.card_to_card.card2.number', 'group' => 'commerce'],
+            ['value' => '6037991811112222']
+        );
+
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه تست',
+            'slug' => 'checkout-note-c2c-cards',
+            'status' => 'published',
+            'base_price' => 100000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $cart = Cart::query()->create([
+            'user_id' => $user->id,
+            'session_id' => null,
+            'status' => 'active',
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        CartItem::query()->create([
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 100000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('checkout.card-to-card.show'))
+            ->assertOk()
+            ->assertSee('اطلاعات کارت مقصد')
+            ->assertSee('چنار آکادمی')
+            ->assertSee('6037-9918-1234-5678')
+            ->assertSee('حساب پشتیبان')
+            ->assertSee('6037-9918-1111-2222')
+            ->assertSee('data-copy-text="6037991812345678"', false)
+            ->assertSee('data-copy-text="6037991811112222"', false);
+    }
+
     public function test_admin_can_approve_card_to_card_order_and_grant_access(): void
     {
         Storage::fake('local');

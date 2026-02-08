@@ -26,6 +26,10 @@ class SettingController extends Controller
         $accessExpirationDays = null;
         $currency = 'IRR';
         $taxPercent = 0;
+        $cardToCardCard1Name = '';
+        $cardToCardCard1Number = '';
+        $cardToCardCard2Name = '';
+        $cardToCardCard2Number = '';
 
         if (Schema::hasTable('settings')) {
             $setting = Setting::query()->where('key', 'page.about')->first();
@@ -42,6 +46,10 @@ class SettingController extends Controller
             $accessExpirationDays = $this->settingInt('commerce.access_expiration_days');
             $currency = $this->commerceCurrency();
             $taxPercent = $this->settingIntAllowZero('commerce.tax_percent', 0);
+            $cardToCardCard1Name = $this->settingString('commerce.card_to_card.card1.name');
+            $cardToCardCard1Number = $this->settingString('commerce.card_to_card.card1.number');
+            $cardToCardCard2Name = $this->settingString('commerce.card_to_card.card2.name');
+            $cardToCardCard2Number = $this->settingString('commerce.card_to_card.card2.number');
         }
 
         return view('admin.settings.index', [
@@ -54,6 +62,10 @@ class SettingController extends Controller
             'accessExpirationDays' => $accessExpirationDays,
             'currency' => $currency,
             'taxPercent' => $taxPercent,
+            'cardToCardCard1Name' => $cardToCardCard1Name,
+            'cardToCardCard1Number' => $cardToCardCard1Number,
+            'cardToCardCard2Name' => $cardToCardCard2Name,
+            'cardToCardCard2Number' => $cardToCardCard2Number,
         ]);
     }
 
@@ -71,6 +83,10 @@ class SettingController extends Controller
             'access_expiration_days' => ['nullable', 'integer', 'min:0', 'max:36500'],
             'currency' => ['nullable', 'string', 'size:3'],
             'tax_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'card_to_card_card1_name' => ['nullable', 'string', 'max:120'],
+            'card_to_card_card1_number' => ['nullable', 'string', 'max:50'],
+            'card_to_card_card2_name' => ['nullable', 'string', 'max:120'],
+            'card_to_card_card2_number' => ['nullable', 'string', 'max:50'],
         ]);
 
         if (Schema::hasTable('settings')) {
@@ -119,11 +135,69 @@ class SettingController extends Controller
                 ['key' => 'commerce.tax_percent', 'group' => 'commerce'],
                 ['value' => min(100, max(0, $taxPercent))]
             );
+
+            $card1Name = isset($validated['card_to_card_card1_name']) && trim((string) $validated['card_to_card_card1_name']) !== '' ? trim((string) $validated['card_to_card_card1_name']) : null;
+            $card1Number = $this->normalizeCardNumber((string) ($validated['card_to_card_card1_number'] ?? ''));
+            $card2Name = isset($validated['card_to_card_card2_name']) && trim((string) $validated['card_to_card_card2_name']) !== '' ? trim((string) $validated['card_to_card_card2_name']) : null;
+            $card2Number = $this->normalizeCardNumber((string) ($validated['card_to_card_card2_number'] ?? ''));
+
+            Setting::query()->updateOrCreate(
+                ['key' => 'commerce.card_to_card.card1.name', 'group' => 'commerce'],
+                ['value' => $card1Name]
+            );
+            Setting::query()->updateOrCreate(
+                ['key' => 'commerce.card_to_card.card1.number', 'group' => 'commerce'],
+                ['value' => $card1Number]
+            );
+            Setting::query()->updateOrCreate(
+                ['key' => 'commerce.card_to_card.card2.name', 'group' => 'commerce'],
+                ['value' => $card2Name]
+            );
+            Setting::query()->updateOrCreate(
+                ['key' => 'commerce.card_to_card.card2.number', 'group' => 'commerce'],
+                ['value' => $card2Number]
+            );
         }
 
         Cache::forget('theme.active');
 
         return redirect()->route('admin.settings.index');
+    }
+
+    private function normalizeCardNumber(string $raw): ?string
+    {
+        $normalized = trim($raw);
+        if ($normalized === '') {
+            return null;
+        }
+
+        $normalized = strtr($normalized, [
+            '۰' => '0',
+            '۱' => '1',
+            '۲' => '2',
+            '۳' => '3',
+            '۴' => '4',
+            '۵' => '5',
+            '۶' => '6',
+            '۷' => '7',
+            '۸' => '8',
+            '۹' => '9',
+            '٠' => '0',
+            '١' => '1',
+            '٢' => '2',
+            '٣' => '3',
+            '٤' => '4',
+            '٥' => '5',
+            '٦' => '6',
+            '٧' => '7',
+            '٨' => '8',
+            '٩' => '9',
+        ]);
+
+        $digits = preg_replace('/\\D+/', '', $normalized);
+        $digits = is_string($digits) ? $digits : '';
+
+        return $digits !== '' ? $digits : null;
     }
 
     private function settingBool(string $key, bool $default): bool

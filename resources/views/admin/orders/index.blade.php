@@ -37,6 +37,7 @@
                                 @php($gateway = ($order->payments ?? collect())->first()?->gateway)
                                 @php($methodLabel = $gateway === 'card_to_card' ? 'کارت‌به‌کارت' : 'درگاه')
                                 @php($statusLabel = match ((string) ($order->status ?? '')) {
+                                    'pending' => 'در انتظار پرداخت',
                                     'pending_review' => 'در انتظار تایید',
                                     'rejected' => 'رد شده',
                                     'paid' => 'تایید شده',

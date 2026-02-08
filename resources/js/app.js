@@ -367,6 +367,313 @@ const attachPasswordToggles = () => {
     });
 };
 
+const formatBytes = (bytes) => {
+    if (!Number.isFinite(bytes) || bytes <= 0) {
+        return '0 B';
+    }
+
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let value = bytes;
+    let unitIndex = 0;
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024;
+        unitIndex += 1;
+    }
+
+    const digits = unitIndex === 0 ? 0 : value < 10 ? 1 : 0;
+    return `${value.toFixed(digits)} ${units[unitIndex]}`;
+};
+
+const setUploadProgress = (input, percent, state = 'uploading') => {
+    const ui = input ? input.__uploadUi : null;
+    if (!ui) {
+        return;
+    }
+
+    const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+    ui.progress.hidden = state === 'idle';
+    ui.progressText.textContent = `${clamped}%`;
+    ui.progressFill.style.width = `${clamped}%`;
+    ui.progress.dataset.state = state;
+};
+
+const clearUploadUi = (input) => {
+    const ui = input ? input.__uploadUi : null;
+    if (!ui) {
+        return;
+    }
+
+    ui.preview.hidden = true;
+    ui.previewImage.hidden = true;
+    ui.previewVideo.hidden = true;
+    ui.previewVideo.pause();
+    ui.previewVideo.removeAttribute('src');
+    ui.previewVideo.load();
+    ui.previewFile.textContent = '';
+    ui.previewFile.hidden = true;
+
+    if (ui.objectUrl) {
+        URL.revokeObjectURL(ui.objectUrl);
+        ui.objectUrl = '';
+    }
+
+    setUploadProgress(input, 0, 'idle');
+};
+
+const updateUploadPreview = (input) => {
+    const ui = input ? input.__uploadUi : null;
+    if (!ui) {
+        return;
+    }
+
+    const file = input.files && input.files[0] ? input.files[0] : null;
+    if (!file) {
+        clearUploadUi(input);
+        return;
+    }
+
+    if (ui.objectUrl) {
+        URL.revokeObjectURL(ui.objectUrl);
+        ui.objectUrl = '';
+    }
+
+    ui.preview.hidden = false;
+    ui.previewImage.hidden = true;
+    ui.previewVideo.hidden = true;
+    ui.previewFile.hidden = true;
+
+    const mime = (file.type || '').toLowerCase();
+    const objectUrl = URL.createObjectURL(file);
+    ui.objectUrl = objectUrl;
+
+    if (mime.startsWith('image/')) {
+        ui.previewImage.src = objectUrl;
+        ui.previewImage.hidden = false;
+        return;
+    }
+
+    if (mime.startsWith('video/')) {
+        ui.previewVideo.src = objectUrl;
+        ui.previewVideo.hidden = false;
+        return;
+    }
+
+    ui.previewFile.textContent = `${file.name} (${formatBytes(file.size)})`;
+    ui.previewFile.hidden = false;
+};
+
+const enhanceFileInput = (input) => {
+    if (!(input instanceof HTMLInputElement) || input.type !== 'file' || input.__uploadEnhanced) {
+        return;
+    }
+
+    input.__uploadEnhanced = true;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'upload';
+
+    const drop = document.createElement('button');
+    drop.type = 'button';
+    drop.className = 'upload__drop';
+    drop.innerHTML =
+        '<div class="upload__title">فایل را اینجا رها کنید</div><div class="upload__meta">یا برای انتخاب کلیک کنید</div>';
+
+    const preview = document.createElement('div');
+    preview.className = 'upload__preview';
+    preview.hidden = true;
+
+    const previewMedia = document.createElement('div');
+    previewMedia.className = 'upload__preview-media';
+
+    const previewImage = document.createElement('img');
+    previewImage.className = 'upload__preview-image';
+    previewImage.alt = '';
+    previewImage.hidden = true;
+
+    const previewVideo = document.createElement('video');
+    previewVideo.className = 'upload__preview-video';
+    previewVideo.controls = true;
+    previewVideo.preload = 'metadata';
+    previewVideo.hidden = true;
+
+    const previewFile = document.createElement('div');
+    previewFile.className = 'upload__preview-file';
+    previewFile.hidden = true;
+
+    previewMedia.appendChild(previewImage);
+    previewMedia.appendChild(previewVideo);
+    previewMedia.appendChild(previewFile);
+
+    const previewActions = document.createElement('div');
+    previewActions.className = 'upload__preview-actions';
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'btn btn--sm btn--ghost upload__remove';
+    removeButton.textContent = 'حذف فایل';
+
+    previewActions.appendChild(removeButton);
+
+    preview.appendChild(previewMedia);
+    preview.appendChild(previewActions);
+
+    const progress = document.createElement('div');
+    progress.className = 'upload__progress';
+    progress.hidden = true;
+    progress.dataset.state = 'idle';
+
+    const progressBar = document.createElement('div');
+    progressBar.className = 'upload__progress-bar';
+
+    const progressFill = document.createElement('div');
+    progressFill.className = 'upload__progress-fill';
+    progressBar.appendChild(progressFill);
+
+    const progressText = document.createElement('div');
+    progressText.className = 'upload__progress-text';
+    progressText.textContent = '0%';
+
+    progress.appendChild(progressBar);
+    progress.appendChild(progressText);
+
+    const parent = input.parentNode;
+    if (!parent) {
+        return;
+    }
+
+    parent.insertBefore(wrapper, input);
+    wrapper.appendChild(drop);
+    wrapper.appendChild(preview);
+    wrapper.appendChild(progress);
+    wrapper.appendChild(input);
+
+    input.classList.add('upload__input');
+
+    input.__uploadUi = {
+        wrapper,
+        drop,
+        preview,
+        previewImage,
+        previewVideo,
+        previewFile,
+        progress,
+        progressFill,
+        progressText,
+        objectUrl: '',
+    };
+
+    drop.addEventListener('click', () => input.click());
+
+    const setDragging = (value) => wrapper.classList.toggle('is-dragover', value);
+
+    drop.addEventListener('dragenter', (event) => {
+        event.preventDefault();
+        setDragging(true);
+    });
+
+    drop.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        setDragging(true);
+    });
+
+    drop.addEventListener('dragleave', () => setDragging(false));
+    drop.addEventListener('drop', (event) => {
+        event.preventDefault();
+        setDragging(false);
+
+        const files = event.dataTransfer ? event.dataTransfer.files : null;
+        if (!files || files.length === 0) {
+            return;
+        }
+
+        const dt = new DataTransfer();
+        Array.from(files).forEach((file) => dt.items.add(file));
+        input.files = dt.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    input.addEventListener('change', () => updateUploadPreview(input));
+
+    removeButton.addEventListener('click', () => {
+        input.value = '';
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+};
+
+const enhanceUploadForm = (form) => {
+    if (!(form instanceof HTMLFormElement) || form.__uploadEnhanced) {
+        return;
+    }
+
+    const inputs = Array.from(form.querySelectorAll('input[type="file"]'));
+    if (inputs.length === 0) {
+        return;
+    }
+
+    form.__uploadEnhanced = true;
+
+    form.addEventListener('submit', (event) => {
+        const fileInputs = inputs.filter((input) => input.files && input.files.length > 0);
+        if (fileInputs.length === 0 || form.dataset.uploading === '1') {
+            return;
+        }
+
+        event.preventDefault();
+
+        form.dataset.uploading = '1';
+
+        const controls = Array.from(form.querySelectorAll('button, input, select, textarea'));
+        controls.forEach((node) => {
+            if (node instanceof HTMLButtonElement || node instanceof HTMLInputElement || node instanceof HTMLSelectElement || node instanceof HTMLTextAreaElement) {
+                node.disabled = true;
+            }
+        });
+
+        fileInputs.forEach((input) => setUploadProgress(input, 0, 'uploading'));
+
+        const action = (form.getAttribute('action') || window.location.href).toString();
+        const method = (form.getAttribute('method') || 'post').toUpperCase();
+        const formData = new FormData(form);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(method, action, true);
+
+        xhr.upload.addEventListener('progress', (e) => {
+            if (!e.lengthComputable) {
+                return;
+            }
+            const percent = (e.loaded / e.total) * 100;
+            fileInputs.forEach((input) => setUploadProgress(input, percent, 'uploading'));
+        });
+
+        xhr.addEventListener('load', () => {
+            fileInputs.forEach((input) => setUploadProgress(input, 100, 'done'));
+            window.location.assign(xhr.responseURL || action);
+        });
+
+        const handleError = () => {
+            fileInputs.forEach((input) => setUploadProgress(input, 0, 'error'));
+            form.dataset.uploading = '0';
+            controls.forEach((node) => {
+                if (node instanceof HTMLButtonElement || node instanceof HTMLInputElement || node instanceof HTMLSelectElement || node instanceof HTMLTextAreaElement) {
+                    node.disabled = false;
+                }
+            });
+        };
+
+        xhr.addEventListener('error', handleError);
+        xhr.addEventListener('abort', handleError);
+
+        xhr.send(formData);
+    });
+};
+
+const initEnhancedFileInputs = () => {
+    document.querySelectorAll('input[type="file"]').forEach((input) => enhanceFileInput(input));
+    document.querySelectorAll('form').forEach((form) => enhanceUploadForm(form));
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     const flashes = parseFlashes();
 
@@ -385,4 +692,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     attachLoginModeToggles();
     attachPasswordToggles();
+    initEnhancedFileInputs();
 });

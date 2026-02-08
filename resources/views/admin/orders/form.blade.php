@@ -33,11 +33,11 @@
                             <span class="field__label">وضعیت</span>
                             @php($statusValue = old('status', (string) ($order->status ?? 'pending')))
                             <select name="status" required>
-                                <option value="pending" @selected($statusValue === 'pending')>pending</option>
-                                <option value="pending_review" @selected($statusValue === 'pending_review')>pending_review</option>
-                                <option value="paid" @selected($statusValue === 'paid')>paid</option>
-                                <option value="rejected" @selected($statusValue === 'rejected')>rejected</option>
-                                <option value="cancelled" @selected($statusValue === 'cancelled')>cancelled</option>
+                                <option value="pending" @selected($statusValue === 'pending')>در انتظار پرداخت</option>
+                                <option value="pending_review" @selected($statusValue === 'pending_review')>در انتظار تایید</option>
+                                <option value="paid" @selected($statusValue === 'paid')>تایید شده</option>
+                                <option value="rejected" @selected($statusValue === 'rejected')>رد شده</option>
+                                <option value="cancelled" @selected($statusValue === 'cancelled')>لغو شده</option>
                             </select>
                             @error('status')
                                 <div class="field__error">{{ $message }}</div>

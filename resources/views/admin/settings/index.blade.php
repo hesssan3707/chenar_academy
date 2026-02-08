@@ -117,6 +117,46 @@
                         @enderror
                     </label>
 
+                    <div class="divider"></div>
+
+                    <div class="field__label">کارت‌های پرداخت کارت‌به‌کارت</div>
+
+                    <div class="grid admin-grid-2 admin-grid-2--flush">
+                        <label class="field">
+                            <span class="field__label">نام صاحب کارت ۱</span>
+                            <input name="card_to_card_card1_name" value="{{ old('card_to_card_card1_name', (string) ($cardToCardCard1Name ?? '')) }}" placeholder="مثلاً: چنار آکادمی">
+                            @error('card_to_card_card1_name')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+
+                        <label class="field">
+                            <span class="field__label">شماره کارت ۱</span>
+                            <input name="card_to_card_card1_number" value="{{ old('card_to_card_card1_number', (string) ($cardToCardCard1Number ?? '')) }}" placeholder="مثلاً: 6037-9918-XXXX-XXXX">
+                            <div class="field__hint">فقط اعداد ذخیره می‌شود؛ فاصله و خط تیره مشکلی ندارد.</div>
+                            @error('card_to_card_card1_number')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+
+                        <label class="field">
+                            <span class="field__label">نام صاحب کارت ۲</span>
+                            <input name="card_to_card_card2_name" value="{{ old('card_to_card_card2_name', (string) ($cardToCardCard2Name ?? '')) }}" placeholder="اختیاری">
+                            @error('card_to_card_card2_name')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+
+                        <label class="field">
+                            <span class="field__label">شماره کارت ۲</span>
+                            <input name="card_to_card_card2_number" value="{{ old('card_to_card_card2_number', (string) ($cardToCardCard2Number ?? '')) }}" placeholder="اختیاری">
+                            <div class="field__hint">فقط اعداد ذخیره می‌شود؛ فاصله و خط تیره مشکلی ندارد.</div>
+                            @error('card_to_card_card2_number')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+                    </div>
+
                     <div class="form-actions">
                         <button class="btn btn--primary" type="submit">ذخیره</button>
                     </div>
