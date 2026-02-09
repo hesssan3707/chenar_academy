@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Product;
 use App\Models\ProductAccess;
 use App\Models\ProductReview;
+use App\Models\Role;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -192,6 +193,165 @@ class ProductReviewsAndRepurchaseTest extends TestCase
             ->assertOk()
             ->assertSee('نظرات کاربران')
             ->assertSee('اولین نفری باشید که این ویدیو را بررسی می‌کند.');
+    }
+
+    public function test_review_requires_admin_approval_when_setting_is_enabled(): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.reviews.require_approval', 'group' => 'commerce'],
+            ['value' => true]
+        );
+
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه با تایید ادمین',
+            'slug' => 'note-review-approval-required',
+            'status' => 'published',
+            'base_price' => 10000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        ProductAccess::query()->create([
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+            'order_item_id' => null,
+            'granted_at' => now(),
+            'expires_at' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('products.reviews.store', $product->slug), [
+                'rating' => 4,
+                'body' => 'نیاز به تایید دارد',
+                'redirect_to' => route('products.show', $product->slug),
+            ])
+            ->assertRedirect(route('products.show', $product->slug));
+
+        $this->assertDatabaseHas('product_reviews', [
+            'product_id' => $product->id,
+            'user_id' => $user->id,
+            'rating' => 4,
+            'body' => 'نیاز به تایید دارد',
+            'status' => 'pending',
+        ]);
+
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertDontSee('نیاز به تایید دارد');
+
+        $this->actingAs($user)
+            ->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertSee('نیاز به تایید دارد')
+            ->assertSee('در انتظار بررسی');
+    }
+
+    public function test_admin_can_approve_or_reject_pending_reviews(): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.reviews.require_approval', 'group' => 'commerce'],
+            ['value' => true]
+        );
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو با نظر تاییدی',
+            'slug' => 'video-review-approval-required',
+            'status' => 'published',
+            'base_price' => 20000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        $review = ProductReview::query()->create([
+            'product_id' => $product->id,
+            'user_id' => $user->id,
+            'rating' => 5,
+            'body' => 'نظر در انتظار تایید',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.reviews.index'))
+            ->assertOk()
+            ->assertSee('نظر در انتظار تایید')
+            ->assertSee('در انتظار');
+
+        $this->actingAs($admin)
+            ->post(route('admin.reviews.approve', $review->id))
+            ->assertRedirect(route('admin.reviews.index'));
+
+        $this->assertDatabaseHas('product_reviews', [
+            'id' => $review->id,
+            'status' => 'approved',
+        ]);
+
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertSee('نظر در انتظار تایید');
+
+        $this->actingAs($admin)
+            ->post(route('admin.reviews.reject', $review->id))
+            ->assertRedirect(route('admin.reviews.index'));
+
+        $this->assertDatabaseHas('product_reviews', [
+            'id' => $review->id,
+            'status' => 'rejected',
+        ]);
+
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertDontSee('نظر در انتظار تایید');
+    }
+
+    public function test_admin_reviews_list_shows_new_label_when_approval_is_not_required(): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.reviews.require_approval', 'group' => 'commerce'],
+            ['value' => false]
+        );
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه با نظر فوری',
+            'slug' => 'note-review-no-approval',
+            'status' => 'published',
+            'base_price' => 10000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        ProductReview::query()->create([
+            'product_id' => $product->id,
+            'user_id' => $user->id,
+            'rating' => 4,
+            'body' => 'نظر جدید',
+            'status' => 'approved',
+        ]);
+
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertSee('نظر جدید');
+
+        $this->actingAs($admin)
+            ->get(route('admin.reviews.index'))
+            ->assertOk()
+            ->assertSee('نظر جدید')
+            ->assertSee('جدید');
     }
 
     public function test_user_can_submit_review_from_library_and_form_is_hidden_after_submission(): void

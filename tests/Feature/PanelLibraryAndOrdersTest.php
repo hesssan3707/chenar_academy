@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Course;
+use App\Models\CourseLesson;
+use App\Models\CourseSection;
 use App\Models\Media;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -17,6 +20,129 @@ use Tests\TestCase;
 class PanelLibraryAndOrdersTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_course_page_shows_chapters_and_locked_state_before_purchase(): void
+    {
+        $courseProduct = Product::query()->create([
+            'type' => 'course',
+            'title' => 'دوره تست',
+            'slug' => 'course-test',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'status' => 'published',
+            'base_price' => 100000,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        Course::query()->create([
+            'product_id' => $courseProduct->id,
+            'body' => null,
+            'level' => null,
+            'total_duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        $section = CourseSection::query()->create([
+            'course_product_id' => $courseProduct->id,
+            'title' => 'فصل اول',
+            'sort_order' => 0,
+        ]);
+
+        CourseLesson::query()->create([
+            'course_section_id' => $section->id,
+            'title' => 'درس رایگان',
+            'sort_order' => 0,
+            'lesson_type' => 'video',
+            'media_id' => null,
+            'content' => null,
+            'is_preview' => true,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        CourseLesson::query()->create([
+            'course_section_id' => $section->id,
+            'title' => 'درس پولی',
+            'sort_order' => 1,
+            'lesson_type' => 'video',
+            'media_id' => null,
+            'content' => null,
+            'is_preview' => false,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        $this->get(route('courses.show', $courseProduct->slug))
+            ->assertOk()
+            ->assertSee('سرفصل‌های دوره')
+            ->assertSee('فصل اول')
+            ->assertSee('درس رایگان')
+            ->assertSee('پیش‌نمایش')
+            ->assertSee('درس پولی')
+            ->assertSee('قفل');
+    }
+
+    public function test_purchased_course_page_links_to_library_instead_of_add_to_cart(): void
+    {
+        $user = User::factory()->create();
+
+        $courseProduct = Product::query()->create([
+            'type' => 'course',
+            'title' => 'دوره خریداری‌شده',
+            'slug' => 'course-purchased',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'status' => 'published',
+            'base_price' => 100000,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        Course::query()->create([
+            'product_id' => $courseProduct->id,
+            'body' => null,
+            'level' => null,
+            'total_duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        ProductAccess::query()->create([
+            'user_id' => $user->id,
+            'product_id' => $courseProduct->id,
+            'order_item_id' => null,
+            'granted_at' => now(),
+            'expires_at' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('courses.show', $courseProduct->slug))
+            ->assertOk()
+            ->assertSee('مشاهده در کتابخانه')
+            ->assertDontSee('افزودن به سبد');
+    }
+
+    public function test_panel_navigation_and_dashboard_link_to_orders(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('panel.dashboard'))
+            ->assertOk()
+            ->assertSee(route('panel.orders.index'), false);
+
+        $this->actingAs($user)
+            ->get(route('panel.orders.index'))
+            ->assertOk()
+            ->assertSee('سفارش');
+    }
 
     public function test_user_without_access_cannot_view_library_product(): void
     {
@@ -146,6 +272,65 @@ class PanelLibraryAndOrdersTest extends TestCase
         $this->actingAs($otherUser)
             ->get(route('panel.library.video.stream', ['product' => $product->slug]))
             ->assertForbidden();
+    }
+
+    public function test_user_with_access_can_download_booklet_pdf_from_library(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('protected/booklets/booklet.pdf', 'dummy-pdf-bytes');
+
+        $user = User::factory()->create();
+
+        $media = Media::query()->create([
+            'uploaded_by_user_id' => null,
+            'disk' => 'local',
+            'path' => 'protected/booklets/booklet.pdf',
+            'original_name' => 'booklet.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 15,
+            'sha1' => null,
+            'width' => null,
+            'height' => null,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        $product = Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه PDF',
+            'slug' => 'note-pdf',
+            'status' => 'published',
+            'base_price' => 20000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        $part = ProductPart::query()->create([
+            'product_id' => $product->id,
+            'part_type' => 'file',
+            'title' => 'فایل جزوه',
+            'sort_order' => 0,
+            'media_id' => $media->id,
+            'content' => null,
+            'meta' => [],
+        ]);
+
+        ProductAccess::query()->create([
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+            'order_item_id' => null,
+            'granted_at' => now(),
+            'expires_at' => null,
+            'meta' => [],
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('panel.library.parts.stream', ['product' => $product->slug, 'part' => $part->id]))
+            ->assertOk();
+
+        $contentDisposition = (string) $response->headers->get('Content-Disposition');
+        $this->assertStringContainsString('attachment', $contentDisposition);
+        $this->assertStringContainsString('booklet.pdf', $contentDisposition);
     }
 
     public function test_user_can_only_view_own_orders_in_panel(): void

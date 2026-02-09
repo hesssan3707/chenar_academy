@@ -38,7 +38,7 @@ class RoleController extends Controller
         return redirect()->route('admin.roles.edit', $role->id);
     }
 
-    public function show(int $role): View
+    public function show(int $role): RedirectResponse
     {
         return redirect()->route('admin.roles.edit', $role);
     }

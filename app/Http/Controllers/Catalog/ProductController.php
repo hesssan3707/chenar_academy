@@ -21,50 +21,38 @@ class ProductController extends Controller
     public function index(Request $request): View
     {
         $type = $request->query('type');
-        $institutionSlug = $request->query('institution');
         $categorySlug = $request->query('category');
 
         $query = Product::query()
             ->where('status', 'published')
-            ->whereIn('type', ['note', 'video'])
+            ->whereIn('type', ['note', 'video', 'course'])
             ->orderByDesc('published_at');
 
         if ($type && in_array($type, ['note', 'video'], true)) {
-            $query->where('type', $type);
+            if ($type === 'note') {
+                $query->where('type', 'note');
+            } elseif ($type === 'video') {
+                $query->whereIn('type', ['video', 'course']);
+            }
         }
 
-        $institutions = collect();
+        $categories = collect();
         $activeInstitution = null;
         $activeCategory = null;
 
         if ($type && in_array($type, ['note', 'video'], true)) {
-            $institutions = Category::query()
-                ->where('type', 'institution')
+            $typesForCategory = $type === 'note' ? ['note'] : ['video', 'course'];
+
+            $categories = Category::query()
+                ->where('type', $type)
                 ->where('is_active', true)
+                ->whereHas('products', function ($q) use ($typesForCategory) {
+                    $q->where('products.status', 'published')
+                        ->whereIn('products.type', $typesForCategory);
+                })
                 ->orderBy('sort_order')
                 ->orderBy('id')
-                ->with(['children' => function ($q) use ($type) {
-                    $q->where('type', $type)
-                        ->where('is_active', true)
-                        ->orderBy('sort_order')
-                        ->orderBy('id');
-                }])
                 ->get();
-
-            if ($institutionSlug) {
-                $activeInstitution = Category::query()
-                    ->where('type', 'institution')
-                    ->where('slug', $institutionSlug)
-                    ->where('is_active', true)
-                    ->first();
-
-                if ($activeInstitution) {
-                    $query->whereHas('categories', function ($q) use ($activeInstitution, $type) {
-                        $q->where('categories.type', $type)
-                            ->where('categories.parent_id', $activeInstitution->id);
-                    });
-                }
-            }
 
             if ($categorySlug) {
                 $activeCategory = Category::query()
@@ -81,9 +69,19 @@ class ProductController extends Controller
             }
         }
 
+        if ($type && in_array($type, ['note', 'video'], true) && ! $activeCategory) {
+            return view('catalog.products.index', [
+                'products' => collect(),
+                'activeType' => $type,
+                'categories' => $categories,
+                'activeInstitution' => $activeInstitution,
+                'activeCategory' => $activeCategory,
+                'purchasedProductIds' => [],
+            ]);
+        }
+
         $cacheKey = 'content_cache.products.index.v1.'.sha1(json_encode([
             'type' => $type,
-            'institution' => $institutionSlug,
             'category' => $categorySlug,
         ], JSON_THROW_ON_ERROR));
 
@@ -122,7 +120,7 @@ class ProductController extends Controller
         return view('catalog.products.index', [
             'products' => $products,
             'activeType' => $type,
-            'institutions' => $institutions,
+            'categories' => $categories,
             'activeInstitution' => $activeInstitution,
             'activeCategory' => $activeCategory,
             'purchasedProductIds' => $purchasedProductIds,
@@ -146,14 +144,21 @@ class ProductController extends Controller
 
         $reviewsArePublic = $this->settingBool('commerce.reviews.public', true);
         $ratingsArePublic = $this->settingBool('commerce.ratings.public', true);
+        $reviewsRequireApproval = $this->settingBool('commerce.reviews.require_approval', false);
 
         $ratingCount = 0;
         $avgRating = null;
 
         if ($ratingsArePublic) {
-            $ratingCount = ProductReview::query()->where('product_id', $product->id)->count();
+            $ratingCount = ProductReview::query()
+                ->where('product_id', $product->id)
+                ->where('status', 'approved')
+                ->count();
             $avgRating = $ratingCount > 0
-                ? (float) ProductReview::query()->where('product_id', $product->id)->avg('rating')
+                ? (float) ProductReview::query()
+                    ->where('product_id', $product->id)
+                    ->where('status', 'approved')
+                    ->avg('rating')
                 : null;
         }
 
@@ -161,6 +166,7 @@ class ProductController extends Controller
         if ($reviewsArePublic) {
             $reviews = ProductReview::query()
                 ->where('product_id', $product->id)
+                ->where('status', 'approved')
                 ->with('user')
                 ->orderByDesc('id')
                 ->take(20)
@@ -184,6 +190,7 @@ class ProductController extends Controller
             'ratingCount' => $ratingCount,
             'reviews' => $reviews,
             'userReview' => $userReview,
+            'reviewsRequireApproval' => $reviewsRequireApproval,
         ]);
     }
 
@@ -221,11 +228,16 @@ class ProductController extends Controller
             'body' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $reviewsRequireApproval = $this->settingBool('commerce.reviews.require_approval', false);
+        $status = $reviewsRequireApproval ? 'pending' : 'approved';
+
         ProductReview::query()->updateOrCreate(
             ['product_id' => $product->id, 'user_id' => $user->id],
             [
                 'rating' => (int) $validated['rating'],
                 'body' => isset($validated['body']) && $validated['body'] !== '' ? $validated['body'] : null,
+                'status' => $status,
+                'moderated_at' => null,
             ]
         );
 

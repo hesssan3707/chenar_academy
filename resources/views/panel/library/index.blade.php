@@ -32,13 +32,29 @@
                                     <a class="card card--media" href="{{ route('panel.library.show', $product->slug) }}">
                                         @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
                                         <img class="card__cover" src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy">
-                                        <div class="card__badge">{{ $product->type === 'course' ? 'دوره' : 'ویدیو' }}</div>
+                                        @php($discountLabel = $product->discountLabel())
+                                        <div class="card__badge">{{ $product->type === 'course' ? 'دوره' : 'ویدیو' }}@if ($discountLabel) • {{ $discountLabel }} @endif</div>
                                         @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
                                         <div class="card__hover">
                                             <div class="card__title">{{ $product->title }}</div>
                                             <div class="card__price">
-                                                <span class="price">{{ number_format($product->sale_price ?? $product->base_price) }}</span>
-                                                <span class="price__unit">{{ $currencyUnit }}</span>
+                                                @php($original = $product->originalPrice())
+                                                @php($final = $product->finalPrice())
+                                                @if ($product->hasDiscount())
+                                                    <div class="card__price--stack">
+                                                        <div class="card__price">
+                                                            <span class="price price--old">{{ number_format($original) }}</span>
+                                                            <span class="price__unit price__unit--old">{{ $currencyUnit }}</span>
+                                                        </div>
+                                                        <div class="card__price">
+                                                            <span class="price">{{ number_format($final) }}</span>
+                                                            <span class="price__unit">{{ $currencyUnit }}</span>
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="price">{{ number_format($final) }}</span>
+                                                    <span class="price__unit">{{ $currencyUnit }}</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </a>
@@ -58,13 +74,29 @@
                                     <a class="card card--media" href="{{ route('panel.library.show', $product->slug) }}">
                                         @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
                                         <img class="card__cover" src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy">
-                                        <div class="card__badge">جزوه</div>
+                                        @php($discountLabel = $product->discountLabel())
+                                        <div class="card__badge">جزوه@if ($discountLabel) • {{ $discountLabel }} @endif</div>
                                         @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
                                         <div class="card__hover">
                                             <div class="card__title">{{ $product->title }}</div>
                                             <div class="card__price">
-                                                <span class="price">{{ number_format($product->sale_price ?? $product->base_price) }}</span>
-                                                <span class="price__unit">{{ $currencyUnit }}</span>
+                                                @php($original = $product->originalPrice())
+                                                @php($final = $product->finalPrice())
+                                                @if ($product->hasDiscount())
+                                                    <div class="card__price--stack">
+                                                        <div class="card__price">
+                                                            <span class="price price--old">{{ number_format($original) }}</span>
+                                                            <span class="price__unit price__unit--old">{{ $currencyUnit }}</span>
+                                                        </div>
+                                                        <div class="card__price">
+                                                            <span class="price">{{ number_format($final) }}</span>
+                                                            <span class="price__unit">{{ $currencyUnit }}</span>
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="price">{{ number_format($final) }}</span>
+                                                    <span class="price__unit">{{ $currencyUnit }}</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </a>

@@ -104,6 +104,18 @@
                         @enderror
                     </label>
 
+                    <label class="field">
+                        <span class="field__label">تایید ادمین برای نمایش نظر</span>
+                        @php($approvalValue = (string) old('reviews_require_approval', ($reviewsRequireApproval ?? false) ? '1' : '0'))
+                        <select name="reviews_require_approval">
+                            <option value="1" @selected($approvalValue === '1')>نیاز به تایید</option>
+                            <option value="0" @selected($approvalValue === '0')>بدون تایید</option>
+                        </select>
+                        @error('reviews_require_approval')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
                     <div class="divider"></div>
 
                     <div class="field__label">انقضای دسترسی پس از خرید</div>

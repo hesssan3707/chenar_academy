@@ -46,7 +46,7 @@ class CouponController extends Controller
         return redirect()->route('admin.coupons.edit', $coupon->id);
     }
 
-    public function show(int $coupon): View
+    public function show(int $coupon): RedirectResponse
     {
         return redirect()->route('admin.coupons.edit', $coupon);
     }

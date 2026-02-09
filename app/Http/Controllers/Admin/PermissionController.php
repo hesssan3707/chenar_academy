@@ -38,7 +38,7 @@ class PermissionController extends Controller
         return redirect()->route('admin.permissions.edit', $permission->id);
     }
 
-    public function show(int $permission): View
+    public function show(int $permission): RedirectResponse
     {
         return redirect()->route('admin.permissions.edit', $permission);
     }

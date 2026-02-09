@@ -15,12 +15,28 @@
                         @if ($thumbUrl)
                             <img class="card__thumb" src="{{ $thumbUrl }}" alt="{{ $course->title }}" loading="lazy">
                         @endif
-                        <div class="card__badge">دوره</div>
+                        @php($discountLabel = $course->discountLabel())
+                        <div class="card__badge">دوره@if ($discountLabel) • {{ $discountLabel }} @endif</div>
                         <div class="card__title">{{ $course->title }}</div>
                         @php($currencyUnit = (($course->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($course->currency ?? 'IRR'))
                         <div class="card__price">
-                            <span class="price">{{ number_format($course->sale_price ?? $course->base_price) }}</span>
-                            <span class="price__unit">{{ $currencyUnit }}</span>
+                            @php($original = $course->originalPrice())
+                            @php($final = $course->finalPrice())
+                            @if ($course->hasDiscount())
+                                <div class="card__price--stack">
+                                    <div class="card__price">
+                                        <span class="price price--old">{{ number_format($original) }}</span>
+                                        <span class="price__unit price__unit--old">{{ $currencyUnit }}</span>
+                                    </div>
+                                    <div class="card__price">
+                                        <span class="price">{{ number_format($final) }}</span>
+                                        <span class="price__unit">{{ $currencyUnit }}</span>
+                                    </div>
+                                </div>
+                            @else
+                                <span class="price">{{ number_format($final) }}</span>
+                                <span class="price__unit">{{ $currencyUnit }}</span>
+                            @endif
                         </div>
                         <div class="card__meta">{{ $course->excerpt ?? 'برای مشاهده جزئیات کلیک کنید' }}</div>
                     </a>

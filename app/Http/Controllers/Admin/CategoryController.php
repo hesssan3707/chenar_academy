@@ -110,7 +110,7 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.edit', $category->id);
     }
 
-    public function show(int $category): View
+    public function show(int $category): RedirectResponse
     {
         return redirect()->route('admin.categories.edit', $category);
     }

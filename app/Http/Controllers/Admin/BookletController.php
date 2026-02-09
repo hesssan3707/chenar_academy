@@ -57,6 +57,8 @@ class BookletController extends Controller
             'status' => $validated['status'],
             'base_price' => $validated['base_price'],
             'sale_price' => $validated['sale_price'],
+            'discount_type' => $validated['discount_type'],
+            'discount_value' => $validated['discount_value'],
             'currency' => $this->commerceCurrency(),
             'published_at' => $validated['published_at'],
             'meta' => [],
@@ -78,7 +80,7 @@ class BookletController extends Controller
         return redirect()->route('admin.booklets.edit', $booklet->id);
     }
 
-    public function show(int $booklet): View
+    public function show(int $booklet): RedirectResponse
     {
         return redirect()->route('admin.booklets.edit', $booklet);
     }
@@ -109,6 +111,8 @@ class BookletController extends Controller
             'status' => $validated['status'],
             'base_price' => $validated['base_price'],
             'sale_price' => $validated['sale_price'],
+            'discount_type' => $validated['discount_type'],
+            'discount_value' => $validated['discount_value'],
             'currency' => $this->commerceCurrency(),
             'published_at' => $validated['published_at'],
             'thumbnail_media_id' => $validated['thumbnail_media_id'] ?? $bookletModel->thumbnail_media_id,
@@ -148,10 +152,25 @@ class BookletController extends Controller
             'excerpt' => ['nullable', 'string', 'max:500'],
             'status' => ['required', 'string', Rule::in(['draft', 'published'])],
             'base_price' => ['required', 'integer', 'min:0', 'max:2000000000'],
-            'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000'],
+            'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibited_with:discount_type,discount_value'],
+            'discount_type' => ['nullable', 'string', Rule::in(['percent', 'amount']), 'required_with:discount_value', 'prohibited_with:sale_price'],
+            'discount_value' => [
+                'nullable',
+                'integer',
+                'min:0',
+                'max:2000000000',
+                'required_with:discount_type',
+                'prohibited_with:sale_price',
+                Rule::when($request->input('discount_type') === 'percent', ['max:100']),
+            ],
             'published_at' => ['nullable', 'string', 'max:32'],
             'cover_image' => ['nullable', 'file', 'image', 'max:5120'],
-            'booklet_file' => ['nullable', 'file', 'max:102400'],
+            'booklet_file' => [
+                Rule::when(! $product || ! $product->exists, ['required'], ['nullable']),
+                'file',
+                'max:102400',
+                'mimes:pdf',
+            ],
         ];
 
         $validated = $request->validate($rules);
@@ -172,6 +191,8 @@ class BookletController extends Controller
             'status' => (string) $validated['status'],
             'base_price' => (int) $validated['base_price'],
             'sale_price' => ($validated['sale_price'] ?? null) !== null && (string) $validated['sale_price'] !== '' ? (int) $validated['sale_price'] : null,
+            'discount_type' => isset($validated['discount_type']) && $validated['discount_type'] !== '' ? (string) $validated['discount_type'] : null,
+            'discount_value' => ($validated['discount_value'] ?? null) !== null && (string) $validated['discount_value'] !== '' ? (int) $validated['discount_value'] : null,
             'published_at' => $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null),
             'thumbnail_media_id' => $thumbnailMedia?->id,
             'booklet_file_media_id' => $bookletFileMedia?->id,

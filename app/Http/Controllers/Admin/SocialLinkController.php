@@ -40,7 +40,7 @@ class SocialLinkController extends Controller
         return redirect()->route('admin.social-links.edit', $socialLink->id);
     }
 
-    public function show(int $social_link): View
+    public function show(int $social_link): RedirectResponse
     {
         return redirect()->route('admin.social-links.edit', $social_link);
     }

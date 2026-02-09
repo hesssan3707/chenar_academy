@@ -23,6 +23,8 @@ class Product extends Model
         'status',
         'base_price',
         'sale_price',
+        'discount_type',
+        'discount_value',
         'currency',
         'published_at',
         'meta',
@@ -77,5 +79,78 @@ class Product extends Model
                 $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })
             ->exists();
+    }
+
+    public function originalPrice(): int
+    {
+        return max(0, (int) ($this->base_price ?? 0));
+    }
+
+    public function finalPrice(): int
+    {
+        $basePrice = $this->originalPrice();
+
+        $discountType = (string) ($this->discount_type ?? '');
+        $discountValue = (int) ($this->discount_value ?? 0);
+
+        if ($discountType !== '' && $discountValue > 0) {
+            if ($discountType === 'percent') {
+                $percent = max(0, min(100, $discountValue));
+
+                return (int) floor($basePrice * (100 - $percent) / 100);
+            }
+
+            if ($discountType === 'amount') {
+                return max(0, $basePrice - $discountValue);
+            }
+        }
+
+        $salePrice = $this->sale_price;
+        if ($salePrice !== null && (string) $salePrice !== '') {
+            return max(0, (int) $salePrice);
+        }
+
+        return $basePrice;
+    }
+
+    public function discountAmount(): int
+    {
+        return max(0, $this->originalPrice() - $this->finalPrice());
+    }
+
+    public function hasDiscount(): bool
+    {
+        return $this->discountAmount() > 0;
+    }
+
+    public function discountLabel(): ?string
+    {
+        if (! $this->hasDiscount()) {
+            return null;
+        }
+
+        $discountType = (string) ($this->discount_type ?? '');
+        $discountValue = (int) ($this->discount_value ?? 0);
+
+        if ($discountType === 'percent' && $discountValue > 0) {
+            $percent = max(0, min(100, $discountValue));
+
+            return $percent.'% OFF';
+        }
+
+        if ($discountType === 'amount' && $discountValue > 0) {
+            return number_format($discountValue).' OFF';
+        }
+
+        $base = $this->originalPrice();
+        $final = $this->finalPrice();
+        if ($base <= 0 || $final >= $base) {
+            return null;
+        }
+
+        $percent = (int) round((($base - $final) / $base) * 100);
+        $percent = max(1, min(99, $percent));
+
+        return $percent.'% OFF';
     }
 }

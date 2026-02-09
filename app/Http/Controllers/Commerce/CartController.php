@@ -59,7 +59,7 @@ class CartController extends Controller
         $request->session()->put('cart_token', $guestToken);
         $cart = $this->getOrCreateCart($request, $guestToken);
 
-        $unitPrice = (int) ($product->sale_price ?? $product->base_price ?? 0);
+        $unitPrice = (int) $product->finalPrice();
 
         $item = CartItem::query()->where('cart_id', $cart->id)->where('product_id', $product->id)->first();
         if ($item) {

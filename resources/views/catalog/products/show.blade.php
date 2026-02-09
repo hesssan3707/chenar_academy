@@ -35,10 +35,31 @@
                         </div>
                     @endif
 
+                    @php($discountLabel = $product->discountLabel())
                     <div class="card__price">
                         @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
-                        <span class="price">{{ number_format($product->sale_price ?? $product->base_price) }}</span>
-                        <span class="price__unit">{{ $currencyUnit }}</span>
+                        @php($original = $product->originalPrice())
+                        @php($final = $product->finalPrice())
+                        @if ($product->hasDiscount())
+                            <div class="card__price--stack">
+                                <div class="card__price">
+                                    <span class="price price--old">{{ number_format($original) }}</span>
+                                    <span class="price__unit price__unit--old">{{ $currencyUnit }}</span>
+                                </div>
+                                <div class="card__price">
+                                    <span class="price">{{ number_format($final) }}</span>
+                                    <span class="price__unit">{{ $currencyUnit }}</span>
+                                </div>
+                                @if ($discountLabel)
+                                    <div>
+                                        <span class="badge badge--brand">{{ $discountLabel }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        @else
+                            <span class="price">{{ number_format($final) }}</span>
+                            <span class="price__unit">{{ $currencyUnit }}</span>
+                        @endif
                     </div>
 
                     @if ($product->excerpt)
@@ -53,6 +74,19 @@
                         @if (($isPurchased ?? false))
                             <div class="panel" style="background: rgba(12, 180, 120, 0.06); border-color: rgba(12, 180, 120, 0.25);">
                                 <div class="field__label">این محصول قبلاً خریداری شده است.</div>
+                            </div>
+                        @endif
+                    @endauth
+
+                    @auth
+                        @if (($userReview ?? null) && (string) ($userReview->status ?? '') === 'pending')
+                            <div class="panel" style="background: rgba(255, 193, 7, 0.06); border-color: rgba(255, 193, 7, 0.25);">
+                                <div class="stack stack--sm">
+                                    <div class="field__label">در انتظار بررسی</div>
+                                    @if ($userReview->body)
+                                        <div>{{ $userReview->body }}</div>
+                                    @endif
+                                </div>
                             </div>
                         @endif
                     @endauth

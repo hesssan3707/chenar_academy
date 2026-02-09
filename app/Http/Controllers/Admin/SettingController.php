@@ -23,6 +23,7 @@ class SettingController extends Controller
 
         $reviewsArePublic = true;
         $ratingsArePublic = true;
+        $reviewsRequireApproval = false;
         $accessExpirationDays = null;
         $currency = 'IRR';
         $taxPercent = 0;
@@ -43,6 +44,7 @@ class SettingController extends Controller
 
             $reviewsArePublic = $this->settingBool('commerce.reviews.public', true);
             $ratingsArePublic = $this->settingBool('commerce.ratings.public', true);
+            $reviewsRequireApproval = $this->settingBool('commerce.reviews.require_approval', false);
             $accessExpirationDays = $this->settingInt('commerce.access_expiration_days');
             $currency = $this->commerceCurrency();
             $taxPercent = $this->settingIntAllowZero('commerce.tax_percent', 0);
@@ -59,6 +61,7 @@ class SettingController extends Controller
             'about' => $about,
             'reviewsArePublic' => $reviewsArePublic,
             'ratingsArePublic' => $ratingsArePublic,
+            'reviewsRequireApproval' => $reviewsRequireApproval,
             'accessExpirationDays' => $accessExpirationDays,
             'currency' => $currency,
             'taxPercent' => $taxPercent,
@@ -80,6 +83,7 @@ class SettingController extends Controller
             'about_body' => ['nullable', 'string', 'max:10000'],
             'reviews_public' => ['nullable', 'boolean'],
             'ratings_public' => ['nullable', 'boolean'],
+            'reviews_require_approval' => ['nullable', 'boolean'],
             'access_expiration_days' => ['nullable', 'integer', 'min:0', 'max:36500'],
             'currency' => ['nullable', 'string', 'size:3'],
             'tax_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
@@ -116,6 +120,11 @@ class SettingController extends Controller
             Setting::query()->updateOrCreate(
                 ['key' => 'commerce.ratings.public', 'group' => 'commerce'],
                 ['value' => $request->boolean('ratings_public')]
+            );
+
+            Setting::query()->updateOrCreate(
+                ['key' => 'commerce.reviews.require_approval', 'group' => 'commerce'],
+                ['value' => $request->boolean('reviews_require_approval')]
             );
 
             $days = (int) ($validated['access_expiration_days'] ?? 0);

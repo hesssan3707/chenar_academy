@@ -11,7 +11,9 @@ use App\Models\Role;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminCrudSmokeTest extends TestCase
@@ -105,6 +107,8 @@ class AdminCrudSmokeTest extends TestCase
 
     public function test_admin_can_create_and_update_booklet(): void
     {
+        Storage::fake('local');
+
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
@@ -115,6 +119,7 @@ class AdminCrudSmokeTest extends TestCase
             'base_price' => 1000,
             'sale_price' => 800,
             'published_at' => null,
+            'booklet_file' => UploadedFile::fake()->create('booklet.pdf', 200, 'application/pdf'),
         ]);
 
         $bookletId = (int) Product::query()->where('slug', 'booklet-1')->value('id');

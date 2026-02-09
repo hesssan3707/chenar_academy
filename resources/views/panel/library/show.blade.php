@@ -137,6 +137,17 @@
                 @endif
             @endif
 
+            @if (in_array($product->type, ['note', 'video'], true) && ($userReview ?? null) && (string) ($userReview->status ?? '') === 'pending')
+                <div class="panel" style="margin-top: 18px; background: rgba(255, 193, 7, 0.06); border-color: rgba(255, 193, 7, 0.25);">
+                    <div class="stack stack--sm">
+                        <div class="field__label">در انتظار بررسی</div>
+                        @if ($userReview->body)
+                            <div>{{ $userReview->body }}</div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
             @if (in_array($product->type, ['note', 'video'], true) && ! ($userReview ?? null))
                 <div class="panel" style="margin-top: 18px;">
                     <div class="stack stack--sm">

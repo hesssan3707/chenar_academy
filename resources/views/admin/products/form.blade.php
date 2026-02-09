@@ -100,6 +100,30 @@
 
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
+                            <span class="field__label">نوع تخفیف</span>
+                            @php($discountTypeValue = old('discount_type', (string) ($product->discount_type ?? '')))
+                            <select name="discount_type">
+                                <option value="" @selected($discountTypeValue === '')>—</option>
+                                <option value="percent" @selected($discountTypeValue === 'percent')>percent</option>
+                                <option value="amount" @selected($discountTypeValue === 'amount')>amount</option>
+                            </select>
+                            @error('discount_type')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+
+                        <label class="field">
+                            <span class="field__label">مقدار تخفیف</span>
+                            <input type="number" name="discount_value" min="0" max="2000000000"
+                                value="{{ old('discount_value', (string) ($product->discount_value ?? '')) }}">
+                            @error('discount_value')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+                    </div>
+
+                    <div class="grid admin-grid-2 admin-grid-2--flush">
+                        <label class="field">
                             <span class="field__label">زمان انتشار</span>
                             <input name="published_at" data-jdp value="{{ old('published_at', $product?->published_at ? jdate($product->published_at)->format('Y/m/d H:i') : '') }}">
                             @error('published_at')

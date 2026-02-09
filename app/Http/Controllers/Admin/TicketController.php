@@ -103,7 +103,7 @@ class TicketController extends Controller
         ]);
     }
 
-    public function edit(int $ticket): View
+    public function edit(int $ticket): RedirectResponse
     {
         return redirect()->route('admin.tickets.show', $ticket);
     }

@@ -6,12 +6,14 @@ use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\PermissionController as AdminPermissionController;
 use App\Http\Controllers\Admin\PostController as AdminPostController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ProductReviewController as AdminProductReviewController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\SocialLinkController as AdminSocialLinkController;
@@ -96,6 +98,8 @@ Route::prefix('admin')
             ->name('users.accesses.destroy');
 
         Route::resource('categories', AdminCategoryController::class);
+        Route::get('discounts/category', [AdminDiscountController::class, 'category'])->name('discounts.category');
+        Route::post('discounts/category', [AdminDiscountController::class, 'applyCategory'])->name('discounts.category.apply');
         Route::resource('products', AdminProductController::class);
         Route::resource('courses', AdminCourseController::class);
 
@@ -118,6 +122,11 @@ Route::prefix('admin')
         Route::resource('banners', AdminBannerController::class);
         Route::get('settings', [AdminSettingController::class, 'index'])->name('settings.index');
         Route::put('settings', [AdminSettingController::class, 'update'])->name('settings.update');
+
+        Route::post('reviews/{review}/approve', [AdminProductReviewController::class, 'approve'])->name('reviews.approve');
+        Route::post('reviews/{review}/reject', [AdminProductReviewController::class, 'reject'])->name('reviews.reject');
+        Route::resource('reviews', AdminProductReviewController::class)->only(['index', 'edit', 'update', 'destroy']);
+
         Route::resource('social-links', AdminSocialLinkController::class);
         Route::get('surveys/{survey}/results', [AdminSurveyController::class, 'results'])->name('surveys.results');
         Route::resource('surveys', AdminSurveyController::class);

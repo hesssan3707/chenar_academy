@@ -17,6 +17,12 @@
                     <div class="card__meta">جزوه‌ها و ویدیوها</div>
                     <div class="card__action">ورود</div>
                 </a>
+                <a class="card" href="{{ route('panel.orders.index') }}">
+                    <div class="card__badge">سفارش‌ها</div>
+                    <div class="card__title">پیگیری وضعیت سفارش‌ها</div>
+                    <div class="card__meta">پرداخت آنلاین و کارت‌به‌کارت</div>
+                    <div class="card__action">مشاهده</div>
+                </a>
                 <a class="card" href="{{ route('panel.tickets.index') }}">
                     <div class="card__badge">پشتیبانی</div>
                     <div class="card__title">تیکت‌های من</div>

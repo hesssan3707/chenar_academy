@@ -22,6 +22,7 @@
 
                 @php
                     $pendingOrdersCount = \App\Models\Order::query()->whereIn('status', ['pending', 'pending_review'])->count();
+                    $pendingReviewsCount = \App\Models\ProductReview::query()->where('status', 'pending')->count();
                     $unreadTicketsCount = \App\Models\Ticket::query()
                         ->where('status', 'open')
                         ->whereNotNull('last_message_at')
@@ -60,12 +61,19 @@
                     <div class="admin-menu__divider"></div>
 
                     <a class="admin-menu__link @if (request()->routeIs('admin.categories.*')) is-active @endif" href="{{ route('admin.categories.index') }}">دسته‌بندی‌ها</a>
+                    <a class="admin-menu__link @if (request()->routeIs('admin.discounts.*')) is-active @endif" href="{{ route('admin.discounts.category') }}">تخفیف گروهی</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.products.*')) is-active @endif" href="{{ route('admin.products.index') }}">محصولات</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.courses.*')) is-active @endif" href="{{ route('admin.courses.index') }}">دوره‌ها</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.orders.*')) is-active @endif" href="{{ route('admin.orders.index') }}">
                         سفارش‌ها
                         @if (($pendingOrdersCount ?? 0) > 0)
                             <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $pendingOrdersCount }}</span>
+                        @endif
+                    </a>
+                    <a class="admin-menu__link @if (request()->routeIs('admin.reviews.*')) is-active @endif" href="{{ route('admin.reviews.index') }}">
+                        نظرات
+                        @if (($pendingReviewsCount ?? 0) > 0)
+                            <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $pendingReviewsCount }}</span>
                         @endif
                     </a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.payments.*')) is-active @endif" href="{{ route('admin.payments.index') }}">پرداخت‌ها</a>

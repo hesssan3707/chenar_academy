@@ -59,12 +59,28 @@
             <div class="grid grid--3">
                 @foreach ($specialOffers as $offer)
                     <a class="card" href="{{ $offer->type === 'course' ? route('courses.show', $offer->slug) : route('products.show', $offer->slug) }}">
-                        <div class="card__badge">{{ $offer->meta['badge'] ?? 'فروش ویژه' }}</div>
+                        @php($discountLabel = $offer->discountLabel())
+                        <div class="card__badge">{{ $offer->meta['badge'] ?? 'فروش ویژه' }}@if ($discountLabel) • {{ $discountLabel }} @endif</div>
                         <div class="card__title">{{ $offer->title }}</div>
                         <div class="card__price">
                             @php($currencyUnit = (($offer->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($offer->currency ?? 'IRR'))
-                            <span class="price">{{ number_format($offer->sale_price ?? $offer->base_price) }}</span>
-                            <span class="price__unit">{{ $currencyUnit }}</span>
+                            @php($original = $offer->originalPrice())
+                            @php($final = $offer->finalPrice())
+                            @if ($offer->hasDiscount())
+                                <div class="card__price--stack">
+                                    <div class="card__price">
+                                        <span class="price price--old">{{ number_format($original) }}</span>
+                                        <span class="price__unit price__unit--old">{{ $currencyUnit }}</span>
+                                    </div>
+                                    <div class="card__price">
+                                        <span class="price">{{ number_format($final) }}</span>
+                                        <span class="price__unit">{{ $currencyUnit }}</span>
+                                    </div>
+                                </div>
+                            @else
+                                <span class="price">{{ number_format($final) }}</span>
+                                <span class="price__unit">{{ $currencyUnit }}</span>
+                            @endif
                         </div>
                         <div class="card__meta">برای مشاهده و خرید کلیک کنید</div>
                     </a>
@@ -86,13 +102,29 @@
                     <a class="card card--media" href="{{ route('products.show', $item->slug) }}">
                         @php($thumbUrl = ($item->thumbnailMedia?->disk ?? null) === 'public' && ($item->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($item->thumbnailMedia->path) : $placeholderThumb)
                         <img class="card__cover" src="{{ $thumbUrl }}" alt="{{ $item->title }}" loading="lazy">
-                        <div class="card__badge">{{ $item->type === 'video' ? 'ویدیو' : 'جزوه' }}</div>
+                        @php($discountLabel = $item->discountLabel())
+                        <div class="card__badge">{{ $item->type === 'video' ? 'ویدیو' : 'جزوه' }}@if ($discountLabel) • {{ $discountLabel }} @endif</div>
                         @php($currencyUnit = (($item->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($item->currency ?? 'IRR'))
                         <div class="card__hover">
                             <div class="card__title">{{ $item->title }}</div>
                             <div class="card__price">
-                                <span class="price">{{ number_format($item->sale_price ?? $item->base_price) }}</span>
-                                <span class="price__unit">{{ $currencyUnit }}</span>
+                                @php($original = $item->originalPrice())
+                                @php($final = $item->finalPrice())
+                                @if ($item->hasDiscount())
+                                    <div class="card__price--stack">
+                                        <div class="card__price">
+                                            <span class="price price--old">{{ number_format($original) }}</span>
+                                            <span class="price__unit price__unit--old">{{ $currencyUnit }}</span>
+                                        </div>
+                                        <div class="card__price">
+                                            <span class="price">{{ number_format($final) }}</span>
+                                            <span class="price__unit">{{ $currencyUnit }}</span>
+                                        </div>
+                                    </div>
+                                @else
+                                    <span class="price">{{ number_format($final) }}</span>
+                                    <span class="price__unit">{{ $currencyUnit }}</span>
+                                @endif
                             </div>
                         </div>
                     </a>

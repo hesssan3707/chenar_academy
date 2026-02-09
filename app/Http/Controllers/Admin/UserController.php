@@ -111,7 +111,7 @@ class UserController extends Controller
         return redirect()->route('admin.users.edit', $user->id);
     }
 
-    public function show(int $user): View
+    public function show(int $user): RedirectResponse
     {
         return redirect()->route('admin.users.edit', $user);
     }

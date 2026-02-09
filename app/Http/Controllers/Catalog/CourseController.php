@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Catalog;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CourseController extends Controller
@@ -20,14 +21,22 @@ class CourseController extends Controller
         return view('catalog.courses.index', ['courses' => $courses]);
     }
 
-    public function show(string $slug): View
+    public function show(Request $request, string $slug): View
     {
         $course = Product::query()
             ->where('slug', $slug)
             ->where('type', 'course')
-            ->with('thumbnailMedia')
+            ->with(['thumbnailMedia', 'course.sections.lessons'])
             ->firstOrFail();
 
-        return view('catalog.courses.show', ['course' => $course]);
+        $isPurchased = false;
+        if ($request->user()) {
+            $isPurchased = $course->userHasAccess($request->user());
+        }
+
+        return view('catalog.courses.show', [
+            'course' => $course,
+            'isPurchased' => $isPurchased,
+        ]);
     }
 }

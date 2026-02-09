@@ -1,139 +1,154 @@
 @extends('layouts.app')
 
-@section('title', 'محصولات')
+@php($pageTitle = $activeType === 'note' ? 'جزوه‌ها' : ($activeType === 'video' ? 'ویدیوها' : 'محصولات'))
+@section('title', $pageTitle)
 
 @section('content')
     <section class="section">
         <div class="container">
-            <h1 class="page-title">محصولات</h1>
-            <p class="page-subtitle">لیست جزوه‌ها و ویدیوها</p>
+            <h1 class="page-title">{{ $pageTitle }}</h1>
+            <p class="page-subtitle">
+                @if ($activeType === 'note')
+                    لیست جزوه‌های آموزشی
+                @elseif ($activeType === 'video')
+                    لیست ویدیوهای آموزشی
+                @else
+                    لیست جزوه‌ها، ویدیوها و دوره‌ها
+                @endif
+            </p>
 
             <div class="stack">
-                <div class="cluster">
-                    <a class="btn {{ $activeType ? 'btn--ghost' : 'btn--primary' }}" href="{{ route('products.index') }}">همه</a>
-                    <a class="btn {{ $activeType === 'note' ? 'btn--primary' : 'btn--ghost' }}" href="{{ route('products.index', ['type' => 'note']) }}">جزوه‌ها</a>
-                    <a class="btn {{ $activeType === 'video' ? 'btn--primary' : 'btn--ghost' }}" href="{{ route('products.index', ['type' => 'video']) }}">ویدیوها</a>
-                </div>
-
-                @if ($activeType && in_array($activeType, ['note', 'video'], true) && ($institutions ?? collect())->isNotEmpty())
-                    <div class="panel">
-                        <div class="stack stack--sm">
-                            <div class="cluster">
-                                <div class="field__label">دسته‌بندی‌ها</div>
-                                <a class="btn btn--sm {{ ! $activeInstitution && ! $activeCategory ? 'btn--primary' : 'btn--ghost' }}" href="{{ route('products.index', ['type' => $activeType]) }}">همه</a>
-                                @if ($activeInstitution)
-                                    <a class="btn btn--sm btn--ghost" href="{{ route('products.index', ['type' => $activeType]) }}">پاک کردن فیلتر</a>
-                                @endif
-                            </div>
-
-                            @foreach ($institutions as $institution)
-                                @php($childCategories = $institution->children ?? collect())
-                                @continue($childCategories->isEmpty())
-
-                                <div class="stack stack--sm">
-                                    <div class="cluster" style="justify-content: space-between;">
-                                        <div class="cluster">
-                                            @if ($institution->icon_key)
-                                                <span aria-hidden="true" style="display:inline-flex;align-items:center;color:rgba(232,238,252,0.8);">
-                                                    @switch($institution->icon_key)
-                                                        @case('university')
-                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                <path d="M3 10l9-5 9 5" />
-                                                                <path d="M5 10v9" />
-                                                                <path d="M19 10v9" />
-                                                                <path d="M9 22V14h6v8" />
-                                                                <path d="M3 19h18" />
-                                                            </svg>
-                                                            @break
-                                                    @endswitch
-                                                </span>
-                                            @endif
-                                            <div class="field__label">{{ $institution->title }}</div>
-                                        </div>
-
-                                        <a class="btn btn--sm {{ ($activeInstitution && $activeInstitution->id === $institution->id && ! $activeCategory) ? 'btn--primary' : 'btn--ghost' }}"
-                                            href="{{ route('products.index', ['type' => $activeType, 'institution' => $institution->slug]) }}">نمایش</a>
-                                    </div>
-
-                                    <div class="cluster">
-                                        @foreach ($childCategories as $category)
-                                            <a class="btn btn--sm {{ ($activeCategory && $activeCategory->id === $category->id) ? 'btn--primary' : 'btn--ghost' }}"
-                                                href="{{ route('products.index', ['type' => $activeType, 'institution' => $institution->slug, 'category' => $category->slug]) }}"
-                                                style="display:inline-flex;align-items:center;gap:8px;">
-                                                @if ($category->icon_key)
-                                                    <span aria-hidden="true" style="display:inline-flex;align-items:center;">
-                                                        @switch($category->icon_key)
-                                                            @case('math')
-                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                    <path d="M4 7h16" />
-                                                                    <path d="M7 4v6" />
-                                                                    <path d="M17 4v6" />
-                                                                    <path d="M6 12h4" />
-                                                                    <path d="M8 10v4" />
-                                                                    <path d="M14 10h4" />
-                                                                    <path d="M14 14h4" />
-                                                                    <path d="M6 18h4" />
-                                                                    <path d="M14 18h4" />
-                                                                </svg>
-                                                                @break
-                                                            @case('physics')
-                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                    <path d="M12 12m-1.5 0a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0" />
-                                                                    <path d="M4.5 12c0-4.4 3.4-8 7.5-8s7.5 3.6 7.5 8-3.4 8-7.5 8-7.5-3.6-7.5-8" />
-                                                                    <path d="M7.2 7.2c3.1-3.1 8.5-2.6 12.1 1.1" />
-                                                                    <path d="M4.7 15.8c3.6 3.6 9 4.2 12.1 1.1" />
-                                                                </svg>
-                                                                @break
-                                                            @case('calculator')
-                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                    <rect x="6" y="3" width="12" height="18" rx="2" />
-                                                                    <path d="M8.5 7h7" />
-                                                                    <path d="M9 11h2" />
-                                                                    <path d="M13 11h2" />
-                                                                    <path d="M9 14h2" />
-                                                                    <path d="M13 14h2" />
-                                                                    <path d="M9 17h2" />
-                                                                    <path d="M13 17h2" />
-                                                                </svg>
-                                                                @break
-                                                            @case('video')
-                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                                                    <path d="M4 7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z" />
-                                                                    <path d="M16 10l4-2v8l-4-2z" />
-                                                                </svg>
-                                                                @break
-                                                        @endswitch
-                                                    </span>
-                                                @endif
-                                                <span>{{ $category->title }}</span>
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
+                @if (! $activeType)
+                    <div class="cluster">
+                        <a class="btn btn--primary" href="{{ route('products.index') }}">همه</a>
+                        <a class="btn btn--ghost" href="{{ route('products.index', ['type' => 'note']) }}">جزوه‌ها</a>
+                        <a class="btn btn--ghost" href="{{ route('products.index', ['type' => 'video']) }}">ویدیوها</a>
                     </div>
                 @endif
 
-                <div class="grid grid--3">
+                @if ($activeType && in_array($activeType, ['note', 'video'], true) && ! ($activeCategory ?? null))
+                    @php($categories = $categories ?? collect())
                     @php($placeholderThumb = 'data:image/svg+xml;utf8,'.rawurlencode('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"960\" height=\"720\" viewBox=\"0 0 960 720\"><defs><linearGradient id=\"g\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#0b1220\"/><stop offset=\"1\" stop-color=\"#111f37\"/></linearGradient></defs><rect width=\"960\" height=\"720\" fill=\"url(#g)\"/><rect x=\"36\" y=\"36\" width=\"888\" height=\"648\" rx=\"36\" fill=\"rgba(255,255,255,0.04)\" stroke=\"rgba(255,255,255,0.10)\"/><path d=\"M380 290c0-22 18-40 40-40h120c22 0 40 18 40 40v140c0 22-18 40-40 40H420c-22 0-40-18-40-40V290z\" fill=\"rgba(255,255,255,0.10)\"/><path d=\"M430 310h100v100H430z\" fill=\"rgba(255,255,255,0.10)\"/><path d=\"M430 440h100\" stroke=\"rgba(255,255,255,0.20)\" stroke-width=\"16\" stroke-linecap=\"round\"/><text x=\"480\" y=\"560\" text-anchor=\"middle\" fill=\"rgba(255,255,255,0.40)\" font-family=\"Vazirmatn, sans-serif\" font-size=\"34\" font-weight=\"700\">چنار</text></svg>'))
-                    @foreach ($products as $product)
-                        @php($purchased = in_array($product->id, ($purchasedProductIds ?? []), true))
-                        <a class="card card--media" href="{{ route('products.show', $product->slug) }}">
-                            @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
-                            <img class="card__cover" src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy">
-                            <div class="card__badge">{{ $product->type === 'video' ? 'ویدیو' : 'جزوه' }}@if ($purchased) • خریداری شده @endif</div>
-                            @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
-                            <div class="card__hover">
-                                <div class="card__title">{{ $product->title }}</div>
-                                <div class="card__price">
-                                    <span class="price">{{ number_format($product->sale_price ?? $product->base_price) }}</span>
-                                    <span class="price__unit">{{ $currencyUnit }}</span>
+
+                    @if ($categories->isEmpty())
+                        <div class="panel max-w-md">
+                            <p class="page-subtitle" style="margin: 0;">دسته‌بندی فعالی برای نمایش وجود ندارد.</p>
+                        </div>
+                    @else
+                        <div class="grid grid--3">
+                            @foreach ($categories as $category)
+                                <a class="card card--media" href="{{ route('products.index', ['type' => $activeType, 'category' => $category->slug]) }}">
+                                    <img class="card__cover" src="{{ $placeholderThumb }}" alt="{{ $category->title }}" loading="lazy">
+                                    <div class="card__badge">دسته‌بندی</div>
+                                    <div class="card__hover">
+                                        <div class="card__title">{{ $category->title }}</div>
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+                @elseif ($activeType && in_array($activeType, ['note', 'video'], true) && ($activeCategory ?? null))
+                    <div class="form-actions">
+                        <a class="btn btn--ghost" href="{{ route('products.index', ['type' => $activeType]) }}">بازگشت به دسته‌بندی‌ها</a>
+                    </div>
+
+                    <div class="grid grid--3">
+                        @php($placeholderThumb = 'data:image/svg+xml;utf8,'.rawurlencode('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"960\" height=\"720\" viewBox=\"0 0 960 720\"><defs><linearGradient id=\"g\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#0b1220\"/><stop offset=\"1\" stop-color=\"#111f37\"/></linearGradient></defs><rect width=\"960\" height=\"720\" fill=\"url(#g)\"/><rect x=\"36\" y=\"36\" width=\"888\" height=\"648\" rx=\"36\" fill=\"rgba(255,255,255,0.04)\" stroke=\"rgba(255,255,255,0.10)\"/><path d=\"M380 290c0-22 18-40 40-40h120c22 0 40 18 40 40v140c0 22-18 40-40 40H420c-22 0-40-18-40-40V290z\" fill=\"rgba(255,255,255,0.10)\"/><path d=\"M430 310h100v100H430z\" fill=\"rgba(255,255,255,0.10)\"/><path d=\"M430 440h100\" stroke=\"rgba(255,255,255,0.20)\" stroke-width=\"16\" stroke-linecap=\"round\"/><text x=\"480\" y=\"560\" text-anchor=\"middle\" fill=\"rgba(255,255,255,0.40)\" font-family=\"Vazirmatn, sans-serif\" font-size=\"34\" font-weight=\"700\">چنار</text></svg>'))
+                        @foreach ($products as $product)
+                            @php($purchased = in_array($product->id, ($purchasedProductIds ?? []), true))
+                            <a class="card card--media" href="{{ $product->type === 'course' ? route('courses.show', $product->slug) : route('products.show', $product->slug) }}">
+                                @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
+                                <img class="card__cover" src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy">
+                                @php($discountLabel = $product->discountLabel())
+                                <div class="card__badge">
+                                    @if ($product->type === 'course')
+                                        دوره
+                                    @elseif ($product->type === 'video')
+                                        ویدیو
+                                    @else
+                                        جزوه
+                                    @endif
+                                    @if ($purchased) • خریداری شده @endif
+                                    @if ($discountLabel) • {{ $discountLabel }} @endif
                                 </div>
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
+                                @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
+                                <div class="card__hover">
+                                    <div class="card__title">{{ $product->title }}</div>
+                                    <div class="card__price">
+                                        @php($original = $product->originalPrice())
+                                        @php($final = $product->finalPrice())
+                                        @if ($product->hasDiscount())
+                                            <div class="card__price--stack">
+                                                <div class="card__price">
+                                                    <span class="price price--old">{{ number_format($original) }}</span>
+                                                    <span class="price__unit price__unit--old">{{ $currencyUnit }}</span>
+                                                </div>
+                                                <div class="card__price">
+                                                    <span class="price">{{ number_format($final) }}</span>
+                                                    <span class="price__unit">{{ $currencyUnit }}</span>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <span class="price">{{ number_format($final) }}</span>
+                                            <span class="price__unit">{{ $currencyUnit }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                    @if (($products ?? collect())->isEmpty())
+                        <div class="panel max-w-md">
+                            <p class="page-subtitle" style="margin: 0;">محتوایی برای این دسته‌بندی یافت نشد.</p>
+                        </div>
+                    @endif
+                @else
+                    <div class="grid grid--3">
+                        @php($placeholderThumb = 'data:image/svg+xml;utf8,'.rawurlencode('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"960\" height=\"720\" viewBox=\"0 0 960 720\"><defs><linearGradient id=\"g\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#0b1220\"/><stop offset=\"1\" stop-color=\"#111f37\"/></linearGradient></defs><rect width=\"960\" height=\"720\" fill=\"url(#g)\"/><rect x=\"36\" y=\"36\" width=\"888\" height=\"648\" rx=\"36\" fill=\"rgba(255,255,255,0.04)\" stroke=\"rgba(255,255,255,0.10)\"/><path d=\"M380 290c0-22 18-40 40-40h120c22 0 40 18 40 40v140c0 22-18 40-40 40H420c-22 0-40-18-40-40V290z\" fill=\"rgba(255,255,255,0.10)\"/><path d=\"M430 310h100v100H430z\" fill=\"rgba(255,255,255,0.10)\"/><path d=\"M430 440h100\" stroke=\"rgba(255,255,255,0.20)\" stroke-width=\"16\" stroke-linecap=\"round\"/><text x=\"480\" y=\"560\" text-anchor=\"middle\" fill=\"rgba(255,255,255,0.40)\" font-family=\"Vazirmatn, sans-serif\" font-size=\"34\" font-weight=\"700\">چنار</text></svg>'))
+                        @foreach ($products as $product)
+                            @php($purchased = in_array($product->id, ($purchasedProductIds ?? []), true))
+                            <a class="card card--media" href="{{ $product->type === 'course' ? route('courses.show', $product->slug) : route('products.show', $product->slug) }}">
+                                @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
+                                <img class="card__cover" src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy">
+                                @php($discountLabel = $product->discountLabel())
+                                <div class="card__badge">
+                                    @if ($product->type === 'course')
+                                        دوره
+                                    @elseif ($product->type === 'video')
+                                        ویدیو
+                                    @else
+                                        جزوه
+                                    @endif
+                                    @if ($purchased) • خریداری شده @endif
+                                    @if ($discountLabel) • {{ $discountLabel }} @endif
+                                </div>
+                                @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
+                                <div class="card__hover">
+                                    <div class="card__title">{{ $product->title }}</div>
+                                    <div class="card__price">
+                                        @php($original = $product->originalPrice())
+                                        @php($final = $product->finalPrice())
+                                        @if ($product->hasDiscount())
+                                            <div class="card__price--stack">
+                                                <div class="card__price">
+                                                    <span class="price price--old">{{ number_format($original) }}</span>
+                                                    <span class="price__unit price__unit--old">{{ $currencyUnit }}</span>
+                                                </div>
+                                                <div class="card__price">
+                                                    <span class="price">{{ number_format($final) }}</span>
+                                                    <span class="price__unit">{{ $currencyUnit }}</span>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <span class="price">{{ number_format($final) }}</span>
+                                            <span class="price__unit">{{ $currencyUnit }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </div>
     </section>

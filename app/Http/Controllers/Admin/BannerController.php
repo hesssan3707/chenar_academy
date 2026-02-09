@@ -41,7 +41,7 @@ class BannerController extends Controller
         return redirect()->route('admin.banners.edit', $banner->id);
     }
 
-    public function show(int $banner): View
+    public function show(int $banner): RedirectResponse
     {
         return redirect()->route('admin.banners.edit', $banner);
     }

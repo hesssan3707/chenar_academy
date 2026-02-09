@@ -17,6 +17,7 @@
 
             @php($booklet = $booklet ?? null)
             @php($isEdit = $booklet && $booklet->exists)
+            @php($requirePdf = ! $isEdit)
 
             <div class="panel">
                 <form method="post"
@@ -60,8 +61,8 @@
                         </label>
 
                         <label class="field">
-                            <span class="field__label">فایل جزوه</span>
-                            <input type="file" name="booklet_file">
+                            <span class="field__label">فایل PDF جزوه</span>
+                            <input type="file" name="booklet_file" accept="application/pdf" @required($requirePdf)>
                             @error('booklet_file')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
@@ -91,6 +92,30 @@
                             <input type="number" name="sale_price" min="0" max="2000000000"
                                 value="{{ old('sale_price', (string) ($booklet->sale_price ?? '')) }}">
                             @error('sale_price')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+                    </div>
+
+                    <div class="grid admin-grid-2 admin-grid-2--flush">
+                        <label class="field">
+                            <span class="field__label">نوع تخفیف</span>
+                            @php($discountTypeValue = old('discount_type', (string) ($booklet->discount_type ?? '')))
+                            <select name="discount_type">
+                                <option value="" @selected($discountTypeValue === '')>—</option>
+                                <option value="percent" @selected($discountTypeValue === 'percent')>percent</option>
+                                <option value="amount" @selected($discountTypeValue === 'amount')>amount</option>
+                            </select>
+                            @error('discount_type')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+
+                        <label class="field">
+                            <span class="field__label">مقدار تخفیف</span>
+                            <input type="number" name="discount_value" min="0" max="2000000000"
+                                value="{{ old('discount_value', (string) ($booklet->discount_value ?? '')) }}">
+                            @error('discount_value')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>

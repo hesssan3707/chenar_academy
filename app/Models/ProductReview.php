@@ -15,6 +15,12 @@ class ProductReview extends Model
         'user_id',
         'rating',
         'body',
+        'status',
+        'moderated_at',
+    ];
+
+    protected $casts = [
+        'moderated_at' => 'datetime',
     ];
 
     public function product(): BelongsTo

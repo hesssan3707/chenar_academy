@@ -13,6 +13,26 @@ class AdminBookletUploadsTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_cannot_create_booklet_without_pdf_file(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $response = $this->actingAs($admin)->post(route('admin.booklets.store'), [
+            'title' => 'Booklet without pdf',
+            'excerpt' => 'Intro',
+            'status' => 'draft',
+            'base_price' => 1000,
+            'sale_price' => 800,
+            'published_at' => null,
+        ]);
+
+        $response->assertSessionHasErrors(['booklet_file']);
+    }
+
     public function test_admin_can_upload_booklet_cover_and_booklet_file(): void
     {
         Storage::fake('public');

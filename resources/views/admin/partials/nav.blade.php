@@ -2,6 +2,7 @@
     <div class="container admin-nav__inner">
         @php
             $pendingOrdersCount = \App\Models\Order::query()->whereIn('status', ['pending', 'pending_review'])->count();
+            $pendingReviewsCount = \App\Models\ProductReview::query()->where('status', 'pending')->count();
             $unreadTicketsCount = \App\Models\Ticket::query()
                 ->where('status', 'open')
                 ->whereNotNull('last_message_at')
@@ -35,8 +36,15 @@
                 <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $pendingOrdersCount }}</span>
             @endif
         </a>
+        <a class="admin-nav__link" href="{{ route('admin.reviews.index') }}">
+            نظرات
+            @if (($pendingReviewsCount ?? 0) > 0)
+                <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $pendingReviewsCount }}</span>
+            @endif
+        </a>
         <a class="admin-nav__link" href="{{ route('admin.payments.index') }}">پرداخت‌ها</a>
         <a class="admin-nav__link" href="{{ route('admin.coupons.index') }}">تخفیف‌ها</a>
+        <a class="admin-nav__link" href="{{ route('admin.discounts.category') }}">تخفیف گروهی</a>
         <a class="admin-nav__link" href="{{ route('admin.posts.index') }}">مقالات</a>
         <a class="admin-nav__link" href="{{ route('admin.banners.index') }}">بنرها</a>
         <a class="admin-nav__link" href="{{ route('admin.surveys.index') }}">نظرسنجی‌ها</a>

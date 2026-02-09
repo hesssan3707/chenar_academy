@@ -52,7 +52,7 @@ class PostController extends Controller
         return redirect()->route('admin.posts.edit', $post->id);
     }
 
-    public function show(Post $post): View
+    public function show(Post $post): RedirectResponse
     {
         return redirect()->route('admin.posts.edit', $post->id);
     }

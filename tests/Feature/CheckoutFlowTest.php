@@ -213,10 +213,17 @@ class CheckoutFlowTest extends TestCase
         $order = Order::query()->where('user_id', $user->id)->latest('id')->firstOrFail();
         $this->assertSame('pending_review', (string) $order->status);
         $this->assertSame('card_to_card', (string) (($order->meta ?? [])['payment_method'] ?? ''));
+        $this->assertNull($order->paid_at);
 
         $payment = Payment::query()->where('order_id', $order->id)->latest('id')->firstOrFail();
         $this->assertSame('card_to_card', (string) $payment->gateway);
         $this->assertSame('pending_review', (string) $payment->status);
+        $this->assertNull($payment->paid_at);
+
+        $this->assertDatabaseMissing('product_accesses', [
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+        ]);
 
         $receiptMediaId = (int) (($payment->meta ?? [])['receipt_media_id'] ?? 0);
         $this->assertNotSame(0, $receiptMediaId);

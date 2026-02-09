@@ -85,6 +85,16 @@ class LibraryController extends Controller
 
         $media = Media::query()->findOrFail($mediaId);
 
+        if ($product->type !== 'video') {
+            $downloadName = $media->original_name ?: null;
+
+            return Storage::disk($media->disk)->download($media->path, $downloadName, [
+                'Content-Type' => $media->mime_type ?: 'application/octet-stream',
+                'Cache-Control' => 'private, no-store, max-age=0',
+                'Pragma' => 'no-cache',
+            ]);
+        }
+
         return Storage::disk($media->disk)->response($media->path, null, [
             'Content-Type' => $media->mime_type ?: 'application/octet-stream',
             'Content-Disposition' => 'inline',
