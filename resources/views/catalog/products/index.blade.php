@@ -38,7 +38,8 @@
                         <div class="grid grid--3">
                             @foreach ($categories as $category)
                                 <a class="card card--media" href="{{ route('products.index', ['type' => $activeType, 'category' => $category->slug]) }}">
-                                    <img class="card__cover" src="{{ $placeholderThumb }}" alt="{{ $category->title }}" loading="lazy">
+                                    <img class="card__cover" src="{{ $placeholderThumb }}" alt="" loading="lazy"
+                                        onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                                     <div class="card__badge">دسته‌بندی</div>
                                     <div class="card__hover">
                                         <div class="card__title">{{ $category->title }}</div>
@@ -58,7 +59,8 @@
                             @php($purchased = in_array($product->id, ($purchasedProductIds ?? []), true))
                             <a class="card card--media" href="{{ $product->type === 'course' ? route('courses.show', $product->slug) : route('products.show', $product->slug) }}">
                                 @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
-                                <img class="card__cover" src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy">
+                                <img class="card__cover" src="{{ $thumbUrl }}" alt="" loading="lazy"
+                                    onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                                 @php($discountLabel = $product->discountLabel())
                                 <div class="card__badge">
                                     @if ($product->type === 'course')
@@ -69,8 +71,10 @@
                                         جزوه
                                     @endif
                                     @if ($purchased) • خریداری شده @endif
-                                    @if ($discountLabel) • {{ $discountLabel }} @endif
                                 </div>
+                                    @if ($discountLabel)
+                                        <div class="card__badge card__badge--discount">{{ $discountLabel }}</div>
+                                    @endif
                                 @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
                                 <div class="card__hover">
                                     <div class="card__title">{{ $product->title }}</div>
@@ -109,7 +113,8 @@
                             @php($purchased = in_array($product->id, ($purchasedProductIds ?? []), true))
                             <a class="card card--media" href="{{ $product->type === 'course' ? route('courses.show', $product->slug) : route('products.show', $product->slug) }}">
                                 @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
-                                <img class="card__cover" src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy">
+                                <img class="card__cover" src="{{ $thumbUrl }}" alt="" loading="lazy"
+                                    onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                                 @php($discountLabel = $product->discountLabel())
                                 <div class="card__badge">
                                     @if ($product->type === 'course')
@@ -120,8 +125,10 @@
                                         جزوه
                                     @endif
                                     @if ($purchased) • خریداری شده @endif
-                                    @if ($discountLabel) • {{ $discountLabel }} @endif
                                 </div>
+                                    @if ($discountLabel)
+                                        <div class="card__badge card__badge--discount">{{ $discountLabel }}</div>
+                                    @endif
                                 @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
                                 <div class="card__hover">
                                     <div class="card__title">{{ $product->title }}</div>

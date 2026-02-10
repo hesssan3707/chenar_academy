@@ -35,6 +35,20 @@ class ProductDiscountTest extends TestCase
         $this->assertSame('17% OFF', $product->discountLabel());
     }
 
+    public function test_sale_price_higher_than_base_price_is_ignored(): void
+    {
+        $product = new Product([
+            'base_price' => 120000,
+            'sale_price' => 150000,
+            'discount_type' => null,
+            'discount_value' => null,
+        ]);
+
+        $this->assertSame(120000, $product->finalPrice());
+        $this->assertFalse($product->hasDiscount());
+        $this->assertNull($product->discountLabel());
+    }
+
     public function test_discount_price_takes_priority_over_sale_price(): void
     {
         $product = new Product([

@@ -103,7 +103,7 @@
                         @php($receiptMime = (string) ($cardToCardReceipt->mime_type ?? ''))
                         <div style="margin-top: 12px;">
                             @if (str_starts_with($receiptMime, 'image/'))
-                                <img src="{{ route('admin.orders.card-to-card.receipt', $order->id) }}" alt="receipt" style="max-width: 520px; width: 100%; border-radius: 12px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);" loading="lazy">
+                                <img src="{{ route('admin.orders.card-to-card.receipt', $order->id) }}" alt="" style="max-width: 520px; width: 100%; border-radius: 12px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);" loading="lazy">
                             @else
                                 <a class="btn btn--ghost btn--sm" href="{{ route('admin.orders.card-to-card.receipt', $order->id) }}" target="_blank" rel="noopener">مشاهده رسید</a>
                             @endif

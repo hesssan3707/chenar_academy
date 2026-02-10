@@ -16,10 +16,6 @@ class EnsureRegularUser
             abort(403);
         }
 
-        if ($user->hasRole('admin')) {
-            abort(403);
-        }
-
         return $next($request);
     }
 }

@@ -107,7 +107,13 @@ class Product extends Model
 
         $salePrice = $this->sale_price;
         if ($salePrice !== null && (string) $salePrice !== '') {
-            return max(0, (int) $salePrice);
+            $sale = max(0, (int) $salePrice);
+
+            if ($basePrice <= 0) {
+                return $sale;
+            }
+
+            return min($basePrice, $sale);
         }
 
         return $basePrice;

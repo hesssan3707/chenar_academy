@@ -3,51 +3,6 @@
 @section('title', 'چنار آکادمی')
 
 @section('content')
-    <section class="hero">
-        <div class="container hero__inner">
-            <div class="hero__content">
-                <h1 class="hero__title">چنار آکادمی، فرصتی برای یادگیری و پیشرفت</h1>
-                <p class="hero__subtitle">
-                    آموزش ویدئویی، جزوه‌ها، وبینارهای آموزشی و محتوای تخصصی برای مسیر یادگیری شما.
-                </p>
-
-                <div class="hero__cta">
-                    <a class="btn btn--primary" href="#">مشاهده ویدیوها</a>
-                    <a class="btn btn--ghost" href="#">مشاهده جزوه‌ها</a>
-                </div>
-
-                <div class="hero__features">
-                    @foreach ($featureItems as $item)
-                        <div class="feature">
-                            <div class="feature__title">{{ $item['title'] }}</div>
-                            <div class="feature__desc">{{ $item['description'] }}</div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-
-            <div class="hero__visual" aria-hidden="true">
-                @if ($homeBanner)
-                    <div class="hero-card">
-                        <div class="hero-card__badge">بنر</div>
-                        <div class="hero-card__title">{{ $homeBanner->title ?: 'بنر صفحه اصلی' }}</div>
-                        <div class="hero-card__meta">{{ $homeBanner->link_url ?: 'مشاهده جزئیات' }}</div>
-                    </div>
-                @else
-                    <div class="hero-card">
-                        <div class="hero-card__badge">New</div>
-                        <div class="hero-card__title">ویدیوها</div>
-                        <div class="hero-card__meta">مطالب جدید برای دانشگاه‌های مختلف</div>
-                    </div>
-                @endif
-                <div class="hero-card hero-card--secondary">
-                    <div class="hero-card__badge">PDF</div>
-                    <div class="hero-card__title">جزوه‌ها</div>
-                    <div class="hero-card__meta">خلاصه، منظم، آماده مطالعه</div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <section class="section">
         <div class="container">
@@ -101,9 +56,13 @@
                 @foreach ($latestProducts as $item)
                     <a class="card card--media" href="{{ route('products.show', $item->slug) }}">
                         @php($thumbUrl = ($item->thumbnailMedia?->disk ?? null) === 'public' && ($item->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($item->thumbnailMedia->path) : $placeholderThumb)
-                        <img class="card__cover" src="{{ $thumbUrl }}" alt="{{ $item->title }}" loading="lazy">
+                        <img class="card__cover" src="{{ $thumbUrl }}" alt="" loading="lazy"
+                            onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                         @php($discountLabel = $item->discountLabel())
-                        <div class="card__badge">{{ $item->type === 'video' ? 'ویدیو' : 'جزوه' }}@if ($discountLabel) • {{ $discountLabel }} @endif</div>
+                        <div class="card__badge">{{ $item->type === 'video' ? 'ویدیو' : 'جزوه' }}</div>
+                        @if ($discountLabel)
+                            <div class="card__badge card__badge--discount">{{ $discountLabel }}</div>
+                        @endif
                         @php($currencyUnit = (($item->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($item->currency ?? 'IRR'))
                         <div class="card__hover">
                             <div class="card__title">{{ $item->title }}</div>
@@ -127,26 +86,6 @@
                                 @endif
                             </div>
                         </div>
-                    </a>
-                @endforeach
-            </div>
-        </div>
-    </section>
-
-    <section class="section">
-        <div class="container">
-            <div class="section__head">
-                <h2 class="section__title">تازه‌ترین مقالات وبلاگ</h2>
-                <div class="section__sub">مطالب مفیدی که خواندن آن را توصیه می‌کنیم</div>
-            </div>
-
-            <div class="grid grid--3">
-                @foreach ($latestPosts as $post)
-                    <a class="card post" href="{{ route('blog.show', $post->slug) }}">
-                        <div class="post__title">{{ $post->title }}</div>
-                        <div class="post__date">{{ $post->published_at ? jdate($post->published_at)->format('Y/m/d') : '' }}</div>
-                        <div class="post__excerpt">{{ $post->excerpt ?? '' }}</div>
-                        <div class="card__action">ادامه مطلب</div>
                     </a>
                 @endforeach
             </div>

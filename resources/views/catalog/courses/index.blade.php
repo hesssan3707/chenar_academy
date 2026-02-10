@@ -13,7 +13,7 @@
                     <a class="card" href="{{ route('courses.show', $course->slug) }}">
                         @php($thumbUrl = ($course->thumbnailMedia?->disk ?? null) === 'public' && ($course->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($course->thumbnailMedia->path) : null)
                         @if ($thumbUrl)
-                            <img class="card__thumb" src="{{ $thumbUrl }}" alt="{{ $course->title }}" loading="lazy">
+                            <img class="card__thumb" src="{{ $thumbUrl }}" alt="" loading="lazy">
                         @endif
                         @php($discountLabel = $course->discountLabel())
                         <div class="card__badge">دوره@if ($discountLabel) • {{ $discountLabel }} @endif</div>

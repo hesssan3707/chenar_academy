@@ -24,7 +24,7 @@
                         <div class="field__label">پیش‌نمایش</div>
 
                         @if ($mediaUrl && str_starts_with($mime, 'image/'))
-                            <img src="{{ $mediaUrl }}" alt="{{ $media->original_name ?? ('Media #'.$media->id) }}"
+                            <img src="{{ $mediaUrl }}" alt=""
                                 style="width: 100%; max-height: 420px; object-fit: contain; border-radius: 14px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);"
                                 loading="lazy">
                         @elseif ($mediaUrl && str_starts_with($mime, 'video/'))

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Post;
 use App\Models\PostBlock;
+use App\Models\Product;
 use App\Models\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -85,5 +86,80 @@ class PublicPagesTest extends TestCase
             ->assertOk()
             ->assertSee('مقاله تست')
             ->assertSee('بدنه مقاله');
+    }
+
+    public function test_product_show_pages_load_for_note_and_video(): void
+    {
+        $note = Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه تست',
+            'slug' => 'test-note',
+            'excerpt' => 'خلاصه جزوه',
+            'description' => "پاراگراف اول\n\nپاراگراف دوم",
+            'thumbnail_media_id' => null,
+            'status' => 'published',
+            'base_price' => 100000,
+            'sale_price' => null,
+            'discount_type' => null,
+            'discount_value' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $video = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو تست',
+            'slug' => 'test-video',
+            'excerpt' => null,
+            'description' => "متن اول\n\nمتن دوم",
+            'thumbnail_media_id' => null,
+            'status' => 'published',
+            'base_price' => 200000,
+            'sale_price' => null,
+            'discount_type' => null,
+            'discount_value' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $this->get(route('products.show', $note->slug))
+            ->assertOk()
+            ->assertSee($note->title)
+            ->assertSee('پاراگراف اول')
+            ->assertSee('پاراگراف دوم');
+
+        $this->get(route('products.show', $video->slug))
+            ->assertOk()
+            ->assertSee($video->title)
+            ->assertSee('متن اول')
+            ->assertSee('متن دوم');
+    }
+
+    public function test_course_show_page_loads(): void
+    {
+        $course = Product::query()->create([
+            'type' => 'course',
+            'title' => 'دوره تست',
+            'slug' => 'test-course',
+            'excerpt' => null,
+            'description' => "توضیح اول\n\nتوضیح دوم",
+            'thumbnail_media_id' => null,
+            'status' => 'published',
+            'base_price' => 300000,
+            'sale_price' => null,
+            'discount_type' => null,
+            'discount_value' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $this->get(route('courses.show', $course->slug))
+            ->assertOk()
+            ->assertSee($course->title)
+            ->assertSee('توضیح اول')
+            ->assertSee('توضیح دوم');
     }
 }

@@ -238,12 +238,72 @@ html[data-theme='admin'] .badge--brand {
     padding: 18px;
 }
 
+.panel--success {
+    background: rgba(12, 180, 120, 0.06);
+    border-color: rgba(12, 180, 120, 0.25);
+}
+
+.panel--warning {
+    background: rgba(255, 193, 7, 0.06);
+    border-color: rgba(255, 193, 7, 0.25);
+}
+
+.panel--soft {
+    background: rgba(15, 26, 46, 0.35);
+    border-style: dashed;
+}
+
 html[data-theme='light'] .panel {
     background: rgba(255, 255, 255, 0.86);
 }
 
 html[data-theme='admin'] .panel {
     background: rgba(255, 255, 255, 0.9);
+}
+
+.section__title--sm {
+    font-size: 18px;
+}
+
+.product-detail {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.product-detail__media {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.product-detail__info {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.product-detail__cover {
+    width: 100%;
+    max-height: 380px;
+    object-fit: cover;
+    border-radius: 14px;
+    border: 1px solid var(--ds-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.product-detail__video {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--ds-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 860px) {
+    .product-detail {
+        grid-template-columns: 1fr;
+    }
 }
 
 .card {
@@ -286,6 +346,23 @@ html[data-theme='light'] .card:hover {
     background: rgba(45, 212, 191, 0.14);
     border: 1px solid rgba(45, 212, 191, 0.22);
     color: rgba(232, 238, 252, 0.92);
+    font-weight: 800;
+    backdrop-filter: blur(10px);
+    max-width: calc(100% - 28px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    z-index: 2;
+}
+
+.card__badge--discount {
+    left: auto;
+    right: 14px;
+    top: 44px;
+    background: rgba(251, 113, 133, 0.18);
+    border-color: rgba(251, 113, 133, 0.28);
+    color: rgba(232, 238, 252, 0.95);
+    box-shadow: 0 10px 22px rgba(251, 113, 133, 0.14);
 }
 
 .card__title {

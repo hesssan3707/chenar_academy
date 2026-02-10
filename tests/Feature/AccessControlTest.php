@@ -173,13 +173,13 @@ class AccessControlTest extends TestCase
         $this->assertSame('6037991811112222', $card2Number->value);
     }
 
-    public function test_admin_cannot_access_user_panel_routes(): void
+    public function test_admin_can_access_user_panel_routes(): void
     {
         $user = User::factory()->create();
         $adminRole = Role::create(['name' => 'admin']);
         $user->roles()->attach($adminRole->id);
 
-        $this->actingAs($user)->get('/panel')->assertForbidden();
+        $this->actingAs($user)->get('/panel')->assertOk();
     }
 
     public function test_user_can_change_password_with_current_password(): void

@@ -396,4 +396,30 @@ class PanelLibraryAndOrdersTest extends TestCase
             ->get(route('panel.orders.show', $otherOrder->id))
             ->assertNotFound();
     }
+
+    public function test_product_details_does_not_show_purchase_required_review_message(): void
+    {
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه بدون خرید',
+            'slug' => 'note-without-purchase',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'status' => 'published',
+            'base_price' => 100000,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertDontSee('برای ثبت نظر ابتدا محصول را خریداری کنید.')
+            ->assertDontSee('ثبت نظر و امتیاز');
+    }
 }

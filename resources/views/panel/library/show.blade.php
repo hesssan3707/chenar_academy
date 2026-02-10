@@ -21,7 +21,8 @@
             @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : null)
             @if ($thumbUrl)
                 <div class="panel" style="margin-top: 18px;">
-                    <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" style="width: 100%; max-height: 360px; object-fit: cover; border-radius: 14px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);" loading="lazy">
+                    <img class="product-detail__cover" src="{{ $thumbUrl }}" alt="" loading="lazy"
+                        onerror="this.onerror=null;this.style.display='none';">
                 </div>
             @endif
 
@@ -36,7 +37,7 @@
                         @foreach ($sections as $section)
                             <div class="panel">
                                 <div class="stack stack--sm">
-                                    <div class="section__title" style="font-size: 18px;">{{ $section->title }}</div>
+                                    <div class="section__title section__title--sm">{{ $section->title }}</div>
 
                                     @php($lessons = $section->lessons ?? collect())
                                     @if ($lessons->isEmpty())
@@ -44,12 +45,12 @@
                                     @else
                                         <div class="stack stack--sm">
                                             @foreach ($lessons as $lesson)
-                                                <div class="panel" style="background: rgba(15,26,46,0.35); border-style: dashed;">
+                                                <div class="panel panel--soft">
                                                     <div class="stack stack--sm">
                                                         <div class="field__label">{{ $lesson->title }}</div>
 
                                                         @if ($lesson->lesson_type === 'video' && $lesson->media_id)
-                                                            <video controls preload="metadata" style="width: 100%; border-radius: 14px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);">
+                                                            <video class="product-detail__video" controls preload="metadata">
                                                                 <source src="{{ route('panel.library.lessons.stream', ['product' => $product->slug, 'lesson' => $lesson->id]) }}" type="video/mp4">
                                                             </video>
                                                         @elseif ($lesson->lesson_type === 'text' && ($lesson->content ?? '') !== '')
@@ -83,12 +84,12 @@
                         @foreach ($parts as $part)
                             <div class="panel">
                                 <div class="stack stack--sm">
-                                    <div class="section__title" style="font-size: 18px;">
+                                    <div class="section__title section__title--sm">
                                         {{ $part->title ?: ('بخش '.($loop->index + 1)) }}
                                     </div>
 
                                     @if ($product->type === 'video' && $part->media_id)
-                                        <video controls preload="metadata" style="width: 100%; border-radius: 14px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);">
+                                        <video class="product-detail__video" controls preload="metadata">
                                             <source src="{{ route('panel.library.parts.stream', ['product' => $product->slug, 'part' => $part->id]) }}" type="video/mp4">
                                         </video>
                                     @elseif ($product->type === 'note' && ($part->content ?? '') !== '')
@@ -114,7 +115,7 @@
                     </div>
                 @elseif ($product->type === 'video' && $singleVideoMediaId)
                     <div class="panel" style="margin-top: 18px;">
-                        <video controls preload="metadata" style="width: 100%; border-radius: 14px; border: 1px solid var(--border); background: rgba(0,0,0,0.2);">
+                        <video class="product-detail__video" controls preload="metadata">
                             <source src="{{ route('panel.library.video.stream', ['product' => $product->slug]) }}" type="video/mp4">
                         </video>
                         <div class="card__meta" style="margin-top: 10px;">این ویدیو فقط داخل سایت قابل مشاهده است.</div>
@@ -138,7 +139,7 @@
             @endif
 
             @if (in_array($product->type, ['note', 'video'], true) && ($userReview ?? null) && (string) ($userReview->status ?? '') === 'pending')
-                <div class="panel" style="margin-top: 18px; background: rgba(255, 193, 7, 0.06); border-color: rgba(255, 193, 7, 0.25);">
+                <div class="panel panel--warning" style="margin-top: 18px;">
                     <div class="stack stack--sm">
                         <div class="field__label">در انتظار بررسی</div>
                         @if ($userReview->body)
