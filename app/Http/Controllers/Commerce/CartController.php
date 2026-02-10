@@ -8,12 +8,13 @@ use App\Models\CartItem;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Cookie;
 
 class CartController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|\Illuminate\Http\JsonResponse
     {
         $cart = $this->findCart($request);
         $items = collect();
@@ -21,24 +22,40 @@ class CartController extends Controller
         if ($cart) {
             $items = CartItem::query()
                 ->where('cart_id', $cart->id)
-                ->with('product')
+                ->with(['product', 'product.thumbnailMedia'])
                 ->orderBy('id')
                 ->get();
         }
 
         $subtotal = (int) $items->sum(fn (CartItem $item) => (int) $item->unit_price * (int) $item->quantity);
+        $currencyUnit = (($cart?->currency ?: $this->commerceCurrency()) === 'IRR')
+            ? 'تومان'
+            : ($cart?->currency ?: $this->commerceCurrency());
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'items' => $items->map(fn($item) => [
+                    'id' => $item->id,
+                    'title' => $item->product?->title,
+                    'price' => (int) $item->unit_price,
+                    'quantity' => (int) $item->quantity,
+                    'thumb' => $item->product?->thumbnailMedia ? Storage::disk('public')->url($item->product->thumbnailMedia->path) : null,
+                ]),
+                'subtotal' => $subtotal,
+                'currency' => $currencyUnit,
+                'count' => $items->count(),
+            ]);
+        }
 
         return view('commerce.cart.index', [
             'cart' => $cart,
             'items' => $items,
             'subtotal' => $subtotal,
-            'currencyUnit' => (($cart?->currency ?: $this->commerceCurrency()) === 'IRR')
-                ? 'تومان'
-                : ($cart?->currency ?: $this->commerceCurrency()),
+            'currencyUnit' => $currencyUnit,
         ]);
     }
 
-    public function storeItem(Request $request): RedirectResponse
+    public function storeItem(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $validated = $request->validate([
             'product_id' => ['required', 'integer', 'exists:products,id'],
@@ -48,6 +65,12 @@ class CartController extends Controller
         $quantity = 1;
 
         if ($request->user() && $product->userHasAccess($request->user())) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'این محصول قبلاً خریداری شده است و نیازی به افزودن دوباره ندارد.'
+                ], 422);
+            }
             return redirect()->route('products.show', $product->slug)->with('toast', [
                 'type' => 'error',
                 'title' => 'قبلاً خریداری شده',
@@ -79,11 +102,13 @@ class CartController extends Controller
             ]);
         }
 
-        $response = redirect()->route('cart.index')->with('toast', [
-            'type' => 'success',
-            'title' => 'به سبد اضافه شد',
-            'message' => 'محصول به سبد خرید اضافه شد.',
-        ]);
+        $response = $request->wantsJson() 
+            ? response()->json(['success' => true, 'message' => 'محصول به سبد خرید اضافه شد.'])
+            : redirect()->route('cart.index')->with('toast', [
+                'type' => 'success',
+                'title' => 'به سبد اضافه شد',
+                'message' => 'محصول به سبد خرید اضافه شد.',
+            ]);
 
         if (! auth()->check() && $guestToken) {
             $response->withCookie($this->guestCartCookie($request, $guestToken));
@@ -109,14 +134,18 @@ class CartController extends Controller
         ]);
     }
 
-    public function destroyItem(Request $request, int $item): RedirectResponse
+    public function destroyItem(Request $request, int $item): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $cart = $this->findCart($request);
         if (! $cart) {
-            return redirect()->route('cart.index');
+            return $request->wantsJson() ? response()->json(['success' => false]) : redirect()->route('cart.index');
         }
 
         CartItem::query()->where('id', $item)->where('cart_id', $cart->id)->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'آیتم از سبد خرید حذف شد.']);
+        }
 
         return redirect()->route('cart.index')->with('toast', [
             'type' => 'success',

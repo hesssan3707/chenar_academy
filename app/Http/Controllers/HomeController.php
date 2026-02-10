@@ -97,6 +97,30 @@ class HomeController extends Controller
             ->orderByDesc('id')
             ->first();
 
+        $purchasedProducts = collect();
+        if (request()->user()) {
+            $accesses = request()->user()
+                ->productAccesses()
+                ->where(function ($query) {
+                    $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
+                ->orderByDesc('granted_at')
+                ->take(10)
+                ->get();
+
+            if ($accesses->isNotEmpty()) {
+                $products = Product::query()
+                    ->whereIn('id', $accesses->pluck('product_id')->all())
+                    ->with('thumbnailMedia')
+                    ->get()
+                    ->keyBy('id');
+
+                $purchasedProducts = $accesses
+                    ->map(fn ($access) => $products->get($access->product_id))
+                    ->filter();
+            }
+        }
+
         $homeBannerImageUrl = null;
 
         if ($homeBanner?->image_media_id) {
@@ -113,6 +137,7 @@ class HomeController extends Controller
             'latestPosts' => $latestPosts,
             'homeBanner' => $homeBanner,
             'homeBannerImageUrl' => $homeBannerImageUrl,
+            'purchasedProducts' => $purchasedProducts,
         ]);
     }
 }

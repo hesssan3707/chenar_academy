@@ -1,0 +1,358 @@
+:root {
+    --nav-width: 280px;
+    --nav-collapsed-width: 80px;
+    --header-height: 0px; /* No header in new design, island nav instead */
+}
+
+body, html {
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    font-family: var(--ds-font-sans);
+    background-color: var(--ds-bg);
+    color: var(--ds-text);
+}
+
+/* Background Layer */
+.spa-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    transition: background-image 0.5s ease;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Main Layout Grid */
+.spa-layout {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Island Navigation */
+.spa-nav {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 26, 46, 0.85); /* Semi-transparent dark */
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-pill);
+    padding: 8px 16px;
+    display: flex;
+    gap: 12px;
+    z-index: 1000;
+    box-shadow: var(--ds-shadow);
+    white-space: nowrap;
+    max-width: 95vw;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.spa-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.spa-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--ds-muted);
+    font-size: 0.7rem;
+    transition: all 0.2s;
+    min-width: 56px;
+    padding: 4px 8px;
+    border-radius: var(--ds-radius-md);
+}
+
+.spa-nav-item .nav-text {
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .spa-nav-item .nav-text {
+        display: none;
+    }
+    .spa-nav-item {
+        min-width: 44px;
+        padding: 4px;
+    }
+}
+
+.spa-nav-item:hover, .spa-nav-item.active {
+    color: var(--ds-brand);
+    transform: translateY(-2px);
+}
+
+.spa-nav-icon {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 4px;
+    transition: transform 0.2s;
+}
+
+.spa-nav-item:hover .spa-nav-icon {
+    transform: scale(1.1);
+}
+
+.spa-cart-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--ds-brand);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(15, 26, 46, 0.9);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.spa-nav-item--cart {
+    position: relative;
+    padding: 0 5px;
+}
+
+/* Content Area */
+.spa-content-wrapper {
+    flex: 1;
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Internal scroll handled by sub-containers if needed, but brief says no vertical scroll */
+}
+
+.spa-page {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 40px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden; /* Strict no vertical scroll */
+    overflow-x: hidden;
+}
+
+/* Transitions */
+.page-enter-active, .page-leave-active {
+    transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.page-enter {
+    opacity: 0;
+}
+
+.slide-enter-from-left {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+.slide-leave-to-right {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+.slide-enter-from-right {
+    transform: translateX(100%);
+    opacity: 0;
+}
+.slide-leave-to-left {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+/* Horizontal Scroll Containers */
+.h-scroll-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 20px;
+    padding: 20px 0;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* IE 10+ */
+    align-items: center;
+    height: 100%; /* Fill available height */
+}
+.h-scroll-container::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.h-scroll-section {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Cards */
+.card-product {
+    width: 280px;
+    height: 400px;
+    background: var(--ds-panel);
+    border-radius: var(--ds-radius-lg);
+    border: 1px solid var(--ds-border);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s;
+    flex-shrink: 0;
+}
+
+.card-product:hover {
+    transform: scale(1.05);
+    z-index: 10;
+    box-shadow: var(--ds-shadow);
+}
+
+.card-category {
+    width: 200px;
+    height: 120px;
+    background: var(--ds-panel-2);
+    border-radius: var(--ds-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: width 0.3s;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.card-category:hover {
+    width: 250px;
+}
+
+.card-category .info {
+    opacity: 0;
+    transition: opacity 0.3s;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.6);
+    padding: 5px 10px;
+    border-radius: var(--ds-radius-sm);
+}
+.card-category:hover .info {
+    opacity: 1;
+}
+
+/* User Panel Specifics */
+.user-panel-grid {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 30px;
+    height: 100%;
+}
+
+.user-sidebar {
+    background: var(--ds-panel);
+    border-radius: var(--ds-radius-lg);
+    padding: 20px;
+    height: 100%;
+}
+
+.user-content {
+    background: var(--ds-panel-2);
+    border-radius: var(--ds-radius-lg);
+    padding: 30px;
+    height: 100%;
+    overflow-y: auto; /* Allow internal scroll for user panel content if needed? Brief says "No vertical scrolling" generally, but maybe content within panel?
+                         Brief: "No vertical scrolling" usually applies to the main page.
+                         "Content on the home page should be limited... no dense content"
+                         For User Panel: "View purchased products, view orders..." - these might need a list.
+                         I'll use horizontal scroll for lists or internal vertical scroll if absolutely necessary, but try to stick to horizontal.
+                      */
+}
+
+/* Modals */
+.spa-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.spa-modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.spa-modal-content {
+    background: var(--ds-panel);
+    padding: 30px;
+    border-radius: var(--ds-radius-lg);
+    width: 400px;
+    max-width: 90%;
+    transform: scale(0.9);
+    transition: transform 0.3s;
+}
+
+.spa-modal.active .spa-modal-content {
+    transform: scale(1);
+}
+
+/* Cart Badge */
+.spa-cart-badge {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background: linear-gradient(135deg, #ff4d4d, #f91d1d);
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid rgba(15, 26, 46, 0.9);
+    box-shadow: 0 2px 8px rgba(249, 29, 29, 0.4);
+    z-index: 10;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: scale(1);
+}
+
+.spa-cart-badge:not(.hidden) {
+    animation: badge-pop 0.3s ease-out;
+}
+
+@keyframes badge-pop {
+    0% { transform: scale(0); }
+    80% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.spa-cart-badge.hidden {
+    display: none;
+    transform: scale(0);
+}

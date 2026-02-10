@@ -50,6 +50,16 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/debug-vite', function () {
+    $manifestPath = public_path('build/manifest.json');
+    return [
+        'public_path' => public_path(),
+        'manifest_exists' => file_exists($manifestPath),
+        'manifest_url' => asset('build/manifest.json'),
+        'manifest_content' => file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : null,
+    ];
+});
+
 Route::get('/', HomeController::class)->name('home');
 Route::get('/about', AboutController::class)->name('about');
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
@@ -174,6 +184,9 @@ Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/', [PostController::class, 'index'])->name('index');
     Route::get('/{slug}', [PostController::class, 'show'])->name('show');
 });
+
+Route::get('/videos', [ProductController::class, 'index'])->name('videos.index');
+Route::get('/notes', [ProductController::class, 'index'])->name('notes.index');
 
 Route::prefix('cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index');

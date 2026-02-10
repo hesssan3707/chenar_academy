@@ -21,6 +21,16 @@ class ProductController extends Controller
     public function index(Request $request): View
     {
         $type = $request->query('type');
+        
+        // Auto-detect type based on route name if not provided in query
+        if (! $type) {
+            if ($request->routeIs('videos.index')) {
+                $type = 'video';
+            } elseif ($request->routeIs('notes.index')) {
+                $type = 'note';
+            }
+        }
+
         $categorySlug = $request->query('category');
 
         $query = Product::query()
@@ -34,6 +44,16 @@ class ProductController extends Controller
             } elseif ($type === 'video') {
                 $query->whereIn('type', ['video', 'course']);
             }
+        }
+
+        $courses = collect();
+        if ($type === 'video') {
+            $courses = Product::query()
+                ->where('status', 'published')
+                ->where('type', 'course')
+                ->orderByDesc('published_at')
+                ->with('thumbnailMedia')
+                ->get();
         }
 
         $categories = collect();
@@ -70,13 +90,35 @@ class ProductController extends Controller
         }
 
         if ($type && in_array($type, ['note', 'video'], true) && ! $activeCategory) {
+            $latestProducts = collect();
+            if ($type === 'video') {
+                $latestProducts = Product::query()
+                    ->where('status', 'published')
+                    ->where('type', 'video')
+                    ->orderByDesc('published_at')
+                    ->with('thumbnailMedia')
+                    ->limit(10)
+                    ->get();
+            } elseif ($type === 'note') {
+                $latestProducts = Product::query()
+                    ->where('status', 'published')
+                    ->where('type', 'note')
+                    ->orderByDesc('published_at')
+                    ->with('thumbnailMedia')
+                    ->limit(10)
+                    ->get();
+            }
+
+            $purchasedProductIds = auth()->check() ? auth()->user()->purchasedProducts()->pluck('products.id')->toArray() : [];
+
             return view('catalog.products.index', [
-                'products' => collect(),
+                'products' => $latestProducts,
+                'courses' => $courses,
                 'activeType' => $type,
                 'categories' => $categories,
                 'activeInstitution' => $activeInstitution,
                 'activeCategory' => $activeCategory,
-                'purchasedProductIds' => [],
+                'purchasedProductIds' => $purchasedProductIds,
             ]);
         }
 
@@ -119,6 +161,7 @@ class ProductController extends Controller
 
         return view('catalog.products.index', [
             'products' => $products,
+            'courses' => $courses,
             'activeType' => $type,
             'categories' => $categories,
             'activeInstitution' => $activeInstitution,

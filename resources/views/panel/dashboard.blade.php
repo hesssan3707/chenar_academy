@@ -1,35 +1,50 @@
-@extends('layouts.app')
+@extends('layouts.spa')
 
 @section('title', 'پنل کاربری')
 
 @section('content')
-    @include('panel.partials.nav')
-
-    <section class="section">
-        <div class="container">
-            <h1 class="page-title">پنل کاربری</h1>
-            <p class="page-subtitle">دسترسی سریع به کتابخانه و پشتیبانی</p>
-
-            <div class="grid grid--3" style="margin-top: 18px;">
-                <a class="card" href="{{ route('panel.library.index') }}">
-                    <div class="card__badge">کتابخانه</div>
-                    <div class="card__title">مشاهده محتواهای خریداری‌شده</div>
-                    <div class="card__meta">جزوه‌ها و ویدیوها</div>
-                    <div class="card__action">ورود</div>
-                </a>
-                <a class="card" href="{{ route('panel.orders.index') }}">
-                    <div class="card__badge">سفارش‌ها</div>
-                    <div class="card__title">پیگیری وضعیت سفارش‌ها</div>
-                    <div class="card__meta">پرداخت آنلاین و کارت‌به‌کارت</div>
-                    <div class="card__action">مشاهده</div>
-                </a>
-                <a class="card" href="{{ route('panel.tickets.index') }}">
-                    <div class="card__badge">پشتیبانی</div>
-                    <div class="card__title">تیکت‌های من</div>
-                    <div class="card__meta">ارسال پیام و پیگیری پاسخ‌ها</div>
-                    <div class="card__action">مشاهده</div>
-                </a>
-            </div>
+    <div class="container h-full py-6">
+        <div class="user-panel-grid">
+            @include('panel.partials.sidebar')
+            
+            <main class="user-content">
+                <h2 class="h2 mb-6">داشبورد</h2>
+                
+                <div class="grid grid--3 gap-4">
+                    <a href="{{ route('panel.library.index') }}" class="stat-card hover:bg-white/5 transition-colors">
+                        <div class="stat-card__value">کتابخانه</div>
+                        <div class="stat-card__label">دسترسی به محتواهای خریداری شده</div>
+                    </a>
+                    <a href="{{ route('panel.orders.index') }}" class="stat-card hover:bg-white/5 transition-colors">
+                        <div class="stat-card__value">سفارش‌ها</div>
+                        <div class="stat-card__label">مشاهده وضعیت سفارش‌ها</div>
+                    </a>
+                    <a href="{{ route('panel.tickets.index') }}" class="stat-card hover:bg-white/5 transition-colors">
+                        <div class="stat-card__value">پشتیبانی</div>
+                        <div class="stat-card__label">ارسال و پیگیری تیکت</div>
+                    </a>
+                </div>
+                
+                <div class="mt-8">
+                    <h3 class="h3 mb-4">اطلاعات حساب</h3>
+                    <div class="bg-black/20 p-4 rounded-xl">
+                        <div class="cluster" style="justify-content: space-between;">
+                            <div>
+                                <div class="text-sm text-muted">نام و نام خانوادگی</div>
+                                <div>{{ auth()->user()->name ?? '-' }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-muted">شماره موبایل</div>
+                                <div>{{ auth()->user()->mobile ?? '-' }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-muted">تاریخ عضویت</div>
+                                <div dir="ltr">{{ auth()->user()->created_at->format('Y/m/d') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
-    </section>
+    </div>
 @endsection
