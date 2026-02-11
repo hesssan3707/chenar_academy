@@ -14,11 +14,11 @@
             
             <!-- Left Side: Image & Key Info -->
             <div class="w-full md:w-1/3 bg-black/20 p-6 flex flex-col border-l border-white/10">
-                @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : null)
-                @if ($thumbUrl)
-                    <div class="aspect-video rounded-xl bg-cover bg-center mb-6 shadow-lg border border-white/5" 
-                         style="background-image: url('{{ $thumbUrl }}')"></div>
-                @endif
+                @php($placeholderThumb = asset('images/default_image.webp'))
+                @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
+                <div class="spa-cover mb-6 shadow-lg border border-white/5">
+                    <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
+                </div>
 
                 <h1 class="h3 mb-2">{{ $product->title }}</h1>
                 <div class="text-muted text-sm mb-4">{{ $product->type === 'video' ? 'ویدیو آموزشی' : ($product->type === 'course' ? 'دوره آموزشی' : 'جزوه آموزشی') }}</div>

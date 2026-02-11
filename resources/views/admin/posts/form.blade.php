@@ -114,5 +114,5 @@
         </div>
     </section>
 
-    <script src="https://cdn.ckeditor.com/4.22.1/full-all/ckeditor.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
 @endsection

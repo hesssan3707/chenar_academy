@@ -306,19 +306,19 @@ function initAdminUploadUi() {
     });
 }
 
-function ensureCkEditorLoaded({ maxAttempts = 30, intervalMs = 250 } = {}) {
+function ensureTinyMceLoaded({ maxAttempts = 30, intervalMs = 250 } = {}) {
     return new Promise((resolve, reject) => {
         let attempts = 0;
 
         const tick = () => {
             attempts++;
-            if (window.CKEDITOR) {
-                resolve(window.CKEDITOR);
+            if (window.tinymce) {
+                resolve(window.tinymce);
                 return;
             }
 
             if (attempts >= maxAttempts) {
-                reject(new Error('CKEDITOR not available'));
+                reject(new Error('TinyMCE not available'));
                 return;
             }
 
@@ -339,7 +339,7 @@ function initAdminWysiwygUi() {
         return;
     }
 
-    ensureCkEditorLoaded().then((CKEDITOR) => {
+    ensureTinyMceLoaded().then((tinymce) => {
         targets.forEach((textarea) => {
             if (!(textarea instanceof HTMLTextAreaElement)) {
                 return;
@@ -351,30 +351,58 @@ function initAdminWysiwygUi() {
 
             const uploadUrlBase = textarea.dataset.wysiwygUploadUrl || '';
             const csrfToken = getCsrfToken();
-            const uploadUrl = uploadUrlBase && csrfToken ? `${uploadUrlBase}?_token=${encodeURIComponent(csrfToken)}` : uploadUrlBase;
             textarea.dataset.wysiwygBound = '1';
 
             try {
-                CKEDITOR.replace(textarea, {
+                tinymce.init({
+                    target: textarea,
                     height: 420,
+                    directionality: 'rtl',
                     language: 'fa',
-                    contentsLangDirection: 'rtl',
-                    extraPlugins: 'colorbutton,font,justify,uploadimage',
-                    removePlugins: 'elementspath',
-                    resize_enabled: true,
-                    allowedContent: true,
-                    toolbar: [
-                        { name: 'clipboard', items: ['Undo', 'Redo'] },
-                        { name: 'styles', items: ['Format', 'Font', 'FontSize'] },
-                        { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat'] },
-                        { name: 'colors', items: ['TextColor', 'BGColor'] },
-                        { name: 'paragraph', items: ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
-                        { name: 'links', items: ['Link', 'Unlink'] },
-                        { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar'] },
-                        { name: 'tools', items: ['Maximize', 'Source'] },
-                    ],
-                    filebrowserUploadUrl: uploadUrl || undefined,
-                    filebrowserUploadMethod: 'form',
+                    language_url: 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/langs/fa.min.js',
+                    menubar: false,
+                    plugins: 'image link lists table code directionality',
+                    toolbar: 'undo redo | formatselect | bold italic underline | alignleft aligncenter alignright alignjustify | rtl ltr | bullist numlist | link image | code',
+                    images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.withCredentials = false;
+                        xhr.open('POST', uploadUrlBase);
+                        xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+
+                        xhr.upload.onprogress = (e) => {
+                            progress(e.loaded / e.total * 100);
+                        };
+
+                        xhr.onload = () => {
+                            if (xhr.status === 403) {
+                                reject({ message: 'HTTP Error: ' + xhr.status, remove: true });
+                                return;
+                            }
+
+                            if (xhr.status < 200 || xhr.status >= 300) {
+                                reject('HTTP Error: ' + xhr.status);
+                                return;
+                            }
+
+                            const json = JSON.parse(xhr.responseText);
+
+                            if (!json || typeof json.url !== 'string') {
+                                reject('Invalid JSON: ' + xhr.responseText);
+                                return;
+                            }
+
+                            resolve(json.url);
+                        };
+
+                        xhr.onerror = () => {
+                            reject('Image upload failed due to a XHR Transport error. Code: ' + xhr.status);
+                        };
+
+                        const formData = new FormData();
+                        formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                        xhr.send(formData);
+                    })
                 });
             } catch {
                 textarea.dataset.wysiwygBound = '0';

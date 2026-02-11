@@ -25,6 +25,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Blog\PostController;
+use App\Http\Controllers\Catalog\BookletController;
 use App\Http\Controllers\Catalog\CourseController;
 use App\Http\Controllers\Catalog\ProductController;
 use App\Http\Controllers\Commerce\CartController;
@@ -169,6 +170,10 @@ Route::prefix('panel')
         Route::resource('orders', OrderController::class)->only(['index', 'show']);
         Route::resource('tickets', TicketController::class);
     });
+
+Route::prefix('booklets')->name('booklets.')->group(function () {
+    Route::get('/', [BookletController::class, 'index'])->name('index');
+});
 
 Route::prefix('courses')->name('courses.')->group(function () {
     Route::get('/', [CourseController::class, 'index'])->name('index');

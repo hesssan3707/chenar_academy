@@ -3,26 +3,14 @@
 @section('title', 'چنار آکادمی - خانه')
 
 @section('content')
-    <div class="container h-full flex flex-col justify-center">
+    <div class="w-full max-w-7xl mx-auto h-full flex flex-col justify-center">
+        @php($placeholderThumb = asset('images/default_image.webp'))
         <!-- Minimal Home Content: Two Horizontal Rows as per brief -->
         
         @if (($homeBanner ?? null))
             <div class="mb-10">
                 <div class="panel p-6 bg-white/5 border border-white/10 rounded-2xl">
                     <div class="h3 text-white">{{ $homeBanner->title }}</div>
-                </div>
-            </div>
-        @endif
-
-        @if (($latestPosts ?? collect())->isNotEmpty())
-            <div class="mb-10">
-                <h2 class="h3 mb-4 text-white">آخرین مقالات</h2>
-                <div class="h-scroll-container">
-                    @foreach ($latestPosts as $post)
-                        <a href="{{ route('blog.show', $post->slug) }}" class="panel p-5 bg-white/5 border border-white/10 rounded-2xl" style="min-width: 280px;">
-                            <div class="font-bold text-white">{{ $post->title }}</div>
-                        </a>
-                    @endforeach
                 </div>
             </div>
         @endif
@@ -44,8 +32,10 @@
                         @foreach($purchasedProducts as $product)
                             <a href="{{ route('panel.library.show', $product->slug) }}" class="card-product">
                                 <!-- Thumbnail -->
-                                <div class="h-48 rounded-lg bg-cover bg-center mb-4 border border-white/10" 
-                                     style="background-image: url('{{ $product->thumbnail_url }}')"></div>
+                                @php($thumbUrl = $product->thumbnail_url ?? $placeholderThumb)
+                                <div class="spa-cover mb-4">
+                                    <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
+                                </div>
                                 <h3 class="font-bold text-lg truncate">{{ $product->title }}</h3>
                                 <div class="mt-auto">
                                     <span class="btn btn--primary btn--sm w-full">مشاهده</span>
@@ -61,22 +51,19 @@
         <div>
             <h2 class="h3 mb-4 text-white">جدیدترین‌ها</h2>
             <div class="h-scroll-container">
-                 @php($placeholderThumb = 'data:image/svg+xml;utf8,'.rawurlencode('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"960\" height=\"720\" viewBox=\"0 0 960 720\"><defs><linearGradient id=\"g\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#0b1220\"/><stop offset=\"1\" stop-color=\"#111f37\"/></linearGradient></defs><rect width=\"960\" height=\"720\" fill=\"url(#g)\"/><rect x=\"36\" y=\"36\" width=\"888\" height=\"648\" rx=\"36\" fill=\"rgba(255,255,255,0.04)\" stroke=\"rgba(255,255,255,0.10)\"/><path d=\"M380 290c0-22 18-40 40-40h120c22 0 40 18 40 40v140c0 22-18 40-40 40H420c-22 0-40-18-40-40V290z\" fill=\"rgba(255,255,255,0.10)\"/><path d=\"M430 310h100v100H430z\" fill=\"rgba(255,255,255,0.10)\"/><path d=\"M430 440h100\" stroke=\"rgba(255,255,255,0.20)\" stroke-width=\"16\" stroke-linecap=\"round\"/><text x=\"480\" y=\"560\" text-anchor=\"middle\" fill=\"rgba(255,255,255,0.40)\" font-family=\"Vazirmatn, sans-serif\" font-size=\"34\" font-weight=\"700\">چنار</text></svg>'))
-                
                 @foreach ($latestProducts as $item)
                     <a href="{{ $item->type === 'course' ? route('courses.show', $item->slug) : route('products.show', $item->slug) }}" class="card-product">
                         @php($thumbUrl = ($item->thumbnailMedia?->disk ?? null) === 'public' && ($item->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($item->thumbnailMedia->path) : $placeholderThumb)
-                        <div class="h-48 rounded-lg bg-cover bg-center mb-4 border border-white/10" 
-                             style="background-image: url('{{ $thumbUrl }}')">
-                             <!-- Badges -->
-                             <div class="flex gap-2 p-2">
-                                 <span class="badge bg-black/50 backdrop-blur-sm text-white border border-white/10">
-                                     {{ $item->type === 'video' ? 'ویدیو' : ($item->type === 'course' ? 'دوره' : 'جزوه') }}
-                                 </span>
-                                 @if($item->hasDiscount())
+                        <div class="spa-cover mb-4">
+                            <img src="{{ $thumbUrl }}" alt="{{ $item->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
+                            <div class="absolute top-0 left-0 right-0 flex gap-2 p-2">
+                                <span class="badge bg-black/50 backdrop-blur-sm text-white border border-white/10">
+                                    {{ $item->type === 'video' ? 'ویدیو' : ($item->type === 'course' ? 'دوره' : 'جزوه') }}
+                                </span>
+                                @if($item->hasDiscount())
                                     <span class="badge bg-red-500/80 text-white">تخفیف</span>
-                                 @endif
-                             </div>
+                                @endif
+                            </div>
                         </div>
                         
                         <h3 class="font-bold text-lg mb-2 truncate">{{ $item->title }}</h3>

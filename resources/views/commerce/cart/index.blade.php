@@ -27,15 +27,10 @@
             <div class="h-scroll-container">
                 @foreach ($items as $item)
                     <div class="panel p-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm w-80 flex flex-col gap-4">
-                        <div class="w-full h-40 rounded-xl bg-white/10 overflow-hidden flex-shrink-0">
-                            @php($thumbUrl = $item->product?->thumbnailMedia ? Storage::disk('public')->url($item->product->thumbnailMedia->path) : null)
-                            @if($thumbUrl)
-                                <img src="{{ $thumbUrl }}" alt="{{ $item->product?->title }}" class="w-full h-full object-cover">
-                            @else
-                                <div class="w-full h-full flex items-center justify-center text-gray-500">
-                                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                </div>
-                            @endif
+                        @php($placeholderThumb = asset('images/default_image.webp'))
+                        @php($thumbUrl = ($item->product?->thumbnailMedia?->disk ?? null) === 'public' && ($item->product?->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($item->product->thumbnailMedia->path) : $placeholderThumb)
+                        <div class="spa-cover flex-shrink-0">
+                            <img src="{{ $thumbUrl }}" alt="{{ $item->product?->title ?? '' }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                         </div>
 
                         <div class="flex-1 text-right">

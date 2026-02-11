@@ -22,13 +22,13 @@
                 </div>
 
                 <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-            @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : null)
-            @if ($thumbUrl)
-                <div class="panel" style="margin-top: 18px;">
-                    <img class="product-detail__cover" src="{{ $thumbUrl }}" alt="" loading="lazy"
-                        onerror="this.onerror=null;this.style.display='none';">
+            @php($placeholderThumb = asset('images/default_image.webp'))
+            @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
+            <div class="panel" style="margin-top: 18px;">
+                <div class="spa-cover">
+                    <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                 </div>
-            @endif
+            </div>
 
             @if ($product->type === 'course')
                 @php($sections = $product->course?->sections ?? collect())

@@ -18,6 +18,12 @@
 
             <div class="p-8 flex-1 overflow-y-auto custom-scrollbar">
                 <div class="max-w-3xl mx-auto space-y-6">
+                    @php($placeholderThumb = asset('images/default_image.webp'))
+                    @php($coverUrl = ($post->coverMedia?->disk ?? null) === 'public' && ($post->coverMedia?->path ?? null) ? Storage::disk('public')->url($post->coverMedia->path) : $placeholderThumb)
+                    <div class="spa-cover">
+                        <img src="{{ $coverUrl }}" alt="{{ $post->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
+                    </div>
+
                     @if (($post->excerpt ?? '') !== '')
                         <div class="text-xl text-white/90 font-light leading-relaxed border-l-4 border-brand pl-4">
                             {{ $post->excerpt }}
