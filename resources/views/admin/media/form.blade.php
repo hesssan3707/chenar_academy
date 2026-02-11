@@ -22,51 +22,25 @@
             @php($isEdit = $media && $media->exists)
 
             <div class="panel max-w-md">
-                <form method="post"
-                    action="{{ $isEdit ? route('admin.media.update', $media->id) : route('admin.media.store') }}"
-                    class="stack stack--sm">
+                <form method="post" action="{{ route('admin.media.store') }}" class="stack stack--sm" enctype="multipart/form-data">
                     @csrf
-                    @if ($isEdit)
-                        @method('put')
-                    @endif
 
                     <label class="field">
                         <span class="field__label">Disk</span>
-                        <input name="disk" required value="{{ old('disk', (string) ($media->disk ?? 'public')) }}">
+                        @php($diskValue = (string) old('disk', 'public'))
+                        <select name="disk" required>
+                            <option value="public" @selected($diskValue === 'public')>public</option>
+                            <option value="local" @selected($diskValue === 'local')>local</option>
+                        </select>
                         @error('disk')
                             <div class="field__error">{{ $message }}</div>
                         @enderror
                     </label>
 
                     <label class="field">
-                        <span class="field__label">Path</span>
-                        <input name="path" required value="{{ old('path', (string) ($media->path ?? '')) }}">
-                        @error('path')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
-
-                    <label class="field">
-                        <span class="field__label">Original name</span>
-                        <input name="original_name" value="{{ old('original_name', (string) ($media->original_name ?? '')) }}">
-                        @error('original_name')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
-
-                    <label class="field">
-                        <span class="field__label">MIME type</span>
-                        <input name="mime_type" value="{{ old('mime_type', (string) ($media->mime_type ?? '')) }}">
-                        @error('mime_type')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
-
-                    <label class="field">
-                        <span class="field__label">Size</span>
-                        <input type="number" name="size" min="0" max="9223372036854775807"
-                            value="{{ old('size', (string) ($media->size ?? '')) }}">
-                        @error('size')
+                        <span class="field__label">File</span>
+                        <input type="file" name="file" required>
+                        @error('file')
                             <div class="field__error">{{ $message }}</div>
                         @enderror
                     </label>

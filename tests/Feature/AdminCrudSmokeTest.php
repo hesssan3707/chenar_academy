@@ -269,6 +269,7 @@ class AdminCrudSmokeTest extends TestCase
         $response = $this->actingAs($admin, 'admin')->post(route('admin.posts.store'), [
             'title' => 'My Post 1',
             'excerpt' => 'Intro',
+            'body' => '<p>Hello <strong>world</strong></p>',
             'status' => 'draft',
             'published_at' => null,
         ]);
@@ -278,16 +279,141 @@ class AdminCrudSmokeTest extends TestCase
 
         $post = Post::query()->findOrFail($postId);
         $this->assertSame('my-post-1', $post->slug);
+        $this->assertSame('<p>Hello <strong>world</strong></p>', $post->body);
 
         $this->actingAs($admin, 'admin')->put(route('admin.posts.update', $postId), [
             'title' => 'My Post 1 Updated',
             'excerpt' => 'Updated',
+            'body' => '<p>Updated body</p>',
             'status' => 'published',
             'published_at' => now()->toDateTimeString(),
         ])->assertRedirect(route('admin.posts.edit', $postId));
 
         $post->refresh();
         $this->assertSame('my-post-1', $post->slug);
+        $this->assertSame('<p>Updated body</p>', $post->body);
+    }
+
+    public function test_admin_can_upload_cover_image_for_post_on_create_and_update(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $cover1 = \Illuminate\Http\UploadedFile::fake()->image('cover-1.jpg', 1200, 675);
+
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.posts.store'), [
+            'title' => 'My Post With Cover',
+            'excerpt' => 'Intro',
+            'body' => '<p>Body</p>',
+            'status' => 'draft',
+            'published_at' => null,
+            'cover_image' => $cover1,
+        ]);
+
+        $postId = (int) Post::query()->where('title', 'My Post With Cover')->value('id');
+        $response->assertRedirect(route('admin.posts.edit', $postId));
+
+        $post = Post::query()->findOrFail($postId);
+        $this->assertNotNull($post->cover_media_id);
+
+        $media1 = \App\Models\Media::query()->findOrFail((int) $post->cover_media_id);
+        $this->assertSame('public', $media1->disk);
+        $this->assertSame('cover-1.jpg', $media1->original_name);
+        $this->assertTrue(\Illuminate\Support\Facades\Storage::disk('public')->exists($media1->path));
+
+        $cover2 = \Illuminate\Http\UploadedFile::fake()->image('cover-2.jpg', 1200, 675);
+
+        $this->actingAs($admin, 'admin')->post(route('admin.posts.update', $postId), [
+            '_method' => 'put',
+            'title' => 'My Post With Cover Updated',
+            'excerpt' => 'Intro 2',
+            'body' => '<p>Body 2</p>',
+            'status' => 'published',
+            'published_at' => now()->toDateTimeString(),
+            'cover_image' => $cover2,
+        ])->assertRedirect(route('admin.posts.edit', $postId));
+
+        $post->refresh();
+        $this->assertNotNull($post->cover_media_id);
+        $this->assertNotSame($media1->id, (int) $post->cover_media_id);
+
+        $media2 = \App\Models\Media::query()->findOrFail((int) $post->cover_media_id);
+        $this->assertSame('public', $media2->disk);
+        $this->assertSame('cover-2.jpg', $media2->original_name);
+        $this->assertTrue(\Illuminate\Support\Facades\Storage::disk('public')->exists($media2->path));
+    }
+
+    public function test_admin_cannot_create_post_without_body(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $this->actingAs($admin, 'admin')
+            ->from(route('admin.posts.create'))
+            ->post(route('admin.posts.store'), [
+                'title' => 'My Post Missing Body',
+                'excerpt' => 'Intro',
+                'status' => 'draft',
+                'published_at' => null,
+            ])
+            ->assertRedirect(route('admin.posts.create'))
+            ->assertSessionHasErrors(['body']);
+
+        $this->assertDatabaseMissing('posts', [
+            'title' => 'My Post Missing Body',
+        ]);
+    }
+
+    public function test_admin_can_upload_media_file_and_metadata_is_saved(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->image('test-image.png', 120, 80);
+
+        $response = $this->actingAs($admin, 'admin')
+            ->post(route('admin.media.store'), [
+                'disk' => 'public',
+                'file' => $file,
+            ]);
+
+        $mediaId = (int) \App\Models\Media::query()->where('original_name', 'test-image.png')->value('id');
+        $response->assertRedirect(route('admin.media.show', $mediaId));
+
+        $media = \App\Models\Media::query()->findOrFail($mediaId);
+        $this->assertSame('public', $media->disk);
+        $this->assertSame('test-image.png', $media->original_name);
+        $this->assertSame('image/png', $media->mime_type);
+        $this->assertNotNull($media->size);
+        $this->assertNotSame('', (string) $media->path);
+        $this->assertTrue(\Illuminate\Support\Facades\Storage::disk('public')->exists($media->path));
+    }
+
+    public function test_admin_can_upload_wysiwyg_image_and_get_url(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->image('editor.jpg', 50, 50);
+
+        $response = $this->actingAs($admin, 'admin')
+            ->postJson(route('admin.media.wysiwyg'), [
+                'file' => $file,
+            ]);
+
+        $response->assertOk()->assertJsonStructure(['url', 'media_id']);
+
+        $mediaId = (int) $response->json('media_id');
+        $media = \App\Models\Media::query()->findOrFail($mediaId);
+        $this->assertSame('public', $media->disk);
+        $this->assertSame('editor.jpg', $media->original_name);
+        $this->assertTrue(\Illuminate\Support\Facades\Storage::disk('public')->exists($media->path));
     }
 
     public function test_admin_can_create_and_update_category_without_slug(): void

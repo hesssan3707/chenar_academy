@@ -726,3 +726,24 @@ html[data-theme='admin'] .upload__progress-fill {
     text-align: left;
     direction: ltr;
 }
+
+.rich-content {
+    overflow-wrap: anywhere;
+}
+
+.rich-content img,
+.rich-content video,
+.rich-content iframe {
+    max-width: 100%;
+}
+
+.rich-content img {
+    height: auto;
+    border-radius: 14px;
+}
+
+.rich-content a {
+    color: rgba(45, 212, 191, 0.95);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}

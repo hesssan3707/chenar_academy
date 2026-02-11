@@ -31,6 +31,9 @@ class SettingController extends Controller
         $cardToCardCard1Number = '';
         $cardToCardCard2Name = '';
         $cardToCardCard2Number = '';
+        $socialInstagramUrl = '';
+        $socialTelegramUrl = '';
+        $socialYoutubeUrl = '';
 
         if (Schema::hasTable('settings')) {
             $setting = Setting::query()->where('key', 'page.about')->first();
@@ -52,6 +55,9 @@ class SettingController extends Controller
             $cardToCardCard1Number = $this->settingString('commerce.card_to_card.card1.number');
             $cardToCardCard2Name = $this->settingString('commerce.card_to_card.card2.name');
             $cardToCardCard2Number = $this->settingString('commerce.card_to_card.card2.number');
+            $socialInstagramUrl = $this->settingString('social.instagram.url');
+            $socialTelegramUrl = $this->settingString('social.telegram.url');
+            $socialYoutubeUrl = $this->settingString('social.youtube.url');
         }
 
         return view('admin.settings.index', [
@@ -69,6 +75,9 @@ class SettingController extends Controller
             'cardToCardCard1Number' => $cardToCardCard1Number,
             'cardToCardCard2Name' => $cardToCardCard2Name,
             'cardToCardCard2Number' => $cardToCardCard2Number,
+            'socialInstagramUrl' => $socialInstagramUrl,
+            'socialTelegramUrl' => $socialTelegramUrl,
+            'socialYoutubeUrl' => $socialYoutubeUrl,
         ]);
     }
 
@@ -91,6 +100,9 @@ class SettingController extends Controller
             'card_to_card_card1_number' => ['nullable', 'string', 'max:50'],
             'card_to_card_card2_name' => ['nullable', 'string', 'max:120'],
             'card_to_card_card2_number' => ['nullable', 'string', 'max:50'],
+            'social_instagram_url' => ['nullable', 'string', 'max:255'],
+            'social_telegram_url' => ['nullable', 'string', 'max:255'],
+            'social_youtube_url' => ['nullable', 'string', 'max:255'],
         ]);
 
         if (Schema::hasTable('settings')) {
@@ -166,6 +178,23 @@ class SettingController extends Controller
                 ['key' => 'commerce.card_to_card.card2.number', 'group' => 'commerce'],
                 ['value' => $card2Number]
             );
+
+            $instagramUrl = $this->normalizeUrl((string) ($validated['social_instagram_url'] ?? ''));
+            $telegramUrl = $this->normalizeUrl((string) ($validated['social_telegram_url'] ?? ''));
+            $youtubeUrl = $this->normalizeUrl((string) ($validated['social_youtube_url'] ?? ''));
+
+            Setting::query()->updateOrCreate(
+                ['key' => 'social.instagram.url', 'group' => 'social'],
+                ['value' => $instagramUrl]
+            );
+            Setting::query()->updateOrCreate(
+                ['key' => 'social.telegram.url', 'group' => 'social'],
+                ['value' => $telegramUrl]
+            );
+            Setting::query()->updateOrCreate(
+                ['key' => 'social.youtube.url', 'group' => 'social'],
+                ['value' => $youtubeUrl]
+            );
         }
 
         Cache::forget('theme.active');
@@ -207,6 +236,20 @@ class SettingController extends Controller
         $digits = is_string($digits) ? $digits : '';
 
         return $digits !== '' ? $digits : null;
+    }
+
+    private function normalizeUrl(string $raw): ?string
+    {
+        $normalized = trim($raw);
+        if ($normalized === '') {
+            return null;
+        }
+
+        if (preg_match('/^https?:\\/\\//i', $normalized) === 1) {
+            return $normalized;
+        }
+
+        return 'https://'.$normalized;
     }
 
     private function settingBool(string $key, bool $default): bool

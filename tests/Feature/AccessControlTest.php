@@ -197,6 +197,46 @@ class AccessControlTest extends TestCase
         $this->assertSame('6037991811112222', $card2Number->value);
     }
 
+    public function test_admin_can_update_social_urls_in_settings_and_contact_page_uses_them(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $this->actingAs($user, 'admin')
+            ->put(route('admin.settings.update'), [
+                'theme' => 'default',
+                'social_instagram_url' => 'instagram.com/chenar_academy',
+                'social_telegram_url' => 't.me/chenar_academy',
+                'social_youtube_url' => 'youtube.com/@chenaracademy',
+            ])->assertRedirect(route('admin.settings.index'));
+
+        $instagram = Setting::query()->where('key', 'social.instagram.url')->first();
+        $this->assertNotNull($instagram);
+        $this->assertSame('social', $instagram->group);
+        $this->assertSame('https://instagram.com/chenar_academy', $instagram->value);
+
+        $telegram = Setting::query()->where('key', 'social.telegram.url')->first();
+        $this->assertNotNull($telegram);
+        $this->assertSame('social', $telegram->group);
+        $this->assertSame('https://t.me/chenar_academy', $telegram->value);
+
+        $youtube = Setting::query()->where('key', 'social.youtube.url')->first();
+        $this->assertNotNull($youtube);
+        $this->assertSame('social', $youtube->group);
+        $this->assertSame('https://youtube.com/@chenaracademy', $youtube->value);
+
+        $this->get(route('contact'))
+            ->assertOk()
+            ->assertSee('https://instagram.com/chenar_academy', false)
+            ->assertSee('https://t.me/chenar_academy', false)
+            ->assertSee('https://youtube.com/@chenaracademy', false);
+    }
+
     public function test_admin_can_access_user_panel_routes(): void
     {
         $user = User::factory()->create();

@@ -24,21 +24,28 @@
                         </div>
                     @endif
 
-                    @foreach (($blocks ?? collect()) as $block)
-                        @php($text = trim((string) ($block->text ?? '')))
-                        @if ($block->block_type === 'heading' && $text !== '')
-                            <h2 class="h3 mt-8 mb-4 text-brand">{{ $text }}</h2>
-                        @elseif ($text !== '')
-                            <div class="text-white/80 leading-loose space-y-4">
-                                @foreach (preg_split("/\\n\\s*\\n/", $text) as $paragraph)
-                                    @php($paragraphText = trim((string) $paragraph))
-                                    @if ($paragraphText !== '')
-                                        <p>{{ $paragraphText }}</p>
-                                    @endif
-                                @endforeach
-                            </div>
-                        @endif
-                    @endforeach
+                    @php($body = trim((string) ($post->body ?? '')))
+                    @if ($body !== '')
+                        <div class="text-white/80 leading-loose space-y-4 rich-content">
+                            {!! $body !!}
+                        </div>
+                    @else
+                        @foreach (($blocks ?? collect()) as $block)
+                            @php($text = trim((string) ($block->text ?? '')))
+                            @if ($block->block_type === 'heading' && $text !== '')
+                                <h2 class="h3 mt-8 mb-4 text-brand">{{ $text }}</h2>
+                            @elseif ($text !== '')
+                                <div class="text-white/80 leading-loose space-y-4">
+                                    @foreach (preg_split("/\\n\\s*\\n/", $text) as $paragraph)
+                                        @php($paragraphText = trim((string) $paragraph))
+                                        @if ($paragraphText !== '')
+                                            <p>{{ $paragraphText }}</p>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
+                        @endforeach
+                    @endif
                 </div>
             </div>
         </div>

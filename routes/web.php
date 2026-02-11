@@ -146,6 +146,8 @@ Route::prefix('admin')
         Route::resource('surveys', AdminSurveyController::class);
 
         Route::resource('tickets', AdminTicketController::class);
+        Route::post('media/wysiwyg', [AdminMediaController::class, 'wysiwyg'])->name('media.wysiwyg');
+        Route::get('media/{media}/stream', [AdminMediaController::class, 'stream'])->name('media.stream');
         Route::resource('media', AdminMediaController::class)->except(['edit', 'update']);
 
         Route::resource('roles', AdminRoleController::class);
@@ -184,6 +186,39 @@ Route::prefix('products')->name('products.')->group(function () {
 Route::prefix('surveys')->name('surveys.')->group(function () {
     Route::post('/{survey}/responses', [SurveyResponseController::class, 'store'])->name('responses.store');
 });
+
+Route::get('/media/{media}/stream', function (\App\Models\Media $media) {
+    if ((string) ($media->disk ?? '') !== 'public') {
+        abort(404);
+    }
+
+    $path = str_replace('\\', '/', (string) ($media->path ?? ''));
+    if ($path === '') {
+        abort(404);
+    }
+
+    if (str_contains($path, '..')) {
+        abort(404);
+    }
+
+    $mime = (string) ($media->mime_type ?? '');
+    $filename = (string) ($media->original_name ?: basename($path));
+
+    $root = (string) config('filesystems.disks.public.root', '');
+    if ($root === '') {
+        abort(404);
+    }
+
+    $absolutePath = rtrim($root, '\\/').DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, ltrim($path, '/'));
+    if (! is_file($absolutePath)) {
+        abort(404);
+    }
+
+    return response()->file($absolutePath, [
+        'Content-Type' => $mime !== '' ? $mime : 'application/octet-stream',
+        'Content-Disposition' => 'inline; filename="'.$filename.'"',
+    ]);
+})->name('media.stream');
 
 Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/', [PostController::class, 'index'])->name('index');

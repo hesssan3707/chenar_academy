@@ -21,7 +21,8 @@
             <div class="panel">
                 <form method="post" action="{{ $isEdit ? route('admin.posts.update', $post->id) : route('admin.posts.store') }}"
                     class="stack stack--sm"
-                    id="post-form">
+                    id="post-form"
+                    enctype="multipart/form-data">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -58,6 +59,29 @@
                     </label>
 
                     <label class="field">
+                        <span class="field__label">تصویر کاور</span>
+                        @if (($post?->cover_media_id ?? null))
+                            <div class="post-cover-preview">
+                                <img src="{{ route('admin.media.stream', (int) $post->cover_media_id) }}" alt="">
+                            </div>
+                            <div class="field__hint">کاور فعلی. برای جایگزینی، تصویر جدید انتخاب کنید.</div>
+                        @endif
+                        <input type="file" name="cover_image" accept="image/*">
+                        @error('cover_image')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
+                    <label class="field">
+                        <span class="field__label">متن مقاله</span>
+                        <textarea name="body" required data-wysiwyg="1"
+                            data-wysiwyg-upload-url="{{ route('admin.media.wysiwyg') }}">{{ old('body', (string) ($post->body ?? '')) }}</textarea>
+                        @error('body')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
+                    <label class="field">
                         <span class="field__label">تاریخ انتشار</span>
                         @php($publishedAtValue = old('published_at', $post?->published_at ? jdate($post->published_at)->format('Y/m/d H:i') : ''))
                         <input name="published_at" data-jdp value="{{ $publishedAtValue }}">
@@ -89,4 +113,6 @@
             </div>
         </div>
     </section>
+
+    <script src="https://cdn.ckeditor.com/4.22.1/full-all/ckeditor.js"></script>
 @endsection

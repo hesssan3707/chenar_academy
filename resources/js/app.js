@@ -26,6 +26,8 @@ window.initApp = function() {
     initAdminCourseLessonUi();
     initAdminConfirmModalUi();
     initAdminCategoryFormUi();
+    initAdminSettingsTabsUi();
+    initAdminWysiwygUi();
 
     const surveyModal = document.querySelector('[data-survey-modal]');
     if (surveyModal) {
@@ -302,6 +304,83 @@ function initAdminUploadUi() {
     document.querySelectorAll('form[enctype="multipart/form-data"]').forEach((form) => {
         bindAdminUploadForm(form);
     });
+}
+
+function ensureCkEditorLoaded({ maxAttempts = 30, intervalMs = 250 } = {}) {
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+
+        const tick = () => {
+            attempts++;
+            if (window.CKEDITOR) {
+                resolve(window.CKEDITOR);
+                return;
+            }
+
+            if (attempts >= maxAttempts) {
+                reject(new Error('CKEDITOR not available'));
+                return;
+            }
+
+            window.setTimeout(tick, intervalMs);
+        };
+
+        tick();
+    });
+}
+
+function initAdminWysiwygUi() {
+    if (!isAdminTheme()) {
+        return;
+    }
+
+    const targets = Array.from(document.querySelectorAll('textarea[data-wysiwyg="1"]'));
+    if (targets.length === 0) {
+        return;
+    }
+
+    ensureCkEditorLoaded().then((CKEDITOR) => {
+        targets.forEach((textarea) => {
+            if (!(textarea instanceof HTMLTextAreaElement)) {
+                return;
+            }
+
+            if (textarea.dataset.wysiwygBound === '1') {
+                return;
+            }
+
+            const uploadUrlBase = textarea.dataset.wysiwygUploadUrl || '';
+            const csrfToken = getCsrfToken();
+            const uploadUrl = uploadUrlBase && csrfToken ? `${uploadUrlBase}?_token=${encodeURIComponent(csrfToken)}` : uploadUrlBase;
+            textarea.dataset.wysiwygBound = '1';
+
+            try {
+                CKEDITOR.replace(textarea, {
+                    height: 420,
+                    language: 'fa',
+                    contentsLangDirection: 'rtl',
+                    extraPlugins: 'colorbutton,font,justify,uploadimage',
+                    removePlugins: 'elementspath',
+                    resize_enabled: true,
+                    allowedContent: true,
+                    toolbar: [
+                        { name: 'clipboard', items: ['Undo', 'Redo'] },
+                        { name: 'styles', items: ['Format', 'Font', 'FontSize'] },
+                        { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat'] },
+                        { name: 'colors', items: ['TextColor', 'BGColor'] },
+                        { name: 'paragraph', items: ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
+                        { name: 'links', items: ['Link', 'Unlink'] },
+                        { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar'] },
+                        { name: 'tools', items: ['Maximize', 'Source'] },
+                    ],
+                    filebrowserUploadUrl: uploadUrl || undefined,
+                    filebrowserUploadMethod: 'form',
+                });
+            } catch {
+                textarea.dataset.wysiwygBound = '0';
+            }
+        });
+    }).catch(() => {});
 }
 
 function initAdminCourseLessonUi() {
@@ -723,6 +802,72 @@ function initAdminCategoryFormUi() {
         typeSelect.addEventListener('change', sync);
         sync();
     });
+}
+
+function initAdminSettingsTabsUi() {
+    if (!isAdminTheme()) {
+        return;
+    }
+
+    const tabsRoot = document.querySelector('[data-settings-tabs]');
+    if (!(tabsRoot instanceof HTMLElement)) {
+        return;
+    }
+
+    if (tabsRoot.dataset.bound === '1') {
+        return;
+    }
+    tabsRoot.dataset.bound = '1';
+
+    const tabs = Array.from(tabsRoot.querySelectorAll('[data-settings-tab]'));
+    const panels = Array.from(document.querySelectorAll('[data-settings-panel]'));
+    if (tabs.length === 0 || panels.length === 0) {
+        return;
+    }
+
+    const activate = (key) => {
+        tabs.forEach((tab) => {
+            const tabKey = tab.getAttribute('data-settings-tab');
+            const isActive = tabKey === key;
+            tab.classList.toggle('is-active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        panels.forEach((panel) => {
+            const panelKey = panel.getAttribute('data-settings-panel');
+            panel.hidden = panelKey !== key;
+        });
+    };
+
+    tabs.forEach((tab) => {
+        if (tab instanceof HTMLButtonElement && tab.dataset.bound === '1') {
+            return;
+        }
+
+        if (tab instanceof HTMLButtonElement) {
+            tab.dataset.bound = '1';
+        }
+
+        tab.addEventListener('click', () => {
+            const key = tab.getAttribute('data-settings-tab');
+            if (!key) return;
+            activate(key);
+        });
+    });
+
+    const firstErrorPanel = panels.find((panel) => panel.querySelector('.field__error'));
+    if (firstErrorPanel) {
+        const key = firstErrorPanel.getAttribute('data-settings-panel');
+        if (key) {
+            activate(key);
+            return;
+        }
+    }
+
+    const firstKey = tabs[0]?.getAttribute('data-settings-tab');
+    if (firstKey) {
+        activate(firstKey);
+    }
 }
 
 function getCsrfToken() {

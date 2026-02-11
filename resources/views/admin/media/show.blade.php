@@ -52,6 +52,22 @@
                         <div>شناسه: {{ $media->id }}</div>
                         <div>Disk: {{ $media->disk }}</div>
                         <div>Path: {{ $media->path }}</div>
+                        @if ((string) ($media->path ?? '') !== '')
+                            <div>
+                                Admin URL:
+                                <a class="link" href="{{ route('admin.media.stream', $media->id) }}" target="_blank" rel="noreferrer">
+                                    {{ route('admin.media.stream', $media->id) }}
+                                </a>
+                            </div>
+                            @if ((string) ($media->disk ?? '') === 'public')
+                                <div>
+                                    Public URL:
+                                    <a class="link" href="{{ route('media.stream', $media->id) }}" target="_blank" rel="noreferrer">
+                                        {{ route('media.stream', $media->id) }}
+                                    </a>
+                                </div>
+                            @endif
+                        @endif
                         <div>Original: {{ $media->original_name ?? '—' }}</div>
                         <div>MIME: {{ $media->mime_type ?? '—' }}</div>
                         <div>Size: {{ $media->size ? number_format((int) $media->size) : '—' }}</div>
