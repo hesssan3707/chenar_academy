@@ -25,7 +25,9 @@ class AccessControlTest extends TestCase
 
     public function test_guest_can_view_admin_login_page(): void
     {
-        $this->get(route('admin.login'))->assertOk();
+        $this->get(route('admin.login'))
+            ->assertOk()
+            ->assertSee('name="otp-send-url" content="'.route('admin.otp.send').'"', false);
     }
 
     public function test_admin_can_login_from_admin_login_page(): void
@@ -40,7 +42,29 @@ class AccessControlTest extends TestCase
             'password' => 'password',
         ])->assertRedirect(route('admin.dashboard'));
 
-        $this->assertAuthenticatedAs($user);
+        $this->assertAuthenticatedAs($user, 'admin');
+        $this->assertGuest('web');
+    }
+
+    public function test_admin_can_login_with_otp_from_admin_login_page(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        $this->postJson(route('admin.otp.send'), [
+            'purpose' => 'admin_login',
+            'phone' => $user->phone,
+        ])->assertOk();
+
+        $this->post(route('admin.login.store'), [
+            'action' => 'login_otp',
+            'phone' => $user->phone,
+            'otp_code' => '11111',
+        ])->assertRedirect(route('admin.dashboard'));
+
+        $this->assertAuthenticatedAs($user, 'admin');
+        $this->assertGuest('web');
     }
 
     public function test_regular_user_cannot_login_from_admin_login_page(): void
@@ -72,7 +96,7 @@ class AccessControlTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->get('/admin')->assertForbidden();
+        $this->actingAs($user)->get('/admin')->assertRedirect(route('admin.login'));
     }
 
     public function test_admin_can_access_admin_routes(): void
@@ -81,7 +105,7 @@ class AccessControlTest extends TestCase
         $adminRole = Role::create(['name' => 'admin']);
         $user->roles()->attach($adminRole->id);
 
-        $this->actingAs($user)->get('/admin')->assertOk();
+        $this->actingAs($user, 'admin')->get('/admin')->assertOk();
     }
 
     public function test_admin_can_update_about_page_content(): void
@@ -94,7 +118,7 @@ class AccessControlTest extends TestCase
         config()->set('theme.default', 'default');
         config()->set('theme.setting_key', 'theme.active');
 
-        $this->actingAs($user)
+        $this->actingAs($user, 'admin')
             ->put(route('admin.settings.update'), [
                 'theme' => 'default',
                 'about_title' => 'درباره ما',
@@ -121,7 +145,7 @@ class AccessControlTest extends TestCase
         config()->set('theme.default', 'default');
         config()->set('theme.setting_key', 'theme.active');
 
-        $this->actingAs($user)
+        $this->actingAs($user, 'admin')
             ->put(route('admin.settings.update'), [
                 'theme' => 'default',
                 'tax_percent' => 9,
@@ -143,7 +167,7 @@ class AccessControlTest extends TestCase
         config()->set('theme.default', 'default');
         config()->set('theme.setting_key', 'theme.active');
 
-        $this->actingAs($user)
+        $this->actingAs($user, 'admin')
             ->put(route('admin.settings.update'), [
                 'theme' => 'default',
                 'card_to_card_card1_name' => 'چنار آکادمی',
@@ -180,6 +204,15 @@ class AccessControlTest extends TestCase
         $user->roles()->attach($adminRole->id);
 
         $this->actingAs($user)->get('/panel')->assertOk();
+    }
+
+    public function test_admin_panel_authentication_does_not_authenticate_user_panel(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        $this->actingAs($user, 'admin')->get('/panel')->assertRedirect(route('login'));
     }
 
     public function test_user_can_change_password_with_current_password(): void

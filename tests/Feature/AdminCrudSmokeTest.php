@@ -28,19 +28,19 @@ class AdminCrudSmokeTest extends TestCase
         $userA = User::factory()->create(['phone' => '09120000001', 'name' => 'User A']);
         $userB = User::factory()->create(['phone' => '09120000002', 'name' => 'User B']);
 
-        $this->actingAs($admin)->post(route('admin.scope.user.store'), [
+        $this->actingAs($admin, 'admin')->post(route('admin.scope.user.store'), [
             'user_id' => $userA->id,
         ])->assertRedirect();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.users.index'))
             ->assertOk()
             ->assertSee('09120000001')
             ->assertDontSee('09120000002');
 
-        $this->actingAs($admin)->post(route('admin.scope.clear'))->assertRedirect();
+        $this->actingAs($admin, 'admin')->post(route('admin.scope.clear'))->assertRedirect();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.users.index'))
             ->assertOk()
             ->assertSee('09120000001')
@@ -55,7 +55,7 @@ class AdminCrudSmokeTest extends TestCase
         $userA = User::factory()->create();
         $userB = User::factory()->create();
 
-        $this->actingAs($admin)->withSession(['admin_scoped_user_id' => $userA->id])
+        $this->actingAs($admin, 'admin')->withSession(['admin_scoped_user_id' => $userA->id])
             ->get(route('admin.users.edit', $userB->id))
             ->assertNotFound();
     }
@@ -82,7 +82,7 @@ class AdminCrudSmokeTest extends TestCase
             'meta' => [],
         ]);
 
-        $this->actingAs($admin)->post(route('admin.users.accesses.store', $customer->id), [
+        $this->actingAs($admin, 'admin')->post(route('admin.users.accesses.store', $customer->id), [
             'product_id' => $product->id,
             'expires_days' => 10,
         ])->assertRedirect();
@@ -97,7 +97,7 @@ class AdminCrudSmokeTest extends TestCase
             ->where('product_id', $product->id)
             ->value('id');
 
-        $this->actingAs($admin)->delete(route('admin.users.accesses.destroy', [$customer->id, $accessId]))
+        $this->actingAs($admin, 'admin')->delete(route('admin.users.accesses.destroy', [$customer->id, $accessId]))
             ->assertRedirect();
 
         $this->assertDatabaseMissing('product_accesses', [
@@ -112,7 +112,7 @@ class AdminCrudSmokeTest extends TestCase
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
-        $response = $this->actingAs($admin)->post(route('admin.booklets.store'), [
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.booklets.store'), [
             'title' => 'Booklet 1',
             'excerpt' => 'Intro',
             'status' => 'draft',
@@ -131,7 +131,7 @@ class AdminCrudSmokeTest extends TestCase
             'slug' => 'booklet-1',
         ]);
 
-        $this->actingAs($admin)->put(route('admin.booklets.update', $bookletId), [
+        $this->actingAs($admin, 'admin')->put(route('admin.booklets.update', $bookletId), [
             'title' => 'Booklet 1 Updated',
             'excerpt' => 'Updated',
             'status' => 'published',
@@ -153,7 +153,7 @@ class AdminCrudSmokeTest extends TestCase
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
-        $response = $this->actingAs($admin)->post(route('admin.videos.store'), [
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.videos.store'), [
             'title' => 'Video 1',
             'excerpt' => 'Intro',
             'status' => 'draft',
@@ -174,7 +174,7 @@ class AdminCrudSmokeTest extends TestCase
             'product_id' => $videoProductId,
         ]);
 
-        $this->actingAs($admin)->put(route('admin.videos.update', $videoProductId), [
+        $this->actingAs($admin, 'admin')->put(route('admin.videos.update', $videoProductId), [
             'title' => 'Video 1 Updated',
             'excerpt' => 'Updated',
             'status' => 'published',
@@ -195,7 +195,7 @@ class AdminCrudSmokeTest extends TestCase
 
         $customer = User::factory()->create();
 
-        $response = $this->actingAs($admin)->post(route('admin.tickets.store'), [
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.tickets.store'), [
             'user_id' => $customer->id,
             'subject' => 'Help',
             'priority' => 'normal',
@@ -216,7 +216,7 @@ class AdminCrudSmokeTest extends TestCase
             'body' => 'Initial message',
         ]);
 
-        $this->actingAs($admin)->put(route('admin.tickets.update', $ticketId), [
+        $this->actingAs($admin, 'admin')->put(route('admin.tickets.update', $ticketId), [
             'body' => 'Reply',
             'close' => '0',
         ])->assertRedirect(route('admin.tickets.show', $ticketId));
@@ -226,7 +226,7 @@ class AdminCrudSmokeTest extends TestCase
             'body' => 'Reply',
         ]);
 
-        $this->actingAs($admin)->put(route('admin.tickets.update', $ticketId), [
+        $this->actingAs($admin, 'admin')->put(route('admin.tickets.update', $ticketId), [
             'body' => '',
             'close' => '1',
         ])->assertRedirect(route('admin.tickets.show', $ticketId));
@@ -242,7 +242,7 @@ class AdminCrudSmokeTest extends TestCase
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
-        $this->actingAs($admin)->post(route('admin.users.store'), [
+        $this->actingAs($admin, 'admin')->post(route('admin.users.store'), [
             'name' => 'Test User',
             'phone' => '09120000000',
             'password' => 'secret123',
@@ -261,7 +261,7 @@ class AdminCrudSmokeTest extends TestCase
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
-        $response = $this->actingAs($admin)->post(route('admin.posts.store'), [
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.posts.store'), [
             'title' => 'My Post 1',
             'excerpt' => 'Intro',
             'status' => 'draft',
@@ -274,7 +274,7 @@ class AdminCrudSmokeTest extends TestCase
         $post = Post::query()->findOrFail($postId);
         $this->assertSame('my-post-1', $post->slug);
 
-        $this->actingAs($admin)->put(route('admin.posts.update', $postId), [
+        $this->actingAs($admin, 'admin')->put(route('admin.posts.update', $postId), [
             'title' => 'My Post 1 Updated',
             'excerpt' => 'Updated',
             'status' => 'published',
@@ -290,7 +290,7 @@ class AdminCrudSmokeTest extends TestCase
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
-        $response = $this->actingAs($admin)->post(route('admin.categories.store'), [
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.categories.store'), [
             'type' => 'note',
             'parent_id' => null,
             'title' => 'Math 1',
@@ -306,7 +306,7 @@ class AdminCrudSmokeTest extends TestCase
         $category = Category::query()->findOrFail($categoryId);
         $this->assertSame('math-1', $category->slug);
 
-        $this->actingAs($admin)->put(route('admin.categories.update', $categoryId), [
+        $this->actingAs($admin, 'admin')->put(route('admin.categories.update', $categoryId), [
             'type' => 'note',
             'parent_id' => null,
             'title' => 'Math 1 Updated',
@@ -358,7 +358,7 @@ class AdminCrudSmokeTest extends TestCase
             'sort_order' => 0,
         ]);
 
-        $response = $this->actingAs($admin)->get(route('admin.categories.index'));
+        $response = $this->actingAs($admin, 'admin')->get(route('admin.categories.index'));
 
         $response
             ->assertOk()
@@ -412,7 +412,7 @@ class AdminCrudSmokeTest extends TestCase
             ]);
         }
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('<span class="badge badge--brand" style="margin-right: 8px;">2</span>', false)
@@ -441,7 +441,7 @@ class AdminCrudSmokeTest extends TestCase
             'meta' => [],
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.orders.edit', $order->id))
             ->assertOk()
             ->assertSee('در انتظار پرداخت')
@@ -485,13 +485,13 @@ class AdminCrudSmokeTest extends TestCase
             'meta' => [],
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.payments.index'))
             ->assertOk()
             ->assertSee('درگاه آزمایشی')
             ->assertSee('در انتظار پرداخت');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.payments.show', $payment->id))
             ->assertOk()
             ->assertSee('درگاه آزمایشی')
@@ -515,13 +515,13 @@ class AdminCrudSmokeTest extends TestCase
             'meta' => [],
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.tickets.index'))
             ->assertOk()
             ->assertSee('باز')
             ->assertSee('معمولی');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.tickets.show', $ticket->id))
             ->assertOk()
             ->assertSee('باز')
@@ -535,32 +535,32 @@ class AdminCrudSmokeTest extends TestCase
 
         User::factory()->count(45)->create();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.users.index'))
             ->assertOk()
             ->assertViewHas('users', fn ($users) => $users->perPage() === 40);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.tickets.index'))
             ->assertOk()
             ->assertViewHas('tickets', fn ($tickets) => $tickets->perPage() === 40);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.videos.index'))
             ->assertOk()
             ->assertViewHas('videos', fn ($videos) => $videos->perPage() === 40);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.booklets.index'))
             ->assertOk()
             ->assertViewHas('booklets', fn ($booklets) => $booklets->perPage() === 40);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.posts.index'))
             ->assertOk()
             ->assertViewHas('posts', fn ($posts) => $posts->perPage() === 40);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.surveys.index'))
             ->assertOk()
             ->assertViewHas('surveys', fn ($surveys) => $surveys->perPage() === 40);
@@ -573,16 +573,16 @@ class AdminCrudSmokeTest extends TestCase
 
         $stubMessage = 'این صفحه در مرحله فعلی به صورت استاب آماده شده است.';
 
-        $this->actingAs($admin)->get(route('admin.categories.index'))->assertOk()->assertDontSee($stubMessage);
-        $this->actingAs($admin)->get(route('admin.products.index'))->assertOk()->assertDontSee($stubMessage);
-        $this->actingAs($admin)->get(route('admin.courses.index'))->assertOk()->assertDontSee($stubMessage);
-        $this->actingAs($admin)->get(route('admin.orders.index'))->assertOk()->assertDontSee($stubMessage);
-        $this->actingAs($admin)->get(route('admin.payments.index'))->assertOk()->assertDontSee($stubMessage);
-        $this->actingAs($admin)->get(route('admin.coupons.index'))->assertOk()->assertDontSee($stubMessage);
-        $this->actingAs($admin)->get(route('admin.banners.index'))->assertOk()->assertDontSee($stubMessage);
-        $this->actingAs($admin)->get(route('admin.social-links.index'))->assertOk()->assertDontSee($stubMessage);
-        $this->actingAs($admin)->get(route('admin.media.index'))->assertOk()->assertDontSee($stubMessage);
-        $this->actingAs($admin)->get(route('admin.roles.index'))->assertOk()->assertDontSee($stubMessage);
-        $this->actingAs($admin)->get(route('admin.permissions.index'))->assertOk()->assertDontSee($stubMessage);
+        $this->actingAs($admin, 'admin')->get(route('admin.categories.index'))->assertOk()->assertDontSee($stubMessage);
+        $this->actingAs($admin, 'admin')->get(route('admin.products.index'))->assertOk()->assertDontSee($stubMessage);
+        $this->actingAs($admin, 'admin')->get(route('admin.courses.index'))->assertOk()->assertDontSee($stubMessage);
+        $this->actingAs($admin, 'admin')->get(route('admin.orders.index'))->assertOk()->assertDontSee($stubMessage);
+        $this->actingAs($admin, 'admin')->get(route('admin.payments.index'))->assertOk()->assertDontSee($stubMessage);
+        $this->actingAs($admin, 'admin')->get(route('admin.coupons.index'))->assertOk()->assertDontSee($stubMessage);
+        $this->actingAs($admin, 'admin')->get(route('admin.banners.index'))->assertOk()->assertDontSee($stubMessage);
+        $this->actingAs($admin, 'admin')->get(route('admin.social-links.index'))->assertOk()->assertDontSee($stubMessage);
+        $this->actingAs($admin, 'admin')->get(route('admin.media.index'))->assertOk()->assertDontSee($stubMessage);
+        $this->actingAs($admin, 'admin')->get(route('admin.roles.index'))->assertOk()->assertDontSee($stubMessage);
+        $this->actingAs($admin, 'admin')->get(route('admin.permissions.index'))->assertOk()->assertDontSee($stubMessage);
     }
 }

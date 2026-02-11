@@ -504,7 +504,7 @@ html[data-theme='light'] .card__action {
     bottom: 18px;
     left: 18px;
     right: 18px;
-    z-index: 60;
+    z-index: 2600;
     display: grid;
     gap: 10px;
     pointer-events: none;

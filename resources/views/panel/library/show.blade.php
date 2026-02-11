@@ -1,14 +1,16 @@
-@extends('layouts.app')
+@extends('layouts.spa')
 
 @section('title', $title ?? ($product->title ?? 'محتوا'))
 
 @section('content')
-    @include('panel.partials.nav')
+    <div class="container h-full py-6">
+        <div class="user-panel-grid">
+            @include('panel.partials.sidebar')
 
-    <section class="section">
-        <div class="container">
-            <h1 class="page-title">{{ $product->title }}</h1>
-            <p class="page-subtitle">
+            <main class="user-content flex flex-col overflow-hidden">
+                <div class="mb-6">
+                    <h2 class="h2 mb-1">{{ $product->title }}</h2>
+                    <p class="text-muted">
                 @if ($product->type === 'course')
                     دوره آموزشی
                 @elseif ($product->type === 'video')
@@ -16,8 +18,10 @@
                 @else
                     جزوه آموزشی
                 @endif
-            </p>
+                    </p>
+                </div>
 
+                <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
             @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : null)
             @if ($thumbUrl)
                 <div class="panel" style="margin-top: 18px;">
@@ -188,6 +192,7 @@
             <div class="form-actions" style="margin-top: 18px;">
                 <a class="btn btn--ghost" href="{{ route('panel.library.index') }}">بازگشت به کتابخانه</a>
             </div>
+                </div>
+            </main>
         </div>
-    </section>
-@endsection
+    </div>

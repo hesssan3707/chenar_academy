@@ -23,7 +23,7 @@ class AdminVideoUploadsTest extends TestCase
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
-        $response = $this->actingAs($admin)->post(route('admin.videos.store'), [
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.videos.store'), [
             'title' => 'My Video',
             'excerpt' => 'Intro',
             'status' => 'draft',

@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=vazirmatn:400,500,600,700&display=swap" rel="stylesheet" />
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/spa.css', 'resources/js/app.js'])
 </head>
 <body class="spa-body">
     <!-- Background Layer -->
@@ -83,29 +83,49 @@
             
             <!-- Login View -->
             <div id="auth-view-login">
-                <form action="{{ route('login.store') }}" method="POST" class="stack stack--sm">
+                <form action="{{ route('login.store') }}" method="POST" class="stack stack--sm" data-auth-ajax="1">
                     @csrf
-                    <input type="hidden" name="action" value="login_password" id="login-action">
+                    <input type="hidden" name="action" value="login_password" id="login-action" data-login-action>
+
+                    <div class="field__error" data-form-error hidden></div>
                     
                     <div class="field">
                         <label class="field__label">شماره موبایل</label>
                         <input type="text" name="phone" id="login-phone" class="field__input" dir="ltr" placeholder="09xxxxxxxxx" required>
+                        <div class="field__error" data-field-error="phone" hidden></div>
                     </div>
 
-                    <div id="login-password-group">
+                    <div id="login-password-group" data-login-section="password">
                         <div class="field">
                             <label class="field__label">رمز عبور</label>
-                            <input type="password" name="password" class="field__input" dir="ltr">
+                            <div class="input-group">
+                                <input type="password" name="password" class="field__input" dir="ltr">
+                                <button class="btn btn--sm" type="button" data-password-toggle aria-label="نمایش رمز عبور">
+                                    <svg data-password-icon="show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <svg data-password-icon="hide" hidden xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94"></path>
+                                        <path d="M1 1l22 22"></path>
+                                        <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.78 21.78 0 0 1-4.87 6.62"></path>
+                                        <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="field__error" data-field-error="password" hidden></div>
                         </div>
                     </div>
 
-                    <div id="login-otp-group" hidden>
+                    <div id="login-otp-group" data-login-section="otp" hidden>
                         <div class="field">
                             <label class="field__label">کد تایید</label>
                             <div class="input-group">
                                 <input type="text" name="otp_code" class="field__input" dir="ltr" placeholder="کد ۵ رقمی">
-                                <button class="btn btn--secondary btn--sm" type="button" id="btn-send-otp-login">ارسال کد</button>
+                                <button class="btn btn--secondary btn--sm" type="button" data-otp-send data-otp-purpose="login">ارسال کد</button>
                             </div>
+                            <div class="field__error" data-otp-error hidden></div>
+                            <div class="field__error" data-field-error="otp_code" hidden></div>
                         </div>
                     </div>
 
@@ -115,11 +135,11 @@
                                 <input type="checkbox" name="remember" value="1">
                                 <span>مرا به خاطر بسپار</span>
                             </label>
-                            <button type="button" class="btn btn--ghost btn--sm text-brand" id="btn-toggle-login-method">
-                                ورود با رمز یکبار مصرف
-                            </button>
                         </div>
-                        <button type="submit" class="btn btn--primary w-full">ورود</button>
+                        <div class="cluster" style="gap: var(--ds-space-3);">
+                            <button type="submit" class="btn btn--primary" style="flex: 1;">ورود</button>
+                            <button type="button" class="btn btn--ghost" style="width: 76px;" data-login-mode-toggle>کد</button>
+                        </div>
                     </div>
                     
                     <div class="cluster mt-6" style="justify-content: center; gap: var(--ds-space-4); font-size: 0.85rem; color: var(--muted);">
@@ -144,11 +164,39 @@
                     </div>
                     <div class="field">
                         <label class="field__label">رمز عبور</label>
-                        <input type="password" name="password" class="field__input" dir="ltr" required>
+                        <div class="input-group">
+                            <input type="password" name="password" class="field__input" dir="ltr" required>
+                            <button class="btn btn--sm" type="button" data-password-toggle aria-label="نمایش رمز عبور">
+                                <svg data-password-icon="show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg data-password-icon="hide" hidden xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94"></path>
+                                    <path d="M1 1l22 22"></path>
+                                    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.78 21.78 0 0 1-4.87 6.62"></path>
+                                    <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <div class="field">
                         <label class="field__label">تکرار رمز عبور</label>
-                        <input type="password" name="password_confirmation" class="field__input" dir="ltr" required>
+                        <div class="input-group">
+                            <input type="password" name="password_confirmation" class="field__input" dir="ltr" required>
+                            <button class="btn btn--sm" type="button" data-password-toggle aria-label="نمایش رمز عبور">
+                                <svg data-password-icon="show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg data-password-icon="hide" hidden xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94"></path>
+                                    <path d="M1 1l22 22"></path>
+                                    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.78 21.78 0 0 1-4.87 6.62"></path>
+                                    <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <div class="field">
                         <label class="field__label">کد تایید</label>
@@ -181,11 +229,39 @@
                     </div>
                     <div class="field">
                         <label class="field__label">رمز عبور جدید</label>
-                        <input type="password" name="password" class="field__input" dir="ltr" required>
+                        <div class="input-group">
+                            <input type="password" name="password" class="field__input" dir="ltr" required>
+                            <button class="btn btn--sm" type="button" data-password-toggle aria-label="نمایش رمز عبور">
+                                <svg data-password-icon="show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg data-password-icon="hide" hidden xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94"></path>
+                                    <path d="M1 1l22 22"></path>
+                                    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.78 21.78 0 0 1-4.87 6.62"></path>
+                                    <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <div class="field">
                         <label class="field__label">تکرار رمز عبور جدید</label>
-                        <input type="password" name="password_confirmation" class="field__input" dir="ltr" required>
+                        <div class="input-group">
+                            <input type="password" name="password_confirmation" class="field__input" dir="ltr" required>
+                            <button class="btn btn--sm" type="button" data-password-toggle aria-label="نمایش رمز عبور">
+                                <svg data-password-icon="show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg data-password-icon="hide" hidden xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94"></path>
+                                    <path d="M1 1l22 22"></path>
+                                    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.78 21.78 0 0 1-4.87 6.62"></path>
+                                    <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn--primary w-full">تغییر رمز عبور</button>
                     <div class="text-center text-sm mt-4">
@@ -199,7 +275,7 @@
     <!-- Cart Modal -->
     <div id="cart-modal" class="spa-modal">
         <div class="spa-modal-content" style="max-width: 450px;">
-            <div class="cluster mb-4" style="justify-content: space-between;">
+            <div class="cluster mb-6 pb-4 border-b border-white/10" style="justify-content: space-between;">
                  <h3 class="h3">سبد خرید</h3>
                  <button class="btn btn--ghost btn--sm" onclick="closeModal('cart-modal')">X</button>
             </div>
@@ -213,13 +289,17 @@
             </div>
 
             <div id="cart-modal-footer" class="mt-6 pt-6 border-t border-white/10 hidden">
-                <div class="flex justify-between items-center mb-8">
+                <div class="flex justify-between items-center mb-10">
                     <span class="text-muted text-lg">مجموع:</span>
                     <span id="cart-total-price" class="text-2xl font-bold text-brand"></span>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <a href="{{ route('cart.index') }}" class="btn btn--secondary w-full" onclick="closeModal('cart-modal')">مشاهده سبد</a>
-                    <a href="{{ route('checkout.index') }}" class="btn btn--primary w-full" onclick="closeModal('cart-modal')">تسویه حساب</a>
+                    @auth
+                        <a href="{{ route('checkout.index') }}" class="btn btn--primary w-full" onclick="closeModal('cart-modal')">تسویه حساب</a>
+                    @else
+                        <a href="#" class="btn btn--primary w-full" onclick="closeModal('cart-modal'); openModal('auth-modal'); return false;">تسویه حساب</a>
+                    @endauth
                 </div>
             </div>
         </div>

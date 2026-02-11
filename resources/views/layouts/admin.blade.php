@@ -10,7 +10,7 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=vazirmatn:400,500,600,700&display=swap" rel="stylesheet" />
 
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/css/admin.css', 'resources/js/app.js'])
     </head>
     <body>
         <div class="admin-shell">
@@ -99,7 +99,7 @@
                         @endif
                         <a class="btn btn--ghost btn--sm" href="{{ route('home') }}">سایت</a>
                         <span class="admin-topbar__user">{{ auth()->user()?->name ?: auth()->user()?->phone }}</span>
-                        <form method="post" action="{{ route('logout') }}">
+                        <form method="post" action="{{ route('admin.logout') }}">
                             @csrf
                             <button class="btn btn--ghost btn--sm" type="submit">خروج</button>
                         </form>
@@ -115,7 +115,7 @@
         <div class="toast-host" data-toast-host></div>
 
         <script type="application/json" data-app-config>
-            @json(['base_url' => url('/'), 'routes' => ['otp_send' => route('otp.send')]])
+            @json(['base_url' => url('/'), 'routes' => ['otp_send' => route('admin.otp.send')]])
         </script>
 
         <script type="application/json" data-flashes>

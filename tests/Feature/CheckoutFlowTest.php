@@ -371,7 +371,7 @@ class CheckoutFlowTest extends TestCase
             ],
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->post(route('admin.orders.card-to-card.approve', $order->id))
             ->assertRedirect();
 

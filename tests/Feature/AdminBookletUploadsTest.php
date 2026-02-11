@@ -21,7 +21,7 @@ class AdminBookletUploadsTest extends TestCase
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
-        $response = $this->actingAs($admin)->post(route('admin.booklets.store'), [
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.booklets.store'), [
             'title' => 'Booklet without pdf',
             'excerpt' => 'Intro',
             'status' => 'draft',
@@ -41,7 +41,7 @@ class AdminBookletUploadsTest extends TestCase
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
-        $response = $this->actingAs($admin)->post(route('admin.booklets.store'), [
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.booklets.store'), [
             'title' => 'Booklet 1',
             'excerpt' => 'Intro',
             'status' => 'draft',

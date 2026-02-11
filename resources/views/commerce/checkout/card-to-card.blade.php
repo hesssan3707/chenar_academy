@@ -1,39 +1,38 @@
-@extends('layouts.app')
+@extends('layouts.spa')
 
 @section('title', 'پرداخت کارت‌به‌کارت')
 
 @section('content')
-    <section class="section">
-        <div class="container">
-            <h1 class="page-title">پرداخت کارت‌به‌کارت</h1>
-            <p class="page-subtitle">رسید پرداخت را آپلود کنید تا سفارش برای بررسی ثبت شود.</p>
+    <div class="container h-full flex flex-col justify-center py-6">
+        <h1 class="h2 mb-2 text-white">پرداخت کارت‌به‌کارت</h1>
+        <p class="text-muted mb-6">رسید پرداخت را آپلود کنید تا سفارش برای بررسی ثبت شود.</p>
 
             @php($items = $items ?? collect())
 
             @if ($items->isEmpty())
-                <div class="panel max-w-md" style="margin-top: 18px;">
-                    <p class="page-subtitle">سبد خرید شما خالی است.</p>
-                    <div class="form-actions">
+                <div class="panel p-6 bg-white/5 rounded-xl border border-gray-700 max-w-md">
+                    <p class="text-muted mb-4">سبد خرید شما خالی است.</p>
+                    <div class="flex gap-4">
                         <a class="btn btn--primary" href="{{ route('products.index') }}">مشاهده محصولات</a>
                         <a class="btn btn--ghost" href="{{ route('checkout.index') }}">بازگشت</a>
                     </div>
                 </div>
             @else
-                <div class="grid" style="grid-template-columns: 1fr; gap: 18px; margin-top: 18px;">
-                    <div class="panel">
+                <div class="h-scroll-container">
+                    <div class="panel p-6 bg-white/5 border border-white/10 rounded-xl w-80">
                         <div class="stack stack--sm">
-                            <div class="section__title" style="font-size: 18px;">فاکتور نهایی</div>
+                            <div class="h4">فاکتور نهایی</div>
 
-                            <div class="cluster" style="justify-content: space-between;">
-                                <div class="field__label">جمع سبد خرید</div>
+                            <div class="flex justify-between">
+                                <div class="text-muted">جمع سبد خرید</div>
                                 <div>
                                     <span class="price">{{ number_format($subtotal ?? 0) }}</span>
                                     <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
                                 </div>
                             </div>
 
-                            <div class="cluster" style="justify-content: space-between;">
-                                <div class="field__label">تخفیف</div>
+                            <div class="flex justify-between">
+                                <div class="text-muted">تخفیف</div>
                                 <div>
                                     <span class="price">{{ number_format($discountAmount ?? 0) }}</span>
                                     <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
@@ -41,8 +40,8 @@
                             </div>
 
                             @if ((int) ($taxPercent ?? 0) > 0)
-                                <div class="cluster" style="justify-content: space-between;">
-                                    <div class="field__label">مالیات ({{ (int) ($taxPercent ?? 0) }}٪)</div>
+                                <div class="flex justify-between">
+                                    <div class="text-muted">مالیات ({{ (int) ($taxPercent ?? 0) }}٪)</div>
                                     <div>
                                         <span class="price">{{ number_format($taxAmount ?? 0) }}</span>
                                         <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
@@ -50,8 +49,8 @@
                                 </div>
                             @endif
 
-                            <div class="cluster" style="justify-content: space-between;">
-                                <div class="field__label">مبلغ قابل پرداخت</div>
+                            <div class="flex justify-between">
+                                <div class="text-muted">مبلغ قابل پرداخت</div>
                                 <div>
                                     <span class="price">{{ number_format($payableAmount ?? 0) }}</span>
                                     <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
@@ -62,10 +61,10 @@
 
                     @php($cardToCardCards = $cardToCardCards ?? [])
                     @if (is_array($cardToCardCards) && count($cardToCardCards) > 0)
-                        <div class="panel max-w-md">
+                        <div class="panel p-6 bg-white/5 border border-white/10 rounded-xl w-80">
                             <div class="stack stack--sm">
-                                <div class="section__title" style="font-size: 18px;">اطلاعات کارت مقصد</div>
-                                <div class="card__meta">لطفاً مبلغ را به یکی از کارت‌های زیر واریز کنید و سپس رسید را آپلود کنید.</div>
+                                <div class="h4">اطلاعات کارت مقصد</div>
+                                <div class="text-muted">لطفاً مبلغ را به یکی از کارت‌های زیر واریز کنید و سپس رسید را آپلود کنید.</div>
 
                                 <div class="stack stack--xs">
                                     @foreach ($cardToCardCards as $card)
@@ -74,17 +73,17 @@
                                         @php($cardNumber = is_string($cardNumber) ? $cardNumber : '')
                                         @php($cardNumberFormatted = strlen($cardNumber) === 16 ? implode('-', str_split($cardNumber, 4)) : $cardNumber)
 
-                                        <div class="panel" style="padding: 12px; background: rgba(15, 26, 46, 0.35);">
-                                            <div class="cluster" style="justify-content: space-between; align-items: flex-start; gap: 12px;">
+                                        <div class="panel p-3 bg-white/5 rounded-xl border border-white/10">
+                                            <div class="flex justify-between items-start gap-3">
                                                 <div class="stack stack--xs" style="min-width: 0;">
                                                     @if ($cardName !== '')
-                                                        <div class="field__label">{{ $cardName }}</div>
+                                                        <div class="text-muted">{{ $cardName }}</div>
                                                     @endif
                                                     <div style="font-weight: 900; letter-spacing: 0.6px;" dir="ltr">{{ $cardNumberFormatted }}</div>
                                                 </div>
                                                 <div class="stack stack--xs" style="align-items: flex-end;">
                                                     <button class="btn btn--ghost btn--sm" type="button" data-copy-trigger data-copy-text="{{ $cardNumber }}">کپی</button>
-                                                    <div class="card__meta" data-copy-feedback hidden>کپی شد</div>
+                                                    <div class="text-muted text-xs" data-copy-feedback hidden>کپی شد</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -94,7 +93,7 @@
                         </div>
                     @endif
 
-                    <div class="panel max-w-md">
+                    <div class="panel p-6 bg-white/5 border border-white/10 rounded-xl w-80">
                         <form method="post" action="{{ route('checkout.card-to-card.store') }}" enctype="multipart/form-data" class="stack stack--sm">
                             @csrf
 
@@ -107,9 +106,9 @@
                                 @enderror
                             </label>
 
-                            <div class="form-actions">
-                                <button class="btn btn--primary" type="submit">ثبت برای بررسی</button>
-                                <a class="btn btn--ghost" href="{{ route('checkout.index') }}">بازگشت</a>
+                            <div class="stack stack--sm">
+                                <button class="btn btn--primary w-full" type="submit">ثبت برای بررسی</button>
+                                <a class="btn btn--ghost w-full" href="{{ route('checkout.index') }}">بازگشت</a>
                             </div>
                         </form>
                     </div>
@@ -183,6 +182,5 @@
                     })();
                 </script>
             @endif
-        </div>
-    </section>
+    </div>
 @endsection

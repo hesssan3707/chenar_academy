@@ -434,9 +434,11 @@ async function refreshCart() {
 
     try {
         const response = await fetch(cartUrl, {
+            cache: 'no-store',
             headers: {
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Cache-Control': 'no-cache'
             }
         });
 
@@ -451,10 +453,11 @@ async function refreshCart() {
             itemsContainer.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-12 opacity-50 text-center w-full">
                     <svg class="w-16 h-16 mb-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                    <p class="h4">سبد خرید شما خالی است</p>
+                    <p class="h4 text-center w-full">سبد خرید شما خالی است</p>
                 </div>
             `;
             if (footer) footer.classList.add('hidden');
+            if (totalPrice) totalPrice.textContent = '';
         } else {
             itemsContainer.innerHTML = data.items.map(item => `
                 <div class="panel p-4 bg-white/5 border border-white/10 rounded-xl flex items-center gap-4 group">
@@ -462,12 +465,14 @@ async function refreshCart() {
                         <img src="${item.thumb || '/assets/img/placeholder.png'}" alt="${item.title}" class="w-full h-full object-cover">
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h4 class="text-sm font-bold text-white truncate mb-1">${item.title}</h4>
+                        <div class="flex items-start justify-between gap-3 mb-1">
+                            <h4 class="text-sm font-bold text-white truncate">${item.title}</h4>
+                            <button onclick="removeFromCart(${item.id})" class="cart-remove-btn" aria-label="حذف آیتم">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
                         <div class="text-brand font-bold text-sm">${item.price.toLocaleString('fa-IR')} ${data.currency}</div>
                     </div>
-                    <button onclick="removeFromCart(${item.id})" class="p-2 text-gray-500 hover:text-red-500 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
                 </div>
             `).join('');
             
@@ -500,7 +505,7 @@ window.removeFromCart = async function(itemId) {
 
         const data = await response.json();
         if (data.success) {
-            refreshCart();
+            await refreshCart();
             if (window.showToast) window.showToast({ type: 'success', title: 'حذف شد', message: data.message });
         }
     } catch (error) {

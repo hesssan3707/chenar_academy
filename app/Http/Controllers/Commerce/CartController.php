@@ -34,7 +34,7 @@ class CartController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'items' => $items->map(fn($item) => [
+                'items' => $items->map(fn ($item) => [
                     'id' => $item->id,
                     'title' => $item->product?->title,
                     'price' => (int) $item->unit_price,
@@ -68,9 +68,10 @@ class CartController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'این محصول قبلاً خریداری شده است و نیازی به افزودن دوباره ندارد.'
+                    'message' => 'این محصول قبلاً خریداری شده است و نیازی به افزودن دوباره ندارد.',
                 ], 422);
             }
+
             return redirect()->route('products.show', $product->slug)->with('toast', [
                 'type' => 'error',
                 'title' => 'قبلاً خریداری شده',
@@ -102,7 +103,7 @@ class CartController extends Controller
             ]);
         }
 
-        $response = $request->wantsJson() 
+        $response = $request->wantsJson()
             ? response()->json(['success' => true, 'message' => 'محصول به سبد خرید اضافه شد.'])
             : redirect()->route('cart.index')->with('toast', [
                 'type' => 'success',

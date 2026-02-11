@@ -83,7 +83,7 @@ class AdminCategoryDiscountTest extends TestCase
         $includedA->categories()->attach($category->id);
         $includedB->categories()->attach($category->id);
 
-        $this->actingAs($admin)->post(route('admin.discounts.category.apply'), [
+        $this->actingAs($admin, 'admin')->post(route('admin.discounts.category.apply'), [
             'category_id' => $category->id,
             'discount_type' => 'percent',
             'discount_value' => 20,

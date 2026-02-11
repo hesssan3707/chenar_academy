@@ -4,61 +4,81 @@
 
 @section('content')
     <div class="spa-page">
-        <div class="mb-10">
+        <div class="mb-6">
             <h1 class="h1 text-white mb-2">{{ $about['title'] ?? 'درباره چنار آکادمی' }}</h1>
             <div class="w-20 h-1 bg-brand rounded-full mb-4"></div>
             <p class="text-xl text-muted">{{ $about['subtitle'] ?? 'آموزش هدفمند برای مسیر حرفه‌ای' }}</p>
+            <div class="flex flex-wrap gap-3 mt-6">
+                <span class="badge badge--brand">یادگیری هدفمند</span>
+                <span class="badge">منتورهای متخصص</span>
+                <span class="badge">پشتیبانی مداوم</span>
+            </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto custom-scrollbar pl-4">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-                <div class="lg:col-span-7 stack stack--lg">
-                    <div class="panel p-8 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl">
-                        <div class="stack stack--md text-lg leading-relaxed text-gray-300">
-                            @php($body = trim((string) ($about['body'] ?? '')))
-                            @if(empty($body))
-                                <p>چنار آکادمی با هدف ارائه آموزش‌های با کیفیت و کاربردی در حوزه‌های مختلف مهندسی و نرم‌افزار فعالیت می‌کند. ما معتقدیم که یادگیری باید لذت‌بخش و در دسترس باشد.</p>
-                                <p>تیم ما متشکل از متخصصانی است که تجربه‌ی سال‌ها کار در صنعت و تدریس را دارند و آماده‌اند تا دانش خود را با شما به اشتراک بگذارند.</p>
-                            @else
-                                @foreach (preg_split("/\n\s*\n/", $body) as $paragraph)
-                                    @php($paragraphText = trim((string) $paragraph))
-                                    @if ($paragraphText !== '')
-                                        <p>{{ $paragraphText }}</p>
-                                    @endif
-                                @endforeach
-                            @endif
-                        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            <div class="lg:col-span-7 stack stack--md">
+                <div class="panel p-6 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl">
+                    <div class="stack stack--sm text-sm leading-relaxed text-gray-300">
+                        @php($body = trim((string) ($about['body'] ?? '')))
+                        @if(empty($body))
+                            <p>چنار آکادمی با هدف ارائه آموزش‌های با کیفیت و کاربردی در حوزه‌های مختلف مهندسی و نرم‌افزار فعالیت می‌کند.</p>
+                            <p>تیم ما متشکل از متخصصانی است که تجربه‌ی سال‌ها کار در صنعت و تدریس را دارند.</p>
+                        @else
+                            @foreach (preg_split("/\n\s*\n/", $body) as $paragraph)
+                                @php($paragraphText = trim((string) $paragraph))
+                                @if ($paragraphText !== '' && $loop->index < 2)
+                                    <p>{{ $paragraphText }}</p>
+                                @endif
+                            @endforeach
+                        @endif
                     </div>
-                    
-                    <div class="grid grid-cols-3 gap-6">
-                        <div class="panel p-6 bg-brand/5 border border-brand/10 rounded-2xl text-center group hover:bg-brand/10 transition-all duration-300">
-                            <div class="text-3xl font-bold text-brand mb-1 group-hover:scale-110 transition-transform">۵۰۰+</div>
-                            <div class="text-xs text-muted uppercase tracking-wider">دانشجوی فعال</div>
+                </div>
+
+                <div class="h-scroll-container">
+                    <div class="panel p-5 bg-white/5 border border-white/10 rounded-2xl" style="min-width: 220px;">
+                        <div class="text-brand text-xs font-bold mb-2">مسیر یادگیری</div>
+                        <div class="text-white text-base font-bold mb-2">قدم‌به‌قدم</div>
+                        <p class="text-muted text-xs leading-relaxed">پروژه‌محور و قابل اجرا</p>
+                    </div>
+                    <div class="panel p-5 bg-white/5 border border-white/10 rounded-2xl" style="min-width: 220px;">
+                        <div class="text-brand text-xs font-bold mb-2">کیفیت محتوا</div>
+                        <div class="text-white text-base font-bold mb-2">به‌روز و کاربردی</div>
+                        <p class="text-muted text-xs leading-relaxed">متناسب با بازار کار</p>
+                    </div>
+                    <div class="panel p-5 bg-white/5 border border-white/10 rounded-2xl" style="min-width: 220px;">
+                        <div class="text-brand text-xs font-bold mb-2">پشتیبانی</div>
+                        <div class="text-white text-base font-bold mb-2">همیشه همراه</div>
+                        <p class="text-muted text-xs leading-relaxed">پاسخ‌گویی سریع</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 stack stack--md">
+                <div class="panel p-6 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl">
+                    <h3 class="h4 mb-3 text-white">چرا چنار آکادمی؟</h3>
+                    <div class="stack stack--xs text-xs text-muted leading-relaxed">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2 h-2 rounded-full bg-brand"></span>
+                            <span>تمرکز بر مهارت‌های کاربردی</span>
                         </div>
-                        <div class="panel p-6 bg-brand/5 border border-brand/10 rounded-2xl text-center group hover:bg-brand/10 transition-all duration-300">
-                            <div class="text-3xl font-bold text-brand mb-1 group-hover:scale-110 transition-transform">۵۰+</div>
-                            <div class="text-xs text-muted uppercase tracking-wider">دوره آموزشی</div>
+                        <div class="flex items-center gap-3">
+                            <span class="w-2 h-2 rounded-full bg-brand"></span>
+                            <span>یادگیری منعطف برای همه</span>
                         </div>
-                        <div class="panel p-6 bg-brand/5 border border-brand/10 rounded-2xl text-center group hover:bg-brand/10 transition-all duration-300">
-                            <div class="text-3xl font-bold text-brand mb-1 group-hover:scale-110 transition-transform">۲۴/۷</div>
-                            <div class="text-xs text-muted uppercase tracking-wider">پشتیبانی</div>
+                        <div class="flex items-center gap-3">
+                            <span class="w-2 h-2 rounded-full bg-brand"></span>
+                            <span>ترکیب ویدیو و جزوه</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="lg:col-span-5 hidden lg:block sticky top-0">
-                    <div class="relative">
-                        <div class="absolute -inset-20 bg-brand/10 blur-[120px] rounded-full animate-pulse"></div>
-                        <div class="panel p-2 bg-white/5 border border-white/10 rounded-[2rem] overflow-hidden backdrop-blur-sm">
-                            <img src="data:image/svg+xml;utf8,{{ rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4F46E5"/><stop offset="1" stop-color="#9333EA"/></linearGradient></defs><rect width="500" height="500" fill="url(#g)" fill-opacity="0.05"/><path d="M100 250 Q250 100 400 250 T400 400" fill="none" stroke="url(#g)" stroke-width="2" stroke-dasharray="20 10" opacity="0.3"/><circle cx="250" cy="250" r="150" fill="none" stroke="url(#g)" stroke-width="1" opacity="0.2"/><path d="M150 250 L350 250 M250 150 L250 350" stroke="url(#g)" stroke-width="1" opacity="0.2"/></svg>') }}" alt="About" class="w-full rounded-[1.8rem] opacity-60">
+                <div class="panel p-5 bg-white/5 border border-white/10 rounded-2xl">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-muted mb-1">شروع مسیر حرفه‌ای</div>
+                            <div class="text-base font-bold text-white">با دوره‌ها و ویدیوها</div>
                         </div>
-                        
-                        <div class="absolute -bottom-6 -right-6 panel p-6 bg-white/10 border border-white/20 rounded-2xl backdrop-blur-xl shadow-xl">
-                            <div class="flex items-center gap-3">
-                                <div class="w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
-                                <span class="text-sm font-medium text-white">در حال رشد و توسعه</span>
-                            </div>
-                        </div>
+                        <a href="{{ route('products.index', ['type' => 'video']) }}" class="btn btn--primary btn--sm">مشاهده ویدیوها</a>
                     </div>
                 </div>
             </div>

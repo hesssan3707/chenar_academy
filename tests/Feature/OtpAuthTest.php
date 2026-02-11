@@ -39,6 +39,55 @@ class OtpAuthTest extends TestCase
         $this->assertTrue(Hash::check('11111', $otp->code_hash));
     }
 
+    public function test_send_admin_login_otp_stores_code_in_database_for_admin_user(): void
+    {
+        $phone = '09120000015';
+
+        $user = User::query()->create([
+            'name' => $phone,
+            'email' => $phone.'@chenar.local',
+            'phone' => $phone,
+            'phone_verified_at' => now(),
+            'password' => 'password',
+            'is_active' => true,
+        ]);
+
+        $adminRole = \App\Models\Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        $this->postJson(route('admin.otp.send'), [
+            'purpose' => 'admin_login',
+            'phone' => $phone,
+        ])->assertOk()->assertJson([
+            'ok' => true,
+            'purpose' => 'admin_login',
+            'phone' => $phone,
+            'cooldown_seconds' => 60,
+        ]);
+
+        $otp = OtpCode::query()->where('phone', $phone)->where('purpose', 'admin_login')->firstOrFail();
+        $this->assertTrue(Hash::check('11111', $otp->code_hash));
+    }
+
+    public function test_send_admin_login_otp_requires_admin_user(): void
+    {
+        $phone = '09120000016';
+
+        User::query()->create([
+            'name' => $phone,
+            'email' => $phone.'@chenar.local',
+            'phone' => $phone,
+            'phone_verified_at' => now(),
+            'password' => 'password',
+            'is_active' => true,
+        ]);
+
+        $this->postJson(route('admin.otp.send'), [
+            'purpose' => 'admin_login',
+            'phone' => $phone,
+        ])->assertStatus(422)->assertJsonValidationErrors(['phone']);
+    }
+
     public function test_login_otp_send_requires_existing_user(): void
     {
         $phone = '09120000011';
@@ -124,6 +173,49 @@ class OtpAuthTest extends TestCase
         ])->assertRedirect(route('panel.dashboard'));
     }
 
+    public function test_login_password_returns_json_redirect_for_ajax_requests(): void
+    {
+        $phone = '09120000012';
+
+        User::query()->create([
+            'name' => $phone,
+            'email' => $phone.'@chenar.local',
+            'phone' => $phone,
+            'phone_verified_at' => now(),
+            'password' => 'password',
+            'is_active' => true,
+        ]);
+
+        $this->postJson(route('login.store'), [
+            'action' => 'login_password',
+            'phone' => $phone,
+            'password' => 'password',
+        ])->assertOk()->assertJson([
+            'ok' => true,
+            'redirect_to' => route('panel.dashboard'),
+        ]);
+    }
+
+    public function test_login_password_returns_validation_errors_for_bad_credentials_in_ajax_requests(): void
+    {
+        $phone = '09120000013';
+
+        User::query()->create([
+            'name' => $phone,
+            'email' => $phone.'@chenar.local',
+            'phone' => $phone,
+            'phone_verified_at' => now(),
+            'password' => 'password',
+            'is_active' => true,
+        ]);
+
+        $this->postJson(route('login.store'), [
+            'action' => 'login_password',
+            'phone' => $phone,
+            'password' => 'wrong-password',
+        ])->assertStatus(422)->assertJsonValidationErrors(['phone']);
+    }
+
     public function test_login_password_requires_password_field(): void
     {
         $phone = '09120000004';
@@ -168,6 +260,34 @@ class OtpAuthTest extends TestCase
             'phone' => $phone,
             'otp_code' => '11111',
         ])->assertRedirect(route('panel.dashboard'));
+    }
+
+    public function test_login_otp_returns_json_redirect_for_ajax_requests(): void
+    {
+        $phone = '09120000014';
+
+        User::query()->create([
+            'name' => $phone,
+            'email' => $phone.'@chenar.local',
+            'phone' => $phone,
+            'phone_verified_at' => now(),
+            'password' => 'password',
+            'is_active' => true,
+        ]);
+
+        $this->postJson(route('otp.send'), [
+            'purpose' => 'login',
+            'phone' => $phone,
+        ])->assertOk();
+
+        $this->postJson(route('login.store'), [
+            'action' => 'login_otp',
+            'phone' => $phone,
+            'otp_code' => '11111',
+        ])->assertOk()->assertJson([
+            'ok' => true,
+            'redirect_to' => route('panel.dashboard'),
+        ]);
     }
 
     public function test_login_otp_requires_otp_code_field(): void

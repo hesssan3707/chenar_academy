@@ -52,10 +52,10 @@ class RegisterController extends Controller
             $user->forceFill(['phone_verified_at' => now()])->save();
         }
 
-        Auth::login($user);
+        Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
-        return $this->redirectAfterAuth($user);
+        return redirect()->intended(route('panel.dashboard'));
     }
 
     private function consumeOtpOrFail(string $phone, string $purpose, string $code): void
@@ -83,14 +83,5 @@ class RegisterController extends Controller
         }
 
         $otp->forceFill(['consumed_at' => now()])->save();
-    }
-
-    private function redirectAfterAuth(User $user): RedirectResponse
-    {
-        if ($user->hasRole('admin')) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        return redirect()->route('panel.dashboard');
     }
 }

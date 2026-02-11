@@ -19,15 +19,22 @@ class OtpController extends Controller
         try {
             $validated = $request->validate([
                 'phone' => ['required', 'string', 'max:20'],
-                'purpose' => ['required', 'string', Rule::in(['login', 'register', 'password_reset'])],
+                'purpose' => ['required', 'string', Rule::in(['login', 'admin_login', 'register', 'password_reset'])],
             ]);
 
-            if (in_array($validated['purpose'], ['login', 'password_reset'], true)) {
-                if (! User::query()->where('phone', $validated['phone'])->exists()) {
-                    return response()->json([
-                        'ok' => false,
-                        'message' => 'کاربری با این شماره تلفن پیدا نشد.',
-                    ], 422);
+            if (in_array($validated['purpose'], ['login', 'admin_login', 'password_reset'], true)) {
+                $user = User::query()->where('phone', $validated['phone'])->first();
+
+                if (! $user) {
+                    throw ValidationException::withMessages([
+                        'phone' => 'کاربری با این شماره تلفن پیدا نشد.',
+                    ]);
+                }
+
+                if ($validated['purpose'] === 'admin_login' && ! $user->hasRole('admin')) {
+                    throw ValidationException::withMessages([
+                        'phone' => 'دسترسی ورود مدیر ندارید.',
+                    ]);
                 }
             }
 
@@ -53,7 +60,7 @@ class OtpController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'ok' => false,
-                'message' => 'خطای سرور: ' . $e->getMessage(),
+                'message' => 'خطای سرور: '.$e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ], 500);

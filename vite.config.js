@@ -5,7 +5,12 @@ export default defineConfig({
     base: '/chenar_academy/public/build/',
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            input: [
+                'resources/css/app.css',
+                'resources/css/admin.css',
+                'resources/css/spa.css',
+                'resources/js/app.js',
+            ],
             refresh: true,
         }),
     ],

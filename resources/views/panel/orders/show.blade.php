@@ -1,80 +1,87 @@
-@extends('layouts.app')
+@extends('layouts.spa')
 
 @section('title', $title ?? 'جزئیات سفارش')
 
 @section('content')
-    @include('panel.partials.nav')
+    <div class="container h-full py-6">
+        <div class="user-panel-grid">
+            @include('panel.partials.sidebar')
 
-    <section class="section">
-        <div class="container">
-            <h1 class="page-title">{{ $title ?? 'جزئیات سفارش' }}</h1>
-            <p class="page-subtitle">شماره سفارش: {{ $order->order_number }}</p>
-
-            <div class="panel" style="margin-top: 18px;">
-                <div class="stack stack--sm">
-                    @php($currencyUnit = (($order->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($order->currency ?? 'IRR'))
-                    @php($statusLabel = match ((string) ($order->status ?? '')) {
-                        'pending_review' => 'در انتظار تایید',
-                        'rejected' => 'رد شده',
-                        'paid' => 'تایید شده',
-                        'cancelled' => 'لغو شده',
-                        default => (string) ($order->status ?? ''),
-                    })
-                    <div class="cluster" style="justify-content:space-between;">
-                        <div class="stack stack--sm">
-                            <div class="field__label">وضعیت</div>
-                            <div>{{ $statusLabel }}</div>
-                        </div>
-                        <div class="stack stack--sm" style="text-align:left;">
-                            <div class="field__label">مبلغ قابل پرداخت</div>
-                            <div class="card__price">
-                                <span class="price">{{ number_format((int) $order->payable_amount) }}</span>
-                                <span class="price__unit">{{ $currencyUnit }}</span>
-                            </div>
-                        </div>
+            <main class="user-content flex flex-col overflow-hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="h2 mb-1">{{ $title ?? 'جزئیات سفارش' }}</h2>
+                        <p class="text-muted">شماره سفارش: {{ $order->order_number }}</p>
                     </div>
-
-                    <div class="cluster" style="justify-content:space-between;">
-                        <div class="stack stack--sm">
-                            <div class="field__label">تاریخ ثبت</div>
-                            <div>{{ $order->placed_at ? jdate($order->placed_at)->format('Y/m/d H:i') : '—' }}</div>
-                        </div>
-                        <div class="stack stack--sm" style="text-align:left;">
-                            <div class="field__label">تاریخ پرداخت</div>
-                            <div>{{ $order->paid_at ? jdate($order->paid_at)->format('Y/m/d H:i') : '—' }}</div>
-                        </div>
-                    </div>
+                    <a class="btn btn--ghost" href="{{ route('panel.orders.index') }}">بازگشت</a>
                 </div>
-            </div>
 
-            <div class="panel" style="margin-top: 18px;">
-                <div class="stack stack--sm">
-                    <div class="field__label">آیتم‌ها</div>
-                    @foreach ($order->items as $item)
-                        <div class="panel" style="background: rgba(15,26,46,0.35); border-style: dashed;">
-                            <div class="cluster" style="justify-content:space-between;align-items:flex-start;">
-                                <div class="stack stack--sm">
-                                    <div class="field__label">{{ $item->product_title }}</div>
-                                    <div class="card__meta">نوع: {{ $item->product_type }} • تعداد: {{ (int) $item->quantity }}</div>
-                                </div>
-                                <div class="stack stack--sm" style="text-align:left;">
-                                    <div class="card__price">
-                                        <span class="price">{{ number_format((int) $item->total_price) }}</span>
-                                        <span class="price__unit">{{ $currencyUnit }}</span>
+                <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                    <div class="stack stack--md">
+                        <div class="panel p-6 bg-white/5 border border-white/10 rounded-xl">
+                            <div class="stack stack--sm">
+                                @php($currencyUnit = (($order->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($order->currency ?? 'IRR'))
+                                @php($statusLabel = match ((string) ($order->status ?? '')) {
+                                    'pending_review' => 'در انتظار تایید',
+                                    'rejected' => 'رد شده',
+                                    'paid' => 'تایید شده',
+                                    'cancelled' => 'لغو شده',
+                                    default => (string) ($order->status ?? ''),
+                                })
+                                <div class="flex justify-between">
+                                    <div class="stack stack--xs">
+                                        <div class="text-muted">وضعیت</div>
+                                        <div>{{ $statusLabel }}</div>
                                     </div>
-                                    @if ($item->product)
-                                        <a class="btn btn--sm btn--ghost" href="{{ route('panel.library.show', $item->product->slug) }}">مشاهده در کتابخانه</a>
-                                    @endif
+                                    <div class="stack stack--xs text-left" dir="ltr">
+                                        <div class="text-muted">مبلغ قابل پرداخت</div>
+                                        <div class="card__price">
+                                            <span class="price">{{ number_format((int) $order->payable_amount) }}</span>
+                                            <span class="price__unit">{{ $currencyUnit }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between">
+                                    <div class="stack stack--xs">
+                                        <div class="text-muted">تاریخ ثبت</div>
+                                        <div>{{ $order->placed_at ? jdate($order->placed_at)->format('Y/m/d H:i') : '—' }}</div>
+                                    </div>
+                                    <div class="stack stack--xs text-left" dir="ltr">
+                                        <div class="text-muted">تاریخ پرداخت</div>
+                                        <div>{{ $order->paid_at ? jdate($order->paid_at)->format('Y/m/d H:i') : '—' }}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    @endforeach
-                </div>
-            </div>
 
-            <div class="form-actions" style="margin-top: 18px;">
-                <a class="btn btn--ghost" href="{{ route('panel.orders.index') }}">بازگشت</a>
-            </div>
+                        <div class="panel p-6 bg-white/5 border border-white/10 rounded-xl">
+                            <div class="stack stack--sm">
+                                <div class="text-muted">آیتم‌ها</div>
+                                @foreach ($order->items as $item)
+                                    <div class="panel p-4 bg-white/5 border border-white/10 rounded-xl">
+                                        <div class="flex justify-between items-start">
+                                            <div class="stack stack--xs">
+                                                <div class="font-bold">{{ $item->product_title }}</div>
+                                                <div class="card__meta">نوع: {{ $item->product_type }} • تعداد: {{ (int) $item->quantity }}</div>
+                                            </div>
+                                            <div class="stack stack--xs text-left" dir="ltr">
+                                                <div class="card__price">
+                                                    <span class="price">{{ number_format((int) $item->total_price) }}</span>
+                                                    <span class="price__unit">{{ $currencyUnit }}</span>
+                                                </div>
+                                                @if ($item->product)
+                                                    <a class="btn btn--sm btn--ghost" href="{{ route('panel.library.show', $item->product->slug) }}">مشاهده در کتابخانه</a>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
-    </section>
+    </div>
 @endsection

@@ -1,12 +1,13 @@
-@extends('layouts.app')
+@extends('layouts.spa')
 
 @section('title', $title ?? 'نمایش تیکت')
 
 @section('content')
-    @include('panel.partials.nav')
-
-    <section class="section">
-        <div class="container">
+    <div class="container h-full py-6">
+        <div class="user-panel-grid">
+            @include('panel.partials.sidebar')
+            
+            <main class="user-content flex flex-col overflow-hidden">
             <div class="cluster" style="justify-content: space-between; align-items: center;">
                 <div>
                     <h1 class="page-title">{{ $ticket->subject }}</h1>
@@ -36,10 +37,11 @@
 
             @php($messages = $messages ?? collect())
 
-            <div class="stack" style="margin-top: 18px;">
+            <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <div class="stack stack--md" style="margin-top: 6px;">
                 @foreach ($messages as $message)
                     @php($isUser = (int) ($message->sender_user_id ?? 0) === (int) auth()->id())
-                    <div class="panel" style="{{ $isUser ? 'background: rgba(15,26,46,0.35); border-style: dashed;' : '' }}">
+                    <div class="panel p-4 bg-white/5 border border-white/10 rounded-xl" style="{{ $isUser ? 'background: rgba(15,26,46,0.35); border-style: dashed;' : '' }}">
                         <div class="stack stack--sm">
                             <div class="cluster" style="justify-content: space-between;">
                                 <div class="field__label">{{ $isUser ? 'شما' : 'پشتیبانی' }}</div>
@@ -51,10 +53,11 @@
                         </div>
                     </div>
                 @endforeach
+                </div>
             </div>
 
             @if ($ticket->status !== 'closed')
-                <div class="panel max-w-md" style="margin-top: 18px;">
+                <div class="panel max-w-md p-6 bg-white/5 border border-white/10 rounded-xl" style="margin-top: 18px;">
                     <form method="post" action="{{ route('panel.tickets.update', $ticket->id) }}" class="stack stack--sm">
                         @csrf
                         @method('put')
@@ -73,6 +76,7 @@
                     </form>
                 </div>
             @endif
+            </main>
         </div>
-    </section>
+    </div>
 @endsection

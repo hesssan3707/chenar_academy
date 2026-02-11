@@ -21,7 +21,7 @@ class ProductController extends Controller
     public function index(Request $request): View
     {
         $type = $request->query('type');
-        
+
         // Auto-detect type based on route name if not provided in query
         if (! $type) {
             if ($request->routeIs('videos.index')) {

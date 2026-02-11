@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\OtpCode;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,8 +31,10 @@ class LoginController extends Controller
         return view('auth.forgot-password');
     }
 
-    public function authenticate(Request $request): RedirectResponse
+    public function authenticate(Request $request): RedirectResponse|JsonResponse
     {
+        $guard = Auth::guard('web');
+
         $validated = $request->validate([
             'action' => ['required', Rule::in(['login_password', 'login_otp'])],
             'phone' => ['required', 'string', 'max:20'],
@@ -45,7 +48,7 @@ class LoginController extends Controller
                 'password' => ['required', 'string', 'max:120'],
             ]);
 
-            if (! Auth::attempt(['phone' => $validated['phone'], 'password' => $validated['password']], $request->boolean('remember'))) {
+            if (! $guard->attempt(['phone' => $validated['phone'], 'password' => $validated['password']], $request->boolean('remember'))) {
                 throw ValidationException::withMessages([
                     'phone' => 'اطلاعات ورود صحیح نیست.',
                 ]);
@@ -53,7 +56,15 @@ class LoginController extends Controller
 
             $request->session()->regenerate();
 
-            return $this->redirectAfterAuth($request->user());
+            $redirect = redirect()->intended(route('panel.dashboard'));
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => true,
+                    'redirect_to' => $redirect->getTargetUrl(),
+                ]);
+            }
+
+            return $redirect;
         }
 
         $request->validate([
@@ -70,14 +81,24 @@ class LoginController extends Controller
 
         $this->consumeOtpOrFail($validated['phone'], 'login', (string) $validated['otp_code']);
 
-        Auth::login($user, $request->boolean('remember'));
+        $guard->login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return $this->redirectAfterAuth($user);
+        $redirect = redirect()->intended(route('panel.dashboard'));
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'redirect_to' => $redirect->getTargetUrl(),
+            ]);
+        }
+
+        return $redirect;
     }
 
-    public function authenticateAdmin(Request $request): RedirectResponse
+    public function authenticateAdmin(Request $request): RedirectResponse|JsonResponse
     {
+        $guard = Auth::guard('admin');
+
         $validated = $request->validate([
             'action' => ['required', Rule::in(['login_password', 'login_otp'])],
             'phone' => ['required', 'string', 'max:20'],
@@ -91,7 +112,7 @@ class LoginController extends Controller
                 'password' => ['required', 'string', 'max:120'],
             ]);
 
-            if (! Auth::attempt(['phone' => $validated['phone'], 'password' => $validated['password']], $request->boolean('remember'))) {
+            if (! $guard->attempt(['phone' => $validated['phone'], 'password' => $validated['password']], $request->boolean('remember'))) {
                 throw ValidationException::withMessages([
                     'phone' => 'اطلاعات ورود صحیح نیست.',
                 ]);
@@ -99,10 +120,18 @@ class LoginController extends Controller
 
             $request->session()->regenerate();
 
-            $user = $request->user();
-            $this->ensureAdminOrFail($request, $user);
+            $user = $guard->user();
+            $this->ensureAdminOrFail($request, $user, 'admin');
 
-            return redirect()->route('admin.dashboard');
+            $redirect = redirect()->intended(route('admin.dashboard'));
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => true,
+                    'redirect_to' => $redirect->getTargetUrl(),
+                ]);
+            }
+
+            return $redirect;
         }
 
         $request->validate([
@@ -117,14 +146,22 @@ class LoginController extends Controller
             ]);
         }
 
-        $this->consumeOtpOrFail($validated['phone'], 'login', (string) $validated['otp_code']);
+        $this->consumeOtpOrFail($validated['phone'], 'admin_login', (string) $validated['otp_code']);
 
-        Auth::login($user, $request->boolean('remember'));
+        $guard->login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        $this->ensureAdminOrFail($request, $user);
+        $this->ensureAdminOrFail($request, $user, 'admin');
 
-        return redirect()->route('admin.dashboard');
+        $redirect = redirect()->intended(route('admin.dashboard'));
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'redirect_to' => $redirect->getTargetUrl(),
+            ]);
+        }
+
+        return $redirect;
     }
 
     public function forgotStore(Request $request): RedirectResponse
@@ -150,20 +187,30 @@ class LoginController extends Controller
             'password' => $validated['password'],
         ])->save();
 
-        Auth::login($user);
+        Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
-        return $this->redirectAfterAuth($user);
+        return redirect()->intended(route('panel.dashboard'));
     }
 
     public function logout(Request $request): RedirectResponse
     {
-        Auth::logout();
+        Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->route('home');
+    }
+
+    public function logoutAdmin(Request $request): RedirectResponse
+    {
+        Auth::guard('admin')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('admin.login');
     }
 
     private function consumeOtpOrFail(string $phone, string $purpose, string $code): void
@@ -193,13 +240,13 @@ class LoginController extends Controller
         $otp->forceFill(['consumed_at' => now()])->save();
     }
 
-    private function ensureAdminOrFail(Request $request, ?User $user): void
+    private function ensureAdminOrFail(Request $request, ?User $user, string $guard): void
     {
         if ($user && $user->hasRole('admin')) {
             return;
         }
 
-        Auth::logout();
+        Auth::guard($guard)->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -207,18 +254,5 @@ class LoginController extends Controller
         throw ValidationException::withMessages([
             'phone' => 'دسترسی ورود ادمین ندارید.',
         ]);
-    }
-
-    private function redirectAfterAuth(?User $user): RedirectResponse
-    {
-        if (! $user) {
-            return redirect()->route('home');
-        }
-
-        if ($user->hasRole('admin')) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        return redirect()->route('panel.dashboard');
     }
 }

@@ -55,7 +55,7 @@ class AdminSurveyResultsTest extends TestCase
             'meta' => [],
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.surveys.results', $survey->id))
             ->assertOk()
             ->assertSee('نتایج نظرسنجی')

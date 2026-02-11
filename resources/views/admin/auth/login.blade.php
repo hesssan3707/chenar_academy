@@ -6,7 +6,6 @@
     <section class="section">
         <div class="container">
             <h1 class="page-title">ورود مدیر</h1>
-            <p class="page-subtitle">این صفحه فقط برای ورود ادمین است</p>
 
             <div class="panel max-w-sm">
                 <form method="post" action="{{ route('admin.login.store') }}" class="stack stack--sm">
@@ -55,7 +54,7 @@
                         <span class="field__label">کد یکبار مصرف</span>
                         <div class="input-group">
                             <input name="otp_code" type="text" inputmode="numeric" autocomplete="one-time-code" value="{{ old('otp_code') }}">
-                            <button class="btn btn--sm" type="button" data-otp-send data-otp-purpose="login">
+                            <button class="btn btn--sm" type="button" data-otp-send data-otp-purpose="admin_login">
                                 ارسال کد
                             </button>
                         </div>
@@ -81,4 +80,3 @@
         </div>
     </section>
 @endsection
-

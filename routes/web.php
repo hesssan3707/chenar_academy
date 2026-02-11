@@ -52,6 +52,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/debug-vite', function () {
     $manifestPath = public_path('build/manifest.json');
+
     return [
         'public_path' => public_path(),
         'manifest_exists' => file_exists($manifestPath),
@@ -84,17 +85,20 @@ Route::post('/logout', [LoginController::class, 'logout'])
 
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware('guest')
+    ->middleware('guest:admin')
     ->group(function () {
         Route::get('/login', [LoginController::class, 'showAdmin'])->name('login');
         Route::post('/login', [LoginController::class, 'authenticateAdmin'])->name('login.store');
+        Route::post('/otp/send', [OtpController::class, 'send'])->name('otp.send');
     });
 
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'admin.panel', 'admin.scope'])
+    ->middleware(['auth:admin', 'admin.panel', 'admin.scope'])
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        Route::post('/logout', [LoginController::class, 'logoutAdmin'])->name('logout');
 
         Route::post('scope/user', [AdminUserController::class, 'scopeStore'])->name('scope.user.store');
         Route::post('scope/clear', [AdminUserController::class, 'scopeClear'])->name('scope.clear');

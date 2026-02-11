@@ -280,13 +280,13 @@ class ProductReviewsAndRepurchaseTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.reviews.index'))
             ->assertOk()
             ->assertSee('نظر در انتظار تایید')
             ->assertSee('در انتظار');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->post(route('admin.reviews.approve', $review->id))
             ->assertRedirect(route('admin.reviews.index'));
 
@@ -299,7 +299,7 @@ class ProductReviewsAndRepurchaseTest extends TestCase
             ->assertOk()
             ->assertSee('نظر در انتظار تایید');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->post(route('admin.reviews.reject', $review->id))
             ->assertRedirect(route('admin.reviews.index'));
 
@@ -347,7 +347,7 @@ class ProductReviewsAndRepurchaseTest extends TestCase
             ->assertOk()
             ->assertSee('نظر جدید');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get(route('admin.reviews.index'))
             ->assertOk()
             ->assertSee('نظر جدید')
