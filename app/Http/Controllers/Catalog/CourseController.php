@@ -60,7 +60,16 @@ class CourseController extends Controller
 
         $media = Media::query()->findOrFail($lesson->media_id);
 
-        return Storage::disk($media->disk)->response($media->path, null, [
+        $stream = Storage::disk($media->disk)->readStream($media->path);
+        abort_if(! is_resource($stream), 404);
+
+        return response()->stream(function () use ($stream) {
+            try {
+                fpassthru($stream);
+            } finally {
+                fclose($stream);
+            }
+        }, 200, [
             'Content-Type' => $media->mime_type ?: 'application/octet-stream',
             'Content-Disposition' => 'inline',
             'Cache-Control' => 'private, no-store, max-age=0',

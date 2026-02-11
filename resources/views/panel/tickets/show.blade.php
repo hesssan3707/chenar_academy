@@ -41,7 +41,11 @@
                 <div class="stack stack--md" style="margin-top: 6px;">
                 @foreach ($messages as $message)
                     @php($isUser = (int) ($message->sender_user_id ?? 0) === (int) auth()->id())
-                    <div class="panel p-4 bg-white/5 border border-white/10 rounded-xl" style="{{ $isUser ? 'background: rgba(15,26,46,0.35); border-style: dashed;' : '' }}">
+                    @if ($isUser)
+                        <div class="panel p-4 bg-white/5 border border-white/10 rounded-xl" style="background: rgba(15,26,46,0.35); border-style: dashed;">
+                    @else
+                        <div class="panel p-4 bg-white/5 border border-white/10 rounded-xl">
+                    @endif
                         <div class="stack stack--sm">
                             <div class="cluster" style="justify-content: space-between;">
                                 <div class="field__label">{{ $isUser ? 'شما' : 'پشتیبانی' }}</div>

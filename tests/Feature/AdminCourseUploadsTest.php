@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Course;
 use App\Models\CourseLesson;
-use App\Models\Category;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;

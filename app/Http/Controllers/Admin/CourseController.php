@@ -3,17 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Course;
 use App\Models\CourseLesson;
 use App\Models\CourseSection;
-use App\Models\Category;
 use App\Models\Media;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -219,15 +218,15 @@ class CourseController extends Controller
             'description' => ['nullable', 'string'],
             'status' => ['nullable', 'string', Rule::in(['draft', 'published'])],
             'base_price' => [$shouldPublish ? 'required' : 'nullable', 'integer', 'min:0', 'max:2000000000'],
-            'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibited_with:discount_type,discount_value'],
-            'discount_type' => ['nullable', 'string', Rule::in(['percent', 'amount']), 'required_with:discount_value', 'prohibited_with:sale_price'],
+            'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibits:discount_type,discount_value'],
+            'discount_type' => ['nullable', 'string', Rule::in(['percent', 'amount']), 'required_with:discount_value', 'prohibits:sale_price'],
             'discount_value' => [
                 'nullable',
                 'integer',
                 'min:0',
                 'max:2000000000',
                 'required_with:discount_type',
-                'prohibited_with:sale_price',
+                'prohibits:sale_price',
                 Rule::when($request->input('discount_type') === 'percent', ['max:100']),
             ],
             'published_at' => ['nullable', 'string', 'max:32'],
@@ -301,6 +300,12 @@ class CourseController extends Controller
         if (! is_array($lessonsInput)) {
             $lessonsInput = [];
         }
+        if ($lessonsInput === []) {
+            $payload = $request->all('lessons');
+            if (isset($payload['lessons']) && is_array($payload['lessons'])) {
+                $lessonsInput = $payload['lessons'];
+            }
+        }
 
         if ($request->hasFile('lessons')) {
             set_time_limit(0);
@@ -319,6 +324,9 @@ class CourseController extends Controller
             $uploadedFile = $request->file("lessons.$key.file");
             if ($uploadedFile !== null && ! ($uploadedFile instanceof UploadedFile)) {
                 $uploadedFile = null;
+            }
+            if ($uploadedFile === null && isset($lessonRow['file']) && $lessonRow['file'] instanceof UploadedFile) {
+                $uploadedFile = $lessonRow['file'];
             }
 
             $lessonId = isset($lessonRow['id']) && is_numeric($lessonRow['id']) ? (int) $lessonRow['id'] : null;
@@ -420,7 +428,10 @@ class CourseController extends Controller
 
     private function extractVideoDurationSeconds(Media $media): ?int
     {
-        $absolutePath = Storage::disk($media->disk)->path($media->path);
+        $absolutePath = $this->resolveLocalDiskPath($media->disk, $media->path);
+        if ($absolutePath === null) {
+            return null;
+        }
 
         $result = Process::timeout(30)->run([
             'ffprobe',
@@ -453,7 +464,7 @@ class CourseController extends Controller
             return null;
         }
 
-        $path = Storage::disk($disk)->putFile($directory, $file);
+        $path = $file->store($directory, $disk);
 
         return Media::query()->create([
             'uploaded_by_user_id' => request()->user()?->id,
@@ -468,6 +479,18 @@ class CourseController extends Controller
             'duration_seconds' => null,
             'meta' => [],
         ]);
+    }
+
+    private function resolveLocalDiskPath(string $disk, string $path): ?string
+    {
+        $root = config("filesystems.disks.$disk.root");
+        if (! is_string($root) || $root === '') {
+            return null;
+        }
+
+        $relativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($path, '/\\'));
+
+        return rtrim($root, '/\\').DIRECTORY_SEPARATOR.$relativePath;
     }
 
     private function uniqueProductSlug(string $baseSlug, ?int $ignoreProductId = null): string

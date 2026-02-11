@@ -59,7 +59,7 @@
                 <div class="panel p-8 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl shadow-xl w-80">
                     <h3 class="h4 text-white mb-6 border-b border-white/10 pb-4">خلاصه سفارش</h3>
                     <div class="flex justify-between items-center mb-4 text-gray-300">
-                        <span>تعداد اقلام:</span>
+                        <span>اقلام:</span>
                         <span>{{ $items->count() }} عدد</span>
                     </div>
                     <div class="flex justify-between items-center mb-8 pt-4 border-t border-white/10">

@@ -412,12 +412,7 @@ function initAdminCourseLessonUi() {
                 return;
             }
 
-            const handle = target.closest('[data-drag-handle]');
-            if (!(handle instanceof HTMLElement)) {
-                return;
-            }
-
-            const row = handle.closest('tr');
+            const row = target.closest('tr');
             if (!(row instanceof HTMLTableRowElement)) {
                 return;
             }
@@ -682,40 +677,52 @@ function initAdminCategoryFormUi() {
         return;
     }
 
-    const typeSelect = document.querySelector('select[data-category-type]');
-    const parentSelect = document.querySelector('select[data-category-parent]');
-    if (!(typeSelect instanceof HTMLSelectElement) || !(parentSelect instanceof HTMLSelectElement)) {
-        return;
-    }
+    const typeSelects = Array.from(document.querySelectorAll('select[data-category-type]'));
+    typeSelects.forEach((typeSelect) => {
+        if (!(typeSelect instanceof HTMLSelectElement)) {
+            return;
+        }
 
-    const optionTemplates = Array.from(parentSelect.querySelectorAll('option')).map((option) => option.cloneNode(true));
+        const host = typeSelect.closest('form') || document;
+        const parentSelect = host.querySelector('select[data-category-parent]');
+        if (!(parentSelect instanceof HTMLSelectElement)) {
+            return;
+        }
 
-    const sync = () => {
-        const typeValue = String(typeSelect.value || '');
-        const currentValue = String(parentSelect.value || '');
+        if (typeSelect.dataset.bound === '1') {
+            return;
+        }
+        typeSelect.dataset.bound = '1';
 
-        parentSelect.innerHTML = '';
+        const optionTemplates = Array.from(parentSelect.querySelectorAll('option')).map((option) => option.cloneNode(true));
 
-        optionTemplates.forEach((template) => {
-            if (!(template instanceof HTMLOptionElement)) {
-                return;
-            }
+        const sync = () => {
+            const typeValue = String(typeSelect.value || '');
+            const currentValue = String(parentSelect.value || '');
 
-            const optionType = template.dataset.type;
-            const isMatch = typeValue === '' || !optionType || optionType === typeValue;
-            if (!isMatch) {
-                return;
-            }
+            parentSelect.innerHTML = '';
 
-            parentSelect.appendChild(template.cloneNode(true));
-        });
+            optionTemplates.forEach((template) => {
+                if (!(template instanceof HTMLOptionElement)) {
+                    return;
+                }
 
-        const stillExists = Array.from(parentSelect.options).some((option) => option.value === currentValue);
-        parentSelect.value = stillExists ? currentValue : '';
-    };
+                const optionType = template.dataset.type;
+                const isMatch = typeValue === '' || !optionType || optionType === typeValue;
+                if (!isMatch) {
+                    return;
+                }
 
-    typeSelect.addEventListener('change', sync);
-    sync();
+                parentSelect.appendChild(template.cloneNode(true));
+            });
+
+            const stillExists = Array.from(parentSelect.options).some((option) => option.value === currentValue);
+            parentSelect.value = stillExists ? currentValue : '';
+        };
+
+        typeSelect.addEventListener('change', sync);
+        sync();
+    });
 }
 
 function getCsrfToken() {

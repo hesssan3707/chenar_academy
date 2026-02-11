@@ -10,7 +10,6 @@ use App\Models\ProductPart;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -213,15 +212,15 @@ class BookletController extends Controller
             'category_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'note')],
             'status' => ['nullable', 'string', Rule::in(['draft', 'published'])],
             'base_price' => [$shouldPublish ? 'required' : 'nullable', 'integer', 'min:0', 'max:2000000000'],
-            'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibited_with:discount_type,discount_value'],
-            'discount_type' => ['nullable', 'string', Rule::in(['percent', 'amount']), 'required_with:discount_value', 'prohibited_with:sale_price'],
+            'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibits:discount_type,discount_value'],
+            'discount_type' => ['nullable', 'string', Rule::in(['percent', 'amount']), 'required_with:discount_value', 'prohibits:sale_price'],
             'discount_value' => [
                 'nullable',
                 'integer',
                 'min:0',
                 'max:2000000000',
                 'required_with:discount_type',
-                'prohibited_with:sale_price',
+                'prohibits:sale_price',
                 Rule::when($request->input('discount_type') === 'percent', ['max:100']),
             ],
             'published_at' => ['nullable', 'string', 'max:32'],
@@ -291,7 +290,7 @@ class BookletController extends Controller
             return null;
         }
 
-        $path = Storage::disk($disk)->putFile($directory, $file);
+        $path = $file->store($directory, $disk);
 
         return Media::query()->create([
             'uploaded_by_user_id' => request()->user()?->id,

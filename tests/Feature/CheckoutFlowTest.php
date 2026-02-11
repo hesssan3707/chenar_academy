@@ -229,7 +229,7 @@ class CheckoutFlowTest extends TestCase
         $this->assertNotSame(0, $receiptMediaId);
         $receipt = \App\Models\Media::query()->findOrFail($receiptMediaId);
         $this->assertSame('local', (string) $receipt->disk);
-        Storage::disk('local')->assertExists($receipt->path);
+        $this->assertTrue(Storage::disk('local')->exists($receipt->path));
     }
 
     public function test_card_to_card_page_shows_configured_destination_cards_with_copy_action(): void
@@ -342,7 +342,7 @@ class CheckoutFlowTest extends TestCase
             'meta' => [],
         ]);
 
-        $receiptPath = Storage::disk('local')->putFile('receipts', UploadedFile::fake()->image('receipt.jpg', 800, 600));
+        $receiptPath = UploadedFile::fake()->image('receipt.jpg', 800, 600)->store('receipts', 'local');
         $receipt = \App\Models\Media::query()->create([
             'uploaded_by_user_id' => $buyer->id,
             'disk' => 'local',

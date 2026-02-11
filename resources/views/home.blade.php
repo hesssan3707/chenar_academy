@@ -6,6 +6,27 @@
     <div class="container h-full flex flex-col justify-center">
         <!-- Minimal Home Content: Two Horizontal Rows as per brief -->
         
+        @if (($homeBanner ?? null))
+            <div class="mb-10">
+                <div class="panel p-6 bg-white/5 border border-white/10 rounded-2xl">
+                    <div class="h3 text-white">{{ $homeBanner->title }}</div>
+                </div>
+            </div>
+        @endif
+
+        @if (($latestPosts ?? collect())->isNotEmpty())
+            <div class="mb-10">
+                <h2 class="h3 mb-4 text-white">آخرین مقالات</h2>
+                <div class="h-scroll-container">
+                    @foreach ($latestPosts as $post)
+                        <a href="{{ route('blog.show', $post->slug) }}" class="panel p-5 bg-white/5 border border-white/10 rounded-2xl" style="min-width: 280px;">
+                            <div class="font-bold text-white">{{ $post->title }}</div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <!-- 1. Purchased Products (Only if logged in and has products) -->
         @auth
              <!-- Assuming we can pass $purchasedProducts from controller or view composer. 

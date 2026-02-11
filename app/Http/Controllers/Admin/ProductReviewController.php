@@ -108,6 +108,18 @@ class ProductReviewController extends Controller
 
         $value = $setting->value;
 
+        if (is_array($value)) {
+            if (array_key_exists('enabled', $value) && is_bool($value['enabled'])) {
+                return $value['enabled'];
+            }
+
+            if (array_key_exists('value', $value)) {
+                $value = $value['value'];
+            } elseif (count($value) === 1) {
+                $value = reset($value);
+            }
+        }
+
         if (is_bool($value)) {
             return $value;
         }

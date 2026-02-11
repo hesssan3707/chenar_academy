@@ -93,54 +93,82 @@
 
                 <!-- Reviews & Ratings -->
                 <div>
-                    <h2 class="h4 mb-3 border-b border-white/10 pb-2">نظرات کاربران</h2>
-                    
-                    @if (($ratingsArePublic ?? false) && isset($avgRating) && $avgRating !== null)
-                        <div class="flex items-center gap-4 mb-6 bg-white/5 p-4 rounded-lg">
-                            <div class="text-3xl font-bold text-brand">{{ number_format((float) $avgRating, 1) }}</div>
-                            <div class="flex flex-col">
-                                <div class="text-yellow-400 text-lg tracking-widest">
-                                    @php($filledStars = (int) round((float) $avgRating))
-                                    @for ($i = 1; $i <= 5; $i++)
-                                        {{ $i <= $filledStars ? '★' : '☆' }}
-                                    @endfor
-                                </div>
-                                <div class="text-xs text-muted">از {{ (int) ($ratingCount ?? 0) }} رأی</div>
-                            </div>
-                        </div>
-                    @endif
+                    @if (($ratingsArePublic ?? false))
+                        <h2 class="h4 mb-3 border-b border-white/10 pb-2">امتیاز کاربران</h2>
 
-                    @auth
-                        @if (($isPurchased ?? false) && ! ($userReview ?? null))
-                            <form method="post" action="{{ route('products.reviews.store', $product->slug) }}" class="mb-8 p-4 bg-white/5 rounded-lg border border-white/10">
-                                @csrf
-                                <input type="hidden" name="redirect_to" value="{{ url()->current() }}">
-                                <h3 class="h5 mb-3">ثبت نظر</h3>
-                                
-                                <div class="field mb-3">
-                                    <label class="field__label">امتیاز</label>
-                                    <select name="rating" class="field__input bg-black/20">
-                                        @for ($i = 5; $i >= 1; $i--)
-                                            <option value="{{ $i }}">{{ $i }} ستاره</option>
+                        @if (isset($avgRating) && $avgRating !== null)
+                            <div class="flex items-center gap-4 mb-8 bg-white/5 p-4 rounded-lg">
+                                <div class="text-3xl font-bold text-brand">{{ number_format((float) $avgRating, 1) }}</div>
+                                <div class="flex flex-col">
+                                    <div class="text-yellow-400 text-lg tracking-widest">
+                                        @php($filledStars = (int) round((float) $avgRating))
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            {{ $i <= $filledStars ? '★' : '☆' }}
                                         @endfor
-                                    </select>
+                                    </div>
+                                    <div class="text-xs text-muted">از {{ (int) ($ratingCount ?? 0) }} رأی</div>
                                 </div>
-                                
-                                <div class="field mb-3">
-                                    <label class="field__label">نظر شما</label>
-                                    <textarea name="body" class="field__input bg-black/20 h-24"></textarea>
-                                </div>
-                                
-                                <button class="btn btn--primary btn--sm" type="submit">ارسال نظر</button>
-                            </form>
-                        @elseif (($userReview ?? null))
-                            <div class="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg mb-6 text-yellow-200 text-sm">
-                                وضعیت نظر شما: {{ (string) ($userReview->status ?? '') === 'approved' ? 'تایید شده' : ((string) ($userReview->status ?? '') === 'rejected' ? 'رد شده' : 'در انتظار بررسی') }}
                             </div>
                         @endif
-                    @endauth
+                    @endif
 
-                    <!-- Reviews list could be added here if available in view data -->
+                    @if (($reviewsArePublic ?? false))
+                        <h2 class="h4 mb-3 border-b border-white/10 pb-2">نظرات کاربران</h2>
+
+                        @auth
+                            @if (($userReview ?? null))
+                                <div class="p-4 bg-white/5 border border-white/10 rounded-lg mb-6 text-white/80 text-sm">
+                                    <div class="mb-2">
+                                        وضعیت نظر شما: {{ (string) ($userReview->status ?? '') === 'approved' ? 'تایید شده' : ((string) ($userReview->status ?? '') === 'rejected' ? 'رد شده' : 'در انتظار بررسی') }}
+                                    </div>
+                                    @if (($userReview->body ?? '') !== '')
+                                        <div>{{ $userReview->body }}</div>
+                                    @endif
+                                </div>
+                            @elseif (($isPurchased ?? false))
+                                <form method="post" action="{{ route('products.reviews.store', $product->slug) }}" class="mb-8 p-4 bg-white/5 rounded-lg border border-white/10">
+                                    @csrf
+                                    <input type="hidden" name="redirect_to" value="{{ url()->current() }}">
+                                    <h3 class="h5 mb-3">ثبت نظر</h3>
+
+                                    <div class="field mb-3">
+                                        <label class="field__label">امتیاز</label>
+                                        <select name="rating" class="field__input bg-black/20">
+                                            @for ($i = 5; $i >= 1; $i--)
+                                                <option value="{{ $i }}">{{ $i }} ستاره</option>
+                                            @endfor
+                                        </select>
+                                    </div>
+
+                                    <div class="field mb-3">
+                                        <label class="field__label">نظر شما</label>
+                                        <textarea name="body" class="field__input bg-black/20 h-24"></textarea>
+                                    </div>
+
+                                    <button class="btn btn--primary btn--sm" type="submit">ارسال نظر</button>
+                                </form>
+                            @endif
+                        @endauth
+
+                        @php($reviews = $reviews ?? collect())
+                        @if ($reviews->isEmpty())
+                            @if (($product->type ?? null) === 'video')
+                                <div class="text-muted">اولین نفری باشید که این ویدیو را بررسی می‌کند.</div>
+                            @else
+                                <div class="text-muted">اولین نفری باشید که این محصول را بررسی می‌کند.</div>
+                            @endif
+                        @else
+                            <div class="stack stack--sm">
+                                @foreach ($reviews as $review)
+                                    @if (($review->body ?? '') !== '')
+                                        <div class="p-4 bg-white/5 border border-white/10 rounded-lg text-white/80">
+                                            <div>{{ $review->body }}</div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
+                    @endif
                 </div>
             </div>
         </div>

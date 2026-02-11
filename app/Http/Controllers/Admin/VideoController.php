@@ -224,15 +224,15 @@ class VideoController extends Controller
             'category_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'video')],
             'status' => ['nullable', 'string', Rule::in(['draft', 'published'])],
             'base_price' => [$shouldPublish ? 'required' : 'nullable', 'integer', 'min:0', 'max:2000000000'],
-            'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibited_with:discount_type,discount_value'],
-            'discount_type' => ['nullable', 'string', Rule::in(['percent', 'amount']), 'required_with:discount_value', 'prohibited_with:sale_price'],
+            'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibits:discount_type,discount_value'],
+            'discount_type' => ['nullable', 'string', Rule::in(['percent', 'amount']), 'required_with:discount_value', 'prohibits:sale_price'],
             'discount_value' => [
                 'nullable',
                 'integer',
                 'min:0',
                 'max:2000000000',
                 'required_with:discount_type',
-                'prohibited_with:sale_price',
+                'prohibits:sale_price',
                 Rule::when($request->input('discount_type') === 'percent', ['max:100']),
             ],
             'published_at' => ['nullable', 'string', 'max:32'],
@@ -306,14 +306,7 @@ class VideoController extends Controller
         $tempPath = null;
 
         try {
-            try {
-                $absolutePath = $disk->path($media->path);
-                if (! is_string($absolutePath) || $absolutePath === '' || ! file_exists($absolutePath)) {
-                    $absolutePath = null;
-                }
-            } catch (\Throwable) {
-                $absolutePath = null;
-            }
+            $absolutePath = $this->resolveLocalDiskPath($media->disk, $media->path);
 
             if ($absolutePath === null) {
                 $stream = $disk->readStream($media->path);
@@ -399,7 +392,7 @@ class VideoController extends Controller
             return null;
         }
 
-        $path = Storage::disk($disk)->putFile($directory, $file);
+        $path = $file->store($directory, $disk);
 
         return Media::query()->create([
             'uploaded_by_user_id' => request()->user()?->id,
@@ -414,5 +407,17 @@ class VideoController extends Controller
             'duration_seconds' => null,
             'meta' => [],
         ]);
+    }
+
+    private function resolveLocalDiskPath(string $disk, string $path): ?string
+    {
+        $root = config("filesystems.disks.$disk.root");
+        if (! is_string($root) || $root === '') {
+            return null;
+        }
+
+        $relativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($path, '/\\'));
+
+        return rtrim($root, '/\\').DIRECTORY_SEPARATOR.$relativePath;
     }
 }

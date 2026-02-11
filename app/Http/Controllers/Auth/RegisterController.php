@@ -39,7 +39,7 @@ class RegisterController extends Controller
 
         $fullName = trim((string) ($validated['name'] ?? '')) ?: $validated['phone'];
 
-        $user = User::query()->create([
+        $user = new User([
             'name' => $fullName,
             'email' => null,
             'password' => $validated['password'],
@@ -47,6 +47,7 @@ class RegisterController extends Controller
             'phone_verified_at' => now(),
             'is_active' => true,
         ]);
+        $user->save();
 
         if (! $user->phone_verified_at) {
             $user->forceFill(['phone_verified_at' => now()])->save();

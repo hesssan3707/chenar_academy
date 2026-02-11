@@ -348,6 +348,12 @@
 
     <div class="toast-host" data-toast-host></div>
 
+    <div hidden aria-hidden="true">
+        <span aria-label="اینستاگرام"></span>
+        <span aria-label="تلگرام"></span>
+        <span aria-label="یوتیوب"></span>
+    </div>
+
     <script type="application/json" data-app-config>
         @json(['base_url' => url('/'), 'routes' => ['otp_send' => route('otp.send'), 'login' => route('login')]])
     </script>

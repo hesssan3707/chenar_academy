@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -61,7 +62,7 @@ class AdminBookletUploadsTest extends TestCase
             'status' => 'draft',
         ]);
 
-        $productId = (int) \DB::table('products')->where('title', 'Booklet without pdf')->value('id');
+        $productId = (int) DB::table('products')->where('title', 'Booklet without pdf')->value('id');
         $this->assertNotSame(0, $productId);
 
         $product = \App\Models\Product::query()->findOrFail($productId);
@@ -124,7 +125,7 @@ class AdminBookletUploadsTest extends TestCase
             'title' => 'Booklet 1',
         ]);
 
-        $productId = (int) \DB::table('products')->where('title', 'Booklet 1')->value('id');
+        $productId = (int) DB::table('products')->where('title', 'Booklet 1')->value('id');
         $this->assertNotSame(0, $productId);
 
         $product = \App\Models\Product::query()->findOrFail($productId);
@@ -136,16 +137,16 @@ class AdminBookletUploadsTest extends TestCase
             'part_type' => 'file',
         ]);
 
-        $partRow = \DB::table('product_parts')->where('product_id', $productId)->where('part_type', 'file')->first();
+        $partRow = DB::table('product_parts')->where('product_id', $productId)->where('part_type', 'file')->first();
         $this->assertNotNull($partRow);
         $this->assertNotNull($partRow->media_id);
 
         $cover = \App\Models\Media::query()->findOrFail((int) $product->thumbnail_media_id);
         $this->assertSame('public', $cover->disk);
-        Storage::disk('public')->assertExists($cover->path);
+        $this->assertTrue(Storage::disk('public')->exists($cover->path));
 
         $file = \App\Models\Media::query()->findOrFail((int) $partRow->media_id);
         $this->assertSame('local', $file->disk);
-        Storage::disk('local')->assertExists($file->path);
+        $this->assertTrue(Storage::disk('local')->exists($file->path));
     }
 }
