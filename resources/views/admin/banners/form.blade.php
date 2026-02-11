@@ -21,7 +21,8 @@
             <div class="panel max-w-md">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.banners.update', $banner->id) : route('admin.banners.store') }}"
-                    class="stack stack--sm">
+                    class="stack stack--sm"
+                    id="banner-form">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -100,17 +101,24 @@
                         </label>
                     </div>
 
-                    <div class="form-actions">
-                        <button class="btn btn--primary" type="submit">ذخیره</button>
-                    </div>
                 </form>
 
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit" form="banner-form">ذخیره</button>
+                    @if ($isEdit)
+                        <button class="btn btn--danger" type="submit" form="banner-delete-form">حذف بنر</button>
+                    @endif
+                </div>
+
                 @if ($isEdit)
-                    <div class="divider"></div>
-                    <form method="post" action="{{ route('admin.banners.destroy', $banner->id) }}">
+                    <form method="post"
+                        action="{{ route('admin.banners.destroy', $banner->id) }}"
+                        id="banner-delete-form"
+                        data-confirm="1"
+                        data-confirm-title="حذف بنر"
+                        data-confirm-message="آیا از حذف این بنر مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
                         @csrf
                         @method('delete')
-                        <button class="btn btn--ghost" type="submit">حذف بنر</button>
                     </form>
                 @endif
             </div>

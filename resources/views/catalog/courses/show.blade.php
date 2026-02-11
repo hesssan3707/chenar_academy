@@ -108,9 +108,19 @@
                                                         <span>{{ $lesson->title }}</span>
                                                     </div>
                                                     @if (($isPurchased ?? false))
-                                                         <span class="text-green-400 text-xs">آزاد</span>
+                                                        <span class="text-green-400 text-xs">آزاد</span>
+                                                    @elseif ($lesson->is_preview)
+                                                        <div class="flex items-center gap-3">
+                                                            <a class="btn btn--ghost btn--sm"
+                                                                href="{{ route('courses.lessons.preview', ['slug' => $course->slug, 'lesson' => $lesson->id]) }}"
+                                                                target="_blank" rel="noreferrer">مشاهده</a>
+                                                            <span class="text-brand text-xs">پیش‌نمایش</span>
+                                                        </div>
                                                     @else
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                                        <div class="flex items-center gap-2 text-muted text-xs">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                                            <span>قفل</span>
+                                                        </div>
                                                     @endif
                                                 </div>
                                             @endforeach

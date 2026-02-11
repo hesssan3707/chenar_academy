@@ -48,6 +48,7 @@
                     <a class="admin-menu__link @if (request()->routeIs('admin.users.*')) is-active @endif" href="{{ route('admin.users.index') }}">کاربران</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.booklets.*')) is-active @endif" href="{{ route('admin.booklets.index') }}">جزوه‌ها</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.videos.*')) is-active @endif" href="{{ route('admin.videos.index') }}">ویدیوها</a>
+                    <a class="admin-menu__link @if (request()->routeIs('admin.courses.*')) is-active @endif" href="{{ route('admin.courses.index') }}">دوره‌ها</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.tickets.*')) is-active @endif" href="{{ route('admin.tickets.index') }}">
                         تیکت‌ها
                         @if (($unreadTicketsCount ?? 0) > 0)
@@ -63,7 +64,6 @@
                     <a class="admin-menu__link @if (request()->routeIs('admin.categories.*')) is-active @endif" href="{{ route('admin.categories.index') }}">دسته‌بندی‌ها</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.discounts.*')) is-active @endif" href="{{ route('admin.discounts.category') }}">تخفیف گروهی</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.products.*')) is-active @endif" href="{{ route('admin.products.index') }}">محصولات</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.courses.*')) is-active @endif" href="{{ route('admin.courses.index') }}">دوره‌ها</a>
                     <a class="admin-menu__link @if (request()->routeIs('admin.orders.*')) is-active @endif" href="{{ route('admin.orders.index') }}">
                         سفارش‌ها
                         @if (($pendingOrdersCount ?? 0) > 0)
@@ -109,6 +109,20 @@
                 <main class="admin-content">
                     @yield('content')
                 </main>
+            </div>
+        </div>
+
+        <div class="modal" data-confirm-modal hidden>
+            <div class="modal__backdrop" data-confirm-cancel></div>
+            <div class="modal__dialog">
+                <div class="panel stack stack--sm">
+                    <div class="section__title section__title--sm" data-confirm-title>حذف</div>
+                    <div class="page-subtitle" style="margin: 0;" data-confirm-message>آیا مطمئن هستید؟</div>
+                    <div class="form-actions">
+                        <button class="btn btn--danger" type="button" data-confirm-confirm>حذف</button>
+                        <button class="btn btn--ghost" type="button" data-confirm-cancel>انصراف</button>
+                    </div>
+                </div>
             </div>
         </div>
 

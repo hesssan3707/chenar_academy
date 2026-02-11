@@ -20,6 +20,7 @@ class Product extends Model
         'excerpt',
         'description',
         'thumbnail_media_id',
+        'institution_category_id',
         'status',
         'base_price',
         'sale_price',
@@ -38,6 +39,11 @@ class Product extends Model
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'product_categories', 'product_id', 'category_id');
+    }
+
+    public function institutionCategory(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'institution_category_id');
     }
 
     public function thumbnailMedia(): BelongsTo

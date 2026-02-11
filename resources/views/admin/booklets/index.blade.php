@@ -40,7 +40,16 @@
                                         <div class="admin-row-title--sm">{{ $booklet->title }}</div>
                                         <div class="card__meta">{{ $booklet->slug }}</div>
                                     </td>
-                                    <td>{{ $booklet->status }}</td>
+                                    <td class="admin-nowrap">
+                                        @php($statusValue = (string) ($booklet->status ?? ''))
+                                        @if ($statusValue === 'published')
+                                            <span class="badge badge--brand">منتشر شده</span>
+                                        @elseif ($statusValue === 'draft')
+                                            <span class="badge">پیش‌نویس</span>
+                                        @else
+                                            <span class="badge">{{ $statusValue !== '' ? $statusValue : '—' }}</span>
+                                        @endif
+                                    </td>
                                     <td class="admin-nowrap">
                                         @php($price = (int) ($booklet->sale_price ?? $booklet->base_price ?? 0))
                                         {{ number_format($price) }} {{ $booklet->currency ?? 'IRR' }}

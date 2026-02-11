@@ -18,34 +18,57 @@
             @php($videoProduct = $videoProduct ?? null)
             @php($video = $video ?? null)
             @php($isEdit = $videoProduct && $videoProduct->exists)
+            @php($institutions = $institutions ?? collect())
+            @php($categories = $categories ?? collect())
 
             <div class="panel">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.videos.update', $videoProduct->id) : route('admin.videos.store') }}"
                     enctype="multipart/form-data"
-                    class="stack stack--sm">
+                    class="stack stack--sm"
+                    id="video-form">
                     @csrf
                     @if ($isEdit)
                         @method('put')
                     @endif
 
+                    <label class="field">
+                        <span class="field__label">عنوان</span>
+                        <input name="title" required value="{{ old('title', (string) ($videoProduct->title ?? '')) }}">
+                        @error('title')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
-                            <span class="field__label">عنوان</span>
-                            <input name="title" required value="{{ old('title', (string) ($videoProduct->title ?? '')) }}">
-                            @error('title')
+                            <span class="field__label">نوع دانشگاه</span>
+                            @php($institutionValue = old('institution_category_id', (string) ($videoProduct->institution_category_id ?? '')))
+                            <select name="institution_category_id">
+                                <option value="" @selected($institutionValue === '')>—</option>
+                                @foreach ($institutions as $institution)
+                                    <option value="{{ $institution->id }}" @selected((string) $institution->id === (string) $institutionValue)>
+                                        {{ $institution->title }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('institution_category_id')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>
 
                         <label class="field">
-                            <span class="field__label">وضعیت</span>
-                            @php($statusValue = (string) old('status', (string) ($videoProduct->status ?? 'draft')))
-                            <select name="status" required>
-                                <option value="draft" @selected($statusValue === 'draft')>پیش‌نویس</option>
-                                <option value="published" @selected($statusValue === 'published')>منتشر شده</option>
+                            <span class="field__label">دسته‌بندی</span>
+                            @php($categoryValue = old('category_id', (string) ($isEdit ? ($videoProduct?->categories()->where('type', 'video')->value('categories.id') ?? '') : '')))
+                            <select name="category_id">
+                                <option value="" @selected($categoryValue === '')>—</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}" @selected((string) $category->id === (string) $categoryValue)>
+                                        {{ $category->title }}
+                                    </option>
+                                @endforeach
                             </select>
-                            @error('status')
+                            @error('category_id')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>
@@ -138,17 +161,28 @@
                         @enderror
                     </label>
 
-                    <div class="form-actions">
-                        <button class="btn btn--primary" type="submit">ذخیره</button>
-                    </div>
                 </form>
 
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit" name="intent" value="save" form="video-form">ذخیره</button>
+                    <button class="btn btn--ghost" type="submit" name="intent" value="publish" form="video-form">انتشار</button>
+                    @if ($isEdit && (string) $videoProduct->status === 'published')
+                        <button class="btn btn--ghost" type="submit" name="intent" value="draft" form="video-form">تبدیل به پیش‌نویس</button>
+                    @endif
+                    @if ($isEdit)
+                        <button class="btn btn--danger" type="submit" form="video-delete-form">حذف ویدیو</button>
+                    @endif
+                </div>
+
                 @if ($isEdit)
-                    <div class="divider"></div>
-                    <form method="post" action="{{ route('admin.videos.destroy', $videoProduct->id) }}">
+                    <form method="post"
+                        action="{{ route('admin.videos.destroy', $videoProduct->id) }}"
+                        id="video-delete-form"
+                        data-confirm="1"
+                        data-confirm-title="حذف ویدیو"
+                        data-confirm-message="آیا از حذف این ویدیو مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
                         @csrf
                         @method('delete')
-                        <button class="btn btn--ghost" type="submit">حذف ویدیو</button>
                     </form>
                 @endif
             </div>

@@ -21,7 +21,8 @@
             <div class="panel max-w-md">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.roles.update', $role->id) : route('admin.roles.store') }}"
-                    class="stack stack--sm">
+                    class="stack stack--sm"
+                    id="role-form">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -42,18 +43,24 @@
                             <div class="field__error">{{ $message }}</div>
                         @enderror
                     </label>
-
-                    <div class="form-actions">
-                        <button class="btn btn--primary" type="submit">ذخیره</button>
-                    </div>
                 </form>
 
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit" form="role-form">ذخیره</button>
+                    @if ($isEdit)
+                        <button class="btn btn--danger" type="submit" form="role-delete-form">حذف نقش</button>
+                    @endif
+                </div>
+
                 @if ($isEdit)
-                    <div class="divider"></div>
-                    <form method="post" action="{{ route('admin.roles.destroy', $role->id) }}">
+                    <form method="post"
+                        action="{{ route('admin.roles.destroy', $role->id) }}"
+                        id="role-delete-form"
+                        data-confirm="1"
+                        data-confirm-title="حذف نقش"
+                        data-confirm-message="آیا از حذف این نقش مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
                         @csrf
                         @method('delete')
-                        <button class="btn btn--ghost" type="submit">حذف نقش</button>
                     </form>
                 @endif
             </div>

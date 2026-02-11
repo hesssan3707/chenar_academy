@@ -53,7 +53,7 @@
                                 <div class="form-actions">
                                     <a class="btn btn--ghost" href="{{ route('admin.surveys.results', $survey->id) }}">نتایج</a>
                                     <a class="btn btn--ghost" href="{{ route('admin.surveys.edit', $survey->id) }}">ویرایش</a>
-                                    <form method="post" action="{{ route('admin.surveys.destroy', $survey->id) }}">
+                                    <form method="post" action="{{ route('admin.surveys.destroy', $survey->id) }}" class="inline-form" data-confirm="1">
                                         @csrf
                                         @method('delete')
                                         <button class="btn btn--ghost" type="submit">حذف</button>

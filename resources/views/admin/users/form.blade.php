@@ -22,7 +22,8 @@
             <div class="stack">
                 <div class="panel max-w-md">
                     <form method="post" action="{{ $isEdit ? route('admin.users.update', $user->id) : route('admin.users.store') }}"
-                        class="stack stack--sm">
+                        class="stack stack--sm"
+                        id="user-form">
                         @csrf
                         @if ($isEdit)
                             @method('put')
@@ -75,18 +76,24 @@
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>
-
-                        <div class="form-actions">
-                            <button class="btn btn--primary" type="submit">ذخیره</button>
-                        </div>
                     </form>
 
+                    <div class="form-actions">
+                        <button class="btn btn--primary" type="submit" form="user-form">ذخیره</button>
+                        @if ($isEdit)
+                            <button class="btn btn--danger" type="submit" form="user-delete-form">حذف کاربر</button>
+                        @endif
+                    </div>
+
                     @if ($isEdit)
-                        <div class="divider"></div>
-                        <form method="post" action="{{ route('admin.users.destroy', $user->id) }}">
+                        <form method="post"
+                            action="{{ route('admin.users.destroy', $user->id) }}"
+                            id="user-delete-form"
+                            data-confirm="1"
+                            data-confirm-title="حذف کاربر"
+                            data-confirm-message="آیا از حذف این کاربر مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
                             @csrf
                             @method('delete')
-                            <button class="btn btn--ghost" type="submit">حذف کاربر</button>
                         </form>
                     @endif
                 </div>
@@ -171,7 +178,10 @@
                                                 <td class="admin-nowrap">
                                                     <form method="post"
                                                         action="{{ route('admin.users.accesses.destroy', [$user->id, $access->id]) }}"
-                                                        class="inline-form">
+                                                        class="inline-form"
+                                                        data-confirm="1"
+                                                        data-confirm-title="حذف دسترسی"
+                                                        data-confirm-message="آیا از حذف این دسترسی مطمئن هستید؟">
                                                         @csrf
                                                         @method('delete')
                                                         <button class="btn btn--ghost btn--sm" type="submit">حذف</button>

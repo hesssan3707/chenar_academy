@@ -18,11 +18,13 @@
             @php($category = $category ?? null)
             @php($isEdit = $category && $category->exists)
             @php($parents = $parents ?? collect())
+            @php($types = $types ?? [])
 
             <div class="panel">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.categories.update', $category->id) : route('admin.categories.store') }}"
-                    class="stack stack--sm">
+                    class="stack stack--sm"
+                    id="category-form">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -31,7 +33,13 @@
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
                             <span class="field__label">نوع</span>
-                            <input name="type" required value="{{ old('type', (string) ($category->type ?? '')) }}">
+                            @php($typeValue = old('type', (string) ($category->type ?? '')))
+                            <select name="type" required data-category-type>
+                                <option value="" @selected($typeValue === '')>—</option>
+                                @foreach ($types as $type)
+                                    <option value="{{ $type }}" @selected((string) $type === (string) $typeValue)>{{ $type }}</option>
+                                @endforeach
+                            </select>
                             @error('type')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
@@ -49,23 +57,15 @@
                     <label class="field">
                         <span class="field__label">والد</span>
                         @php($parentValue = old('parent_id', (string) ($category->parent_id ?? '')))
-                        <select name="parent_id">
+                        <select name="parent_id" data-category-parent>
                             <option value="">—</option>
                             @foreach ($parents as $parent)
-                                <option value="{{ $parent->id }}" @selected((string) $parent->id === (string) $parentValue)>
+                                <option value="{{ $parent->id }}" data-type="{{ $parent->type }}" @selected((string) $parent->id === (string) $parentValue)>
                                     {{ $parent->type }} — {{ $parent->title }}
                                 </option>
                             @endforeach
                         </select>
                         @error('parent_id')
-                            <div class="field__error">{{ $message }}</div>
-                        @enderror
-                    </label>
-
-                    <label class="field">
-                        <span class="field__label">کلید آیکن</span>
-                        <input name="icon_key" value="{{ old('icon_key', (string) ($category->icon_key ?? '')) }}">
-                        @error('icon_key')
                             <div class="field__error">{{ $message }}</div>
                         @enderror
                     </label>
@@ -100,17 +100,24 @@
                         </label>
                     </div>
 
-                    <div class="form-actions">
-                        <button class="btn btn--primary" type="submit">ذخیره</button>
-                    </div>
                 </form>
 
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit" form="category-form">ذخیره</button>
+                    @if ($isEdit)
+                        <button class="btn btn--danger" type="submit" form="category-delete-form">حذف دسته‌بندی</button>
+                    @endif
+                </div>
+
                 @if ($isEdit)
-                    <div class="divider"></div>
-                    <form method="post" action="{{ route('admin.categories.destroy', $category->id) }}">
+                    <form method="post"
+                        action="{{ route('admin.categories.destroy', $category->id) }}"
+                        id="category-delete-form"
+                        data-confirm="1"
+                        data-confirm-title="حذف دسته‌بندی"
+                        data-confirm-message="آیا از حذف این دسته‌بندی مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
                         @csrf
                         @method('delete')
-                        <button class="btn btn--ghost" type="submit">حذف دسته‌بندی</button>
                     </form>
                 @endif
             </div>

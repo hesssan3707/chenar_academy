@@ -57,7 +57,7 @@
                                                 <td>{{ $category->sort_order }}</td>
                                                 <td class="admin-nowrap">
                                                     <a class="btn btn--ghost btn--sm" href="{{ route('admin.categories.edit', $category->id) }}">ویرایش</a>
-                                                    <form method="post" action="{{ route('admin.categories.destroy', $category->id) }}" class="inline-form">
+                                                    <form method="post" action="{{ route('admin.categories.destroy', $category->id) }}" class="inline-form" data-confirm="1">
                                                         @csrf
                                                         @method('delete')
                                                         <button class="btn btn--ghost btn--sm" type="submit">حذف</button>

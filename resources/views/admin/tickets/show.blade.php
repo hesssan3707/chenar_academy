@@ -111,11 +111,16 @@
                 </div>
 
                 <div class="panel">
-                    <form method="post" action="{{ route('admin.tickets.destroy', $ticket->id) }}" class="stack stack--sm">
+                    <form method="post"
+                        action="{{ route('admin.tickets.destroy', $ticket->id) }}"
+                        class="stack stack--sm"
+                        data-confirm="1"
+                        data-confirm-title="حذف تیکت"
+                        data-confirm-message="آیا از حذف این تیکت مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
                         @csrf
                         @method('delete')
                         <div class="field__label">عملیات</div>
-                        <button class="btn btn--ghost" type="submit">حذف تیکت</button>
+                        <button class="btn btn--danger" type="submit">حذف تیکت</button>
                     </form>
                 </div>
             </div>

@@ -21,7 +21,8 @@
             <div class="panel max-w-md">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.coupons.update', $coupon->id) : route('admin.coupons.store') }}"
-                    class="stack stack--sm">
+                    class="stack stack--sm"
+                    id="coupon-form">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -107,17 +108,24 @@
                         @enderror
                     </label>
 
-                    <div class="form-actions">
-                        <button class="btn btn--primary" type="submit">ذخیره</button>
-                    </div>
                 </form>
 
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit" form="coupon-form">ذخیره</button>
+                    @if ($isEdit)
+                        <button class="btn btn--danger" type="submit" form="coupon-delete-form">حذف کد تخفیف</button>
+                    @endif
+                </div>
+
                 @if ($isEdit)
-                    <div class="divider"></div>
-                    <form method="post" action="{{ route('admin.coupons.destroy', $coupon->id) }}">
+                    <form method="post"
+                        action="{{ route('admin.coupons.destroy', $coupon->id) }}"
+                        id="coupon-delete-form"
+                        data-confirm="1"
+                        data-confirm-title="حذف کد تخفیف"
+                        data-confirm-message="آیا از حذف این کد تخفیف مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
                         @csrf
                         @method('delete')
-                        <button class="btn btn--ghost" type="submit">حذف کد تخفیف</button>
                     </form>
                 @endif
             </div>

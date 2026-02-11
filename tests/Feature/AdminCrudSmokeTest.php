@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -150,6 +151,9 @@ class AdminCrudSmokeTest extends TestCase
 
     public function test_admin_can_create_and_update_video(): void
     {
+        Storage::fake('videos');
+        Process::fake(fn () => Process::result(output: "120.0\n"));
+
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
@@ -181,6 +185,7 @@ class AdminCrudSmokeTest extends TestCase
             'base_price' => 2500,
             'sale_price' => 2000,
             'published_at' => now()->toDateTimeString(),
+            'video_file' => UploadedFile::fake()->create('full.mp4', 2400, 'video/mp4'),
         ])->assertRedirect(route('admin.videos.edit', $videoProductId));
 
         $this->assertDatabaseHas('videos', [

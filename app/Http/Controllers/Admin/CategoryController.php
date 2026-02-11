@@ -7,6 +7,7 @@ use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
@@ -91,12 +92,17 @@ class CategoryController extends Controller
 
     public function create(): View
     {
+        $defaultTypes = ['course', 'video', 'note', 'institution', 'post'];
+        $existingTypes = Category::query()->select('type')->distinct()->orderBy('type')->pluck('type')->all();
+        $types = array_values(array_unique(array_merge($defaultTypes, $existingTypes)));
+
         return view('admin.categories.form', [
             'title' => 'ایجاد دسته‌بندی',
             'category' => new Category([
                 'is_active' => true,
                 'sort_order' => 0,
             ]),
+            'types' => $types,
             'parents' => Category::query()->orderBy('type')->orderBy('title')->orderBy('id')->get(),
         ]);
     }
@@ -119,9 +125,14 @@ class CategoryController extends Controller
     {
         $categoryModel = Category::query()->findOrFail($category);
 
+        $defaultTypes = ['course', 'video', 'note', 'institution', 'post'];
+        $existingTypes = Category::query()->select('type')->distinct()->orderBy('type')->pluck('type')->all();
+        $types = array_values(array_unique(array_merge($defaultTypes, $existingTypes)));
+
         return view('admin.categories.form', [
             'title' => 'ویرایش دسته‌بندی',
             'category' => $categoryModel,
+            'types' => $types,
             'parents' => Category::query()
                 ->where('id', '!=', $categoryModel->id)
                 ->orderBy('type')
@@ -141,7 +152,7 @@ class CategoryController extends Controller
             'type' => $validated['type'],
             'parent_id' => $validated['parent_id'],
             'title' => $validated['title'],
-            'icon_key' => $validated['icon_key'],
+            'icon_key' => $categoryModel->icon_key,
             'description' => $validated['description'],
             'is_active' => $validated['is_active'],
             'sort_order' => $validated['sort_order'],
@@ -164,9 +175,8 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'type' => ['required', 'string', 'max:20'],
-            'parent_id' => ['nullable', 'integer', 'min:1', 'exists:categories,id'],
+            'parent_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', $type)],
             'title' => ['required', 'string', 'max:190'],
-            'icon_key' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
@@ -183,7 +193,7 @@ class CategoryController extends Controller
             'parent_id' => ($validated['parent_id'] ?? null) !== null ? (int) $validated['parent_id'] : null,
             'title' => (string) $validated['title'],
             'slug' => $slug,
-            'icon_key' => isset($validated['icon_key']) && $validated['icon_key'] !== '' ? (string) $validated['icon_key'] : null,
+            'icon_key' => $category?->icon_key,
             'description' => isset($validated['description']) && $validated['description'] !== '' ? (string) $validated['description'] : null,
             'is_active' => $request->boolean('is_active'),
             'sort_order' => ($validated['sort_order'] ?? null) !== null ? (int) $validated['sort_order'] : 0,

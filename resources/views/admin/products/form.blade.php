@@ -21,7 +21,8 @@
             <div class="panel">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.products.update', $product->id) : route('admin.products.store') }}"
-                    class="stack stack--sm">
+                    class="stack stack--sm"
+                    id="product-form">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -131,18 +132,24 @@
                             @enderror
                         </label>
                     </div>
-
-                    <div class="form-actions">
-                        <button class="btn btn--primary" type="submit">ذخیره</button>
-                    </div>
                 </form>
 
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit" form="product-form">ذخیره</button>
+                    @if ($isEdit)
+                        <button class="btn btn--danger" type="submit" form="product-delete-form">حذف محصول</button>
+                    @endif
+                </div>
+
                 @if ($isEdit)
-                    <div class="divider"></div>
-                    <form method="post" action="{{ route('admin.products.destroy', $product->id) }}">
+                    <form method="post"
+                        action="{{ route('admin.products.destroy', $product->id) }}"
+                        id="product-delete-form"
+                        data-confirm="1"
+                        data-confirm-title="حذف محصول"
+                        data-confirm-message="آیا از حذف این محصول مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
                         @csrf
                         @method('delete')
-                        <button class="btn btn--ghost" type="submit">حذف محصول</button>
                     </form>
                 @endif
             </div>

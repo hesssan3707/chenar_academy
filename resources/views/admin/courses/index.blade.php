@@ -41,16 +41,27 @@
                                     <td>{{ $course->id }}</td>
                                     <td class="admin-min-w-240">{{ $course->title }}</td>
                                     <td class="admin-nowrap">{{ $course->slug }}</td>
-                                    <td>{{ $course->status }}</td>
+                                    <td class="admin-nowrap">
+                                        @php($statusValue = (string) ($course->status ?? ''))
+                                        @if ($statusValue === 'published')
+                                            <span class="badge badge--brand">منتشر شده</span>
+                                        @elseif ($statusValue === 'draft')
+                                            <span class="badge">پیش‌نویس</span>
+                                        @else
+                                            <span class="badge">{{ $statusValue !== '' ? $statusValue : '—' }}</span>
+                                        @endif
+                                    </td>
                                     <td class="admin-nowrap">{{ number_format((int) $course->base_price) }} {{ $course->currency }}</td>
                                     <td class="admin-nowrap">{{ $course->published_at ? jdate($course->published_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
-                                        <a class="btn btn--ghost btn--sm" href="{{ route('admin.courses.edit', $course->id) }}">ویرایش</a>
-                                        <form method="post" action="{{ route('admin.courses.destroy', $course->id) }}" class="inline-form">
-                                            @csrf
-                                            @method('delete')
-                                            <button class="btn btn--ghost btn--sm" type="submit">حذف</button>
-                                        </form>
+                                        <div style="display: inline-flex; gap: 8px; align-items: center;">
+                                            <a class="btn btn--ghost btn--sm" href="{{ route('admin.courses.edit', $course->id) }}">ویرایش</a>
+                                            <form method="post" action="{{ route('admin.courses.destroy', $course->id) }}" class="inline-form" data-confirm="1">
+                                                @csrf
+                                                @method('delete')
+                                                <button class="btn btn--ghost btn--sm" type="submit">حذف</button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

@@ -20,7 +20,8 @@
 
             <div class="panel">
                 <form method="post" action="{{ $isEdit ? route('admin.posts.update', $post->id) : route('admin.posts.store') }}"
-                    class="stack stack--sm">
+                    class="stack stack--sm"
+                    id="post-form">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -65,17 +66,24 @@
                         @enderror
                     </label>
 
-                    <div class="form-actions">
-                        <button class="btn btn--primary" type="submit">ذخیره</button>
-                    </div>
                 </form>
 
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit" form="post-form">ذخیره</button>
+                    @if ($isEdit)
+                        <button class="btn btn--danger" type="submit" form="post-delete-form">حذف مقاله</button>
+                    @endif
+                </div>
+
                 @if ($isEdit)
-                    <div class="divider"></div>
-                    <form method="post" action="{{ route('admin.posts.destroy', $post->id) }}">
+                    <form method="post"
+                        action="{{ route('admin.posts.destroy', $post->id) }}"
+                        id="post-delete-form"
+                        data-confirm="1"
+                        data-confirm-title="حذف مقاله"
+                        data-confirm-message="آیا از حذف این مقاله مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
                         @csrf
                         @method('delete')
-                        <button class="btn btn--ghost" type="submit">حذف مقاله</button>
                     </form>
                 @endif
             </div>

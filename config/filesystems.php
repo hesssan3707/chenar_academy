@@ -44,6 +44,19 @@ return [
             'throw' => false,
         ],
 
+        'videos' => [
+            'driver' => 'ftp',
+            'host' => env('VIDEOS_FTP_HOST'),
+            'username' => env('VIDEOS_FTP_USERNAME'),
+            'password' => env('VIDEOS_FTP_PASSWORD'),
+            'port' => env('VIDEOS_FTP_PORT', 21),
+            'root' => env('VIDEOS_FTP_ROOT', ''),
+            'passive' => env('VIDEOS_FTP_PASSIVE', true),
+            'ssl' => env('VIDEOS_FTP_SSL', false),
+            'timeout' => env('VIDEOS_FTP_TIMEOUT', 30),
+            'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

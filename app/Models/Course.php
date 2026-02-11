@@ -21,6 +21,7 @@ class Course extends Model
         'body',
         'level',
         'total_duration_seconds',
+        'total_videos_count',
         'meta',
     ];
 

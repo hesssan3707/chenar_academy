@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,7 +19,28 @@ class AdminVideoUploadsTest extends TestCase
     {
         Storage::fake('public');
         Storage::fake('local');
+        Storage::fake('videos');
         Process::fake(fn () => Process::result(output: "120.0\n"));
+
+        $institution = Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'Payame Noor',
+            'slug' => 'pnu',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $category = Category::query()->create([
+            'type' => 'video',
+            'parent_id' => null,
+            'title' => 'Physics Videos',
+            'slug' => 'physics-videos',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
 
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
@@ -26,6 +48,8 @@ class AdminVideoUploadsTest extends TestCase
         $response = $this->actingAs($admin, 'admin')->post(route('admin.videos.store'), [
             'title' => 'My Video',
             'excerpt' => 'Intro',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
             'status' => 'draft',
             'base_price' => 1000,
             'sale_price' => null,
@@ -47,6 +71,12 @@ class AdminVideoUploadsTest extends TestCase
 
         $product = \App\Models\Product::query()->findOrFail($productId);
         $this->assertNotNull($product->thumbnail_media_id);
+        $this->assertSame($institution->id, (int) $product->institution_category_id);
+
+        $this->assertDatabaseHas('product_categories', [
+            'product_id' => (int) $productId,
+            'category_id' => (int) $category->id,
+        ]);
 
         $this->assertDatabaseHas('videos', [
             'product_id' => $productId,
@@ -63,12 +93,12 @@ class AdminVideoUploadsTest extends TestCase
         Storage::disk('public')->assertExists($cover->path);
 
         $preview = \App\Models\Media::query()->findOrFail((int) $videoRow->preview_media_id);
-        $this->assertSame('local', $preview->disk);
-        Storage::disk('local')->assertExists($preview->path);
+        $this->assertSame('videos', $preview->disk);
+        Storage::disk('videos')->assertExists($preview->path);
 
         $full = \App\Models\Media::query()->findOrFail((int) $videoRow->media_id);
-        $this->assertSame('local', $full->disk);
-        Storage::disk('local')->assertExists($full->path);
+        $this->assertSame('videos', $full->disk);
+        Storage::disk('videos')->assertExists($full->path);
         $this->assertSame(120, (int) $full->duration_seconds);
     }
 }

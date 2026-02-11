@@ -21,7 +21,8 @@
             <div class="panel max-w-md">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.permissions.update', $permission->id) : route('admin.permissions.store') }}"
-                    class="stack stack--sm">
+                    class="stack stack--sm"
+                    id="permission-form">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -43,17 +44,24 @@
                         @enderror
                     </label>
 
-                    <div class="form-actions">
-                        <button class="btn btn--primary" type="submit">ذخیره</button>
-                    </div>
                 </form>
 
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit" form="permission-form">ذخیره</button>
+                    @if ($isEdit)
+                        <button class="btn btn--danger" type="submit" form="permission-delete-form">حذف دسترسی</button>
+                    @endif
+                </div>
+
                 @if ($isEdit)
-                    <div class="divider"></div>
-                    <form method="post" action="{{ route('admin.permissions.destroy', $permission->id) }}">
+                    <form method="post"
+                        action="{{ route('admin.permissions.destroy', $permission->id) }}"
+                        id="permission-delete-form"
+                        data-confirm="1"
+                        data-confirm-title="حذف دسترسی"
+                        data-confirm-message="آیا از حذف این دسترسی مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
                         @csrf
                         @method('delete')
-                        <button class="btn btn--ghost" type="submit">حذف دسترسی</button>
                     </form>
                 @endif
             </div>

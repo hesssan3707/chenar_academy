@@ -28,6 +28,16 @@ html[data-theme='light'] .btn--primary {
     color: rgba(2, 6, 23, 0.92);
 }
 
+.btn--danger {
+    background: var(--ds-color-danger);
+    border-color: var(--ds-color-danger);
+    color: #fff;
+}
+
+.btn--danger:hover {
+    filter: brightness(0.95);
+}
+
 .btn--ghost:hover {
     background: rgba(232, 238, 252, 0.08);
 }
@@ -561,10 +571,14 @@ html[data-theme='admin'] .toast {
 .modal {
     position: fixed;
     inset: 0;
-    z-index: 80;
+    z-index: 2500;
     display: grid;
     place-items: center;
     padding: 18px;
+}
+
+body.has-modal {
+    overflow: hidden;
 }
 
 .modal[hidden] {

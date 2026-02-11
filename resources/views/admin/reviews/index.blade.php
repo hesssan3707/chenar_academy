@@ -89,7 +89,7 @@
                                             </form>
                                         @endif
 
-                                        <form method="post" action="{{ route('admin.reviews.destroy', $review->id) }}" class="inline-form">
+                                        <form method="post" action="{{ route('admin.reviews.destroy', $review->id) }}" class="inline-form" data-confirm="1">
                                             @csrf
                                             @method('delete')
                                             <button class="btn btn--ghost btn--sm" type="submit">حذف</button>
@@ -108,4 +108,3 @@
         </div>
     </section>
 @endsection
-

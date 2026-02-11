@@ -21,7 +21,8 @@
             <div class="panel max-w-md">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.social-links.update', $socialLink->id) : route('admin.social-links.store') }}"
-                    class="stack stack--sm">
+                    class="stack stack--sm"
+                    id="social-link-form">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -81,18 +82,24 @@
                             @enderror
                         </label>
                     </div>
-
-                    <div class="form-actions">
-                        <button class="btn btn--primary" type="submit">ذخیره</button>
-                    </div>
                 </form>
 
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit" form="social-link-form">ذخیره</button>
+                    @if ($isEdit)
+                        <button class="btn btn--danger" type="submit" form="social-link-delete-form">حذف لینک</button>
+                    @endif
+                </div>
+
                 @if ($isEdit)
-                    <div class="divider"></div>
-                    <form method="post" action="{{ route('admin.social-links.destroy', $socialLink->id) }}">
+                    <form method="post"
+                        action="{{ route('admin.social-links.destroy', $socialLink->id) }}"
+                        id="social-link-delete-form"
+                        data-confirm="1"
+                        data-confirm-title="حذف لینک"
+                        data-confirm-message="آیا از حذف این لینک مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
                         @csrf
                         @method('delete')
-                        <button class="btn btn--ghost" type="submit">حذف لینک</button>
                     </form>
                 @endif
             </div>

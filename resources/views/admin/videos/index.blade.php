@@ -40,7 +40,16 @@
                                         <div class="admin-row-title--sm">{{ $video->title }}</div>
                                         <div class="card__meta">{{ $video->slug }}</div>
                                     </td>
-                                    <td>{{ $video->status }}</td>
+                                    <td class="admin-nowrap">
+                                        @php($statusValue = (string) ($video->status ?? ''))
+                                        @if ($statusValue === 'published')
+                                            <span class="badge badge--brand">منتشر شده</span>
+                                        @elseif ($statusValue === 'draft')
+                                            <span class="badge">پیش‌نویس</span>
+                                        @else
+                                            <span class="badge">{{ $statusValue !== '' ? $statusValue : '—' }}</span>
+                                        @endif
+                                    </td>
                                     <td class="admin-nowrap">
                                         @php($price = (int) ($video->sale_price ?? $video->base_price ?? 0))
                                         {{ number_format($price) }} {{ $video->currency ?? 'IRR' }}

@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -26,6 +27,18 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             //
+        });
+
+        $this->renderable(function (PostTooLargeException $e, $request) {
+            if ($request->expectsJson()) {
+                return null;
+            }
+
+            return redirect()->back()->with('toast', [
+                'type' => 'danger',
+                'title' => 'حجم فایل زیاد است',
+                'message' => 'حجم فایل ارسالی از محدودیت سرور بیشتر است. تنظیمات upload_max_filesize و post_max_size را بررسی کنید.',
+            ]);
         });
 
         $this->renderable(function (AuthenticationException $e, $request) {

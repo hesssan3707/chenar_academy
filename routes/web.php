@@ -170,6 +170,7 @@ Route::prefix('panel')
 
 Route::prefix('courses')->name('courses.')->group(function () {
     Route::get('/', [CourseController::class, 'index'])->name('index');
+    Route::get('/{slug}/lessons/{lesson}/preview', [CourseController::class, 'streamPreviewLesson'])->name('lessons.preview');
     Route::get('/{slug}', [CourseController::class, 'show'])->name('show');
 });
 

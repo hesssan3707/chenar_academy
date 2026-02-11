@@ -29,6 +29,7 @@
         <a class="admin-nav__link" href="{{ route('admin.permissions.index') }}">دسترسی‌ها</a>
         <a class="admin-nav__link" href="{{ route('admin.categories.index') }}">دسته‌بندی‌ها</a>
         <a class="admin-nav__link" href="{{ route('admin.products.index') }}">محصولات</a>
+        <a class="admin-nav__link" href="{{ route('admin.videos.index') }}">ویدیوها</a>
         <a class="admin-nav__link" href="{{ route('admin.courses.index') }}">دوره‌ها</a>
         <a class="admin-nav__link" href="{{ route('admin.orders.index') }}">
             سفارش‌ها

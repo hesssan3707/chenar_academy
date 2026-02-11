@@ -48,7 +48,7 @@
                                     <td class="admin-nowrap">{{ $banner->ends_at ? jdate($banner->ends_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.banners.edit', $banner->id) }}">ویرایش</a>
-                                        <form method="post" action="{{ route('admin.banners.destroy', $banner->id) }}" class="inline-form">
+                                        <form method="post" action="{{ route('admin.banners.destroy', $banner->id) }}" class="inline-form" data-confirm="1">
                                             @csrf
                                             @method('delete')
                                             <button class="btn btn--ghost btn--sm" type="submit">حذف</button>

@@ -43,16 +43,27 @@
                                     <td class="admin-nowrap">{{ $product->type }}</td>
                                     <td class="admin-min-w-240">{{ $product->title }}</td>
                                     <td class="admin-nowrap">{{ $product->slug }}</td>
-                                    <td>{{ $product->status }}</td>
+                                    <td class="admin-nowrap">
+                                        @php($statusValue = (string) ($product->status ?? ''))
+                                        @if ($statusValue === 'published')
+                                            <span class="badge badge--brand">منتشر شده</span>
+                                        @elseif ($statusValue === 'draft')
+                                            <span class="badge">پیش‌نویس</span>
+                                        @else
+                                            <span class="badge">{{ $statusValue !== '' ? $statusValue : '—' }}</span>
+                                        @endif
+                                    </td>
                                     <td class="admin-nowrap">{{ number_format((int) $product->base_price) }} {{ $product->currency }}</td>
                                     <td class="admin-nowrap">{{ $product->published_at ? jdate($product->published_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
-                                        <a class="btn btn--ghost btn--sm" href="{{ route('admin.products.edit', $product->id) }}">ویرایش</a>
-                                        <form method="post" action="{{ route('admin.products.destroy', $product->id) }}" class="inline-form">
-                                            @csrf
-                                            @method('delete')
-                                            <button class="btn btn--ghost btn--sm" type="submit">حذف</button>
-                                        </form>
+                                        <div style="display: inline-flex; gap: 8px; align-items: center;">
+                                            <a class="btn btn--ghost btn--sm" href="{{ route('admin.products.edit', $product->id) }}">ویرایش</a>
+                                            <form method="post" action="{{ route('admin.products.destroy', $product->id) }}" class="inline-form" data-confirm="1">
+                                                @csrf
+                                                @method('delete')
+                                                <button class="btn btn--ghost btn--sm" type="submit">حذف</button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

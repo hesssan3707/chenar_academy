@@ -40,7 +40,7 @@
                                     <td class="admin-min-w-240">{{ $permission->description ?? '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.permissions.edit', $permission->id) }}">ویرایش</a>
-                                        <form method="post" action="{{ route('admin.permissions.destroy', $permission->id) }}" class="inline-form">
+                                        <form method="post" action="{{ route('admin.permissions.destroy', $permission->id) }}" class="inline-form" data-confirm="1">
                                             @csrf
                                             @method('delete')
                                             <button class="btn btn--ghost btn--sm" type="submit">حذف</button>
