@@ -56,7 +56,7 @@ class LoginController extends Controller
 
             $request->session()->regenerate();
 
-            $redirect = redirect()->intended(route('panel.dashboard'));
+            $redirect = redirect()->intended(route('panel.library.index'));
             if ($request->expectsJson()) {
                 return response()->json([
                     'ok' => true,
@@ -84,7 +84,7 @@ class LoginController extends Controller
         $guard->login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        $redirect = redirect()->intended(route('panel.dashboard'));
+        $redirect = redirect()->intended(route('panel.library.index'));
         if ($request->expectsJson()) {
             return response()->json([
                 'ok' => true,
@@ -190,7 +190,7 @@ class LoginController extends Controller
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('panel.dashboard'));
+        return redirect()->intended(route('panel.library.index'));
     }
 
     public function logout(Request $request): RedirectResponse

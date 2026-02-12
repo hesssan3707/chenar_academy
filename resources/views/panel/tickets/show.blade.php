@@ -3,11 +3,11 @@
 @section('title', $title ?? 'نمایش تیکت')
 
 @section('content')
-    <div class="container h-full py-6">
-        <div class="user-panel-grid">
+    <div class="spa-page-shell">
+        <div class="user-panel-grid" data-panel-shell>
             @include('panel.partials.sidebar')
             
-            <main class="user-content flex flex-col overflow-hidden">
+            <main class="user-content panel-main flex flex-col" data-panel-main>
             <div class="cluster" style="justify-content: space-between; align-items: center;">
                 <div>
                     <h1 class="page-title">{{ $ticket->subject }}</h1>
@@ -37,8 +37,7 @@
 
             @php($messages = $messages ?? collect())
 
-            <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <div class="stack stack--md" style="margin-top: 6px;">
+            <div class="stack stack--md" style="margin-top: 6px;">
                 @foreach ($messages as $message)
                     @php($isUser = (int) ($message->sender_user_id ?? 0) === (int) auth()->id())
                     @if ($isUser)
@@ -57,7 +56,6 @@
                         </div>
                     </div>
                 @endforeach
-                </div>
             </div>
 
             @if ($ticket->status !== 'closed')

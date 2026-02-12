@@ -6,6 +6,70 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+function getAppBasePathname() {
+    const meta = document.querySelector('meta[name="api-base-url"]');
+    const value = meta?.content;
+    if (!value) return '';
+
+    try {
+        const baseUrl = new URL(value, window.location.origin);
+        const path = (baseUrl.pathname || '/').replace(/\/$/, '');
+        return path === '/' ? '' : path;
+    } catch (e) {
+        return '';
+    }
+}
+
+function normalizeAppPathname(pathname) {
+    const base = getAppBasePathname();
+    const path = pathname || '';
+    if (!base) return path;
+    if (path === base) return '/';
+    if (path.startsWith(base + '/')) return path.slice(base.length);
+    return path;
+}
+
+function isPanelRoutePath(pathname) {
+    return normalizeAppPathname(pathname).startsWith('/panel');
+}
+
+function isStreamRoutePath(pathname) {
+    return normalizeAppPathname(pathname).includes('/stream');
+}
+
+function getMainNavDirection(targetLink) {
+    const items = Array.from(document.querySelectorAll('.spa-nav a.spa-nav-item'));
+    const targetIndex = items.indexOf(targetLink);
+    if (targetIndex === -1) return 'forward';
+
+    const currentPath = normalizeAppPathname(new URL(window.location.href, window.location.origin).pathname).replace(/\/$/, '');
+    const currentIndex = items.findIndex((item) => {
+        if (!item.href || item.href.includes('#')) return false;
+        let itemPath = '';
+        try {
+            itemPath = normalizeAppPathname(new URL(item.href, window.location.origin).pathname).replace(/\/$/, '');
+        } catch (e) {
+            return false;
+        }
+
+        if (item.dataset.spaNav === 'home') {
+            return itemPath === currentPath;
+        }
+
+        if (itemPath === currentPath) return true;
+        if (currentPath.startsWith(itemPath)) {
+            const nextChar = currentPath.charAt(itemPath.length);
+            if (itemPath.endsWith('/') || nextChar === '/' || nextChar === '') {
+                return true;
+            }
+        }
+        return false;
+    });
+
+    if (currentIndex === -1 || currentIndex === targetIndex) return 'forward';
+    return targetIndex > currentIndex ? 'forward' : 'back';
+}
+
 function initSPA() {
     // Intercept clicks on links
     document.addEventListener('click', (e) => {
@@ -26,21 +90,45 @@ function initSPA() {
         }
 
         // Check if it's a same-origin link
+        let urlObj;
         try {
-            const urlObj = new URL(url, window.location.origin);
+            urlObj = new URL(url, window.location.origin);
             if (urlObj.origin !== window.location.origin) return;
         } catch (err) {
             console.error('URL parse error:', err);
             return; // Invalid URL
         }
 
+        if (link.hasAttribute('download')) return;
+        if (isStreamRoutePath(urlObj.pathname || '')) return;
+
         e.preventDefault();
-        navigateTo(url);
+
+        const isPanelPath = isPanelRoutePath(urlObj.pathname || '');
+        const isCurrentlyInPanel = isPanelRoutePath(window.location.pathname || '');
+        const isInsidePanelShell = !!link.closest('[data-panel-shell]');
+        const isPanelNavLink = !!link.closest('[data-panel-nav]');
+        const shouldUsePanelMainTransition = isPanelPath && (isCurrentlyInPanel || isPanelNavLink || isInsidePanelShell);
+
+        const direction = !shouldUsePanelMainTransition && link.classList.contains('spa-nav-item')
+            ? getMainNavDirection(link)
+            : 'forward';
+
+        navigateTo(url, shouldUsePanelMainTransition ? 'panel-main' : 'full', direction);
     });
 
     // Handle browser back/forward
     window.addEventListener('popstate', () => {
-        loadPage(window.location.href, 'back');
+        const container = document.getElementById('spa-content');
+        const isInPanelShell = !!container?.querySelector('[data-panel-shell]');
+        const nextPath = (() => {
+            try {
+                return new URL(window.location.href, window.location.origin).pathname || '';
+            } catch (e) {
+                return '';
+            }
+        })();
+        loadPage(window.location.href, 'back', isInPanelShell && isPanelRoutePath(nextPath) ? 'panel-main' : 'auto');
     });
 
     // Initial load setup
@@ -49,15 +137,56 @@ function initSPA() {
 
 let isAnimating = false;
 
-function navigateTo(url) {
-    if (isAnimating) return;
-    history.pushState({}, '', url);
-    loadPage(url, 'forward');
+function setPanelMainLoading(isLoading) {
+    const container = document.getElementById('spa-content');
+    const main = container?.querySelector('[data-panel-main]');
+    if (!main) return;
+
+    let loader = main.querySelector('.panel-main-loader');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.className = 'panel-main-loader';
+        loader.innerHTML = '<div class="panel-main-hourglass" role="img" aria-label="در حال بارگذاری"></div>';
+        main.appendChild(loader);
+    }
+
+    main.classList.toggle('panel-main-is-loading', isLoading);
 }
 
-async function loadPage(url, direction = 'forward') {
+function navigateTo(url, mode = 'full', direction = 'forward') {
+    if (isAnimating) return;
+    history.pushState({}, '', url);
+    loadPage(url, direction, mode);
+}
+
+async function loadPage(url, direction = 'forward', mode = 'auto') {
     isAnimating = true;
     const container = document.getElementById('spa-content');
+    const currentPanelShell = container?.querySelector('[data-panel-shell]');
+    const targetPath = (() => {
+        try {
+            return new URL(url, window.location.origin).pathname || '';
+        } catch (e) {
+            return '';
+        }
+    })();
+    const shouldShowPanelLoader = mode === 'panel-main' || (mode === 'auto' && currentPanelShell && isPanelRoutePath(targetPath));
+    const panelMainFadeDurationMs = 180;
+    const currentMainForLoader = shouldShowPanelLoader ? container?.querySelector('[data-panel-main]') : null;
+    const panelMainFadeStartedAt = (() => {
+        if (!currentMainForLoader) return null;
+        if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+            return performance.now();
+        }
+        return Date.now();
+    })();
+
+    if (shouldShowPanelLoader) {
+        setPanelMainLoading(true);
+        if (currentMainForLoader) {
+            currentMainForLoader.classList.add('panel-main-is-fading');
+        }
+    }
     
     // 1. Fetch new content
     try {
@@ -82,6 +211,58 @@ async function loadPage(url, direction = 'forward') {
         }
 
         if (newTitle) document.title = newTitle.innerText;
+
+        const nextPanelShell = newContent.querySelector('[data-panel-shell]');
+        const shouldSwapPanelMain = mode === 'panel-main' || (mode === 'auto' && currentPanelShell && nextPanelShell);
+
+        if (shouldSwapPanelMain) {
+            const currentMain = container.querySelector('[data-panel-main]');
+            const nextMain = newContent.querySelector('[data-panel-main]');
+
+            if (currentMain && nextMain) {
+                const loader = currentMain.querySelector('.panel-main-loader');
+                const now = (() => {
+                    if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+                        return performance.now();
+                    }
+                    return Date.now();
+                })();
+                const elapsed = panelMainFadeStartedAt ? (now - panelMainFadeStartedAt) : panelMainFadeDurationMs;
+                const remaining = Math.max(0, panelMainFadeDurationMs - elapsed);
+
+                if (remaining > 0) {
+                    await new Promise((resolve) => setTimeout(resolve, remaining));
+                }
+
+                currentMain.innerHTML = nextMain.innerHTML;
+                if (loader) currentMain.appendChild(loader);
+                currentMain.scrollTop = 0;
+
+                requestAnimationFrame(() => {
+                    currentMain.classList.remove('panel-main-is-fading');
+                    currentMain.classList.remove('panel-main-is-loading');
+                });
+
+                isAnimating = false;
+                setupCurrentPage();
+
+                updateActiveNav(url);
+                return;
+            }
+
+            if (mode === 'panel-main') {
+                isAnimating = false;
+                window.location.href = url;
+                return;
+            }
+        }
+
+        if (shouldShowPanelLoader) {
+            setPanelMainLoading(false);
+            if (currentMainForLoader) {
+                currentMainForLoader.classList.remove('panel-main-is-fading');
+            }
+        }
 
         // 2. Prepare for animation
         const currentContent = container.firstElementChild;
@@ -126,7 +307,14 @@ async function loadPage(url, direction = 'forward') {
         updateActiveNav(url);
 
     } catch (error) {
+        if (shouldShowPanelLoader) {
+            setPanelMainLoading(false);
+            if (currentMainForLoader) {
+                currentMainForLoader.classList.remove('panel-main-is-fading');
+            }
+        }
         console.error('SPA Navigation Error:', error);
+        isAnimating = false;
         window.location.href = url; // Fallback
     }
 }
@@ -139,6 +327,7 @@ function setupCurrentPage() {
     
     // Highlight active nav item
     updateActiveNav(window.location.href);
+    updatePanelNav(window.location.href);
 
     // Intercept Add to Cart forms
     document.querySelectorAll('form[action*="/cart/items"]').forEach(form => {
@@ -260,6 +449,37 @@ function updateActiveNav(url) {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
+        }
+    });
+}
+
+function updatePanelNav(url) {
+    const panelNav = document.querySelector('[data-panel-nav]');
+    if (!panelNav) return;
+
+    const currentPath = new URL(url).pathname.replace(/\/$/, '');
+
+    panelNav.querySelectorAll('a.panel-nav-link').forEach(link => {
+        if (!link.href || link.href.includes('#')) return;
+
+        const itemPath = new URL(link.href).pathname.replace(/\/$/, '');
+
+        let isActive = false;
+        if (itemPath === currentPath) {
+            isActive = true;
+        } else if (currentPath.startsWith(itemPath)) {
+            const nextChar = currentPath.charAt(itemPath.length);
+            if (itemPath.endsWith('/') || nextChar === '/' || nextChar === '') {
+                isActive = true;
+            }
+        }
+
+        if (isActive) {
+            link.classList.add('bg-white/10');
+            link.setAttribute('aria-current', 'page');
+        } else {
+            link.classList.remove('bg-white/10');
+            link.removeAttribute('aria-current');
         }
     });
 }

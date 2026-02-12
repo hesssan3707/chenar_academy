@@ -25,10 +25,6 @@
                             </div>
                             
                             <h3 class="font-bold text-lg mb-2 truncate">{{ $post->title }}</h3>
-                            
-                            <div class="text-sm text-muted mb-4 line-clamp-2">
-                                {{ $post->excerpt ?? '' }}
-                            </div>
 
                             <div class="mt-auto flex justify-between items-center">
                                 <span class="text-xs text-muted">{{ $post->published_at ? jdate($post->published_at)->format('Y/m/d') : '' }}</span>

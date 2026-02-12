@@ -144,7 +144,7 @@ class OtpAuthTest extends TestCase
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
             'otp_code' => '11111',
-        ])->assertRedirect(route('panel.dashboard'));
+        ])->assertRedirect(route('panel.library.index'));
 
         $this->assertDatabaseHas('users', [
             'phone' => $phone,
@@ -170,7 +170,7 @@ class OtpAuthTest extends TestCase
             'action' => 'login_password',
             'phone' => $phone,
             'password' => 'password',
-        ])->assertRedirect(route('panel.dashboard'));
+        ])->assertRedirect(route('panel.library.index'));
     }
 
     public function test_login_password_returns_json_redirect_for_ajax_requests(): void
@@ -192,7 +192,7 @@ class OtpAuthTest extends TestCase
             'password' => 'password',
         ])->assertOk()->assertJson([
             'ok' => true,
-            'redirect_to' => route('panel.dashboard'),
+            'redirect_to' => route('panel.library.index'),
         ]);
     }
 
@@ -259,7 +259,7 @@ class OtpAuthTest extends TestCase
             'action' => 'login_otp',
             'phone' => $phone,
             'otp_code' => '11111',
-        ])->assertRedirect(route('panel.dashboard'));
+        ])->assertRedirect(route('panel.library.index'));
     }
 
     public function test_login_otp_returns_json_redirect_for_ajax_requests(): void
@@ -286,7 +286,7 @@ class OtpAuthTest extends TestCase
             'otp_code' => '11111',
         ])->assertOk()->assertJson([
             'ok' => true,
-            'redirect_to' => route('panel.dashboard'),
+            'redirect_to' => route('panel.library.index'),
         ]);
     }
 
@@ -332,12 +332,12 @@ class OtpAuthTest extends TestCase
             'otp_code' => '11111',
             'password' => 'newpass123',
             'password_confirmation' => 'newpass123',
-        ])->assertRedirect(route('panel.dashboard'));
+        ])->assertRedirect(route('panel.library.index'));
 
         $this->post(route('login.store'), [
             'action' => 'login_password',
             'phone' => $phone,
             'password' => 'newpass123',
-        ])->assertRedirect(route('panel.dashboard'));
+        ])->assertRedirect(route('panel.library.index'));
     }
 }

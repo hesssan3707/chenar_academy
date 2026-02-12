@@ -59,7 +59,13 @@ class ProductCategoryFilterTest extends TestCase
 
         $this->get(route('products.index', ['type' => 'note', 'category' => $category->slug]))
             ->assertOk()
-            ->assertSee($product->title);
+            ->assertSee($product->title)
+            ->assertDontSee('مشاهده جزئیات');
+
+        $this->get(route('booklets.index', ['category' => $category->slug]))
+            ->assertOk()
+            ->assertSee($product->title)
+            ->assertDontSee('مشاهده جزئیات');
     }
 
     public function test_videos_page_shows_only_categories_until_category_selected(): void
@@ -110,7 +116,8 @@ class ProductCategoryFilterTest extends TestCase
 
         $this->get(route('products.index', ['type' => 'video', 'category' => $category->slug]))
             ->assertOk()
-            ->assertSee($product->title);
+            ->assertSee($product->title)
+            ->assertDontSee('مشاهده جزئیات');
     }
 
     public function test_videos_page_shows_courses_alongside_videos_in_category_flow(): void
@@ -177,7 +184,8 @@ class ProductCategoryFilterTest extends TestCase
         $this->get(route('products.index', ['type' => 'video', 'category' => $category->slug]))
             ->assertOk()
             ->assertSee($video->title)
-            ->assertSee($course->title);
+            ->assertSee($course->title)
+            ->assertDontSee('مشاهده جزئیات');
     }
 
     public function test_products_index_filters_by_category(): void
@@ -239,6 +247,7 @@ class ProductCategoryFilterTest extends TestCase
         $this->get(route('products.index', ['type' => 'note', 'category' => $category->slug]))
             ->assertOk()
             ->assertSee($included->title)
-            ->assertDontSee($excluded->title);
+            ->assertDontSee($excluded->title)
+            ->assertDontSee('مشاهده جزئیات');
     }
 }

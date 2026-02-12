@@ -57,7 +57,8 @@ class PublicPagesTest extends TestCase
 
         $this->get(route('blog.index'))
             ->assertOk()
-            ->assertSee('مقاله تست');
+            ->assertSee('مقاله تست')
+            ->assertDontSee('خلاصه مقاله تست');
     }
 
     public function test_blog_show_page_loads_post_content_blocks(): void
@@ -85,7 +86,9 @@ class PublicPagesTest extends TestCase
         $this->get(route('blog.show', ['slug' => 'test-post']))
             ->assertOk()
             ->assertSee('مقاله تست')
-            ->assertSee('بدنه مقاله');
+            ->assertSee('بدنه مقاله')
+            ->assertSee('detail-shell')
+            ->assertSee('detail-grid');
     }
 
     public function test_product_show_pages_load_for_note_and_video(): void
@@ -116,7 +119,7 @@ class PublicPagesTest extends TestCase
             'thumbnail_media_id' => null,
             'status' => 'published',
             'base_price' => 200000,
-            'sale_price' => null,
+            'sale_price' => 150000,
             'discount_type' => null,
             'discount_value' => null,
             'currency' => 'IRR',
@@ -128,13 +131,25 @@ class PublicPagesTest extends TestCase
             ->assertOk()
             ->assertSee($note->title)
             ->assertSee('پاراگراف اول')
-            ->assertSee('پاراگراف دوم');
+            ->assertSee('پاراگراف دوم')
+            ->assertSee('detail-shell')
+            ->assertSee('detail-grid')
+            ->assertDontSee('max-h-[80vh]');
 
         $this->get(route('products.show', $video->slug))
             ->assertOk()
             ->assertSee($video->title)
+            ->assertSee('ویدیو قفل است')
+            ->assertSee('امتیاز و نظرات')
+            ->assertDontSee('پیش‌نمایش')
             ->assertSee('متن اول')
-            ->assertSee('متن دوم');
+            ->assertSee('متن دوم')
+            ->assertSee('صرفه‌جویی')
+            ->assertSee('25% OFF')
+            ->assertSee('detail-section')
+            ->assertSee('detail-shell')
+            ->assertSee('detail-grid')
+            ->assertDontSee('max-h-[80vh]');
     }
 
     public function test_course_show_page_loads(): void
@@ -160,6 +175,14 @@ class PublicPagesTest extends TestCase
             ->assertOk()
             ->assertSee($course->title)
             ->assertSee('توضیح اول')
-            ->assertSee('توضیح دوم');
+            ->assertSee('توضیح دوم')
+            ->assertSee('detail-shell')
+            ->assertSee('detail-grid')
+            ->assertDontSee('max-h-[80vh]');
+
+        $this->get(route('courses.index'))
+            ->assertOk()
+            ->assertSee($course->title)
+            ->assertDontSee('مشاهده جزئیات');
     }
 }

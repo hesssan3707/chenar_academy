@@ -88,7 +88,7 @@
 
             <div class="navbar__actions">
                 @auth
-                    <a class="btn btn--ghost" href="{{ route('panel.dashboard') }}">پنل</a>
+                    <a class="btn btn--ghost" href="{{ route('panel.library.index') }}">پنل</a>
                     <a class="btn btn--ghost" href="{{ route('panel.profile') }}">{{ auth()->user()->name ?: auth()->user()->phone }}</a>
                     <form method="post" action="{{ route('logout') }}">
                         @csrf

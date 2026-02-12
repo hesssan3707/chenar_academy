@@ -159,7 +159,7 @@ Route::prefix('panel')
     ->name('panel.')
     ->middleware(['auth', 'regular.user'])
     ->group(function () {
-        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/', fn () => redirect()->route('panel.library.index'))->name('dashboard');
         Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
         Route::put('/profile/password', [DashboardController::class, 'updatePassword'])->name('profile.password.update');
         Route::get('/library', [LibraryController::class, 'index'])->name('library.index');

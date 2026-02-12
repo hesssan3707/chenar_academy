@@ -3,11 +3,11 @@
 @section('title', 'پنل کاربری')
 
 @section('content')
-    <div class="container h-full py-6">
-        <div class="user-panel-grid">
+    <div class="spa-page-shell">
+        <div class="user-panel-grid" data-panel-shell>
             @include('panel.partials.sidebar')
             
-            <main class="user-content">
+            <main class="user-content panel-main" data-panel-main>
                 <h2 class="h2 mb-6">داشبورد</h2>
                 
                 <div class="grid grid--3 gap-4">

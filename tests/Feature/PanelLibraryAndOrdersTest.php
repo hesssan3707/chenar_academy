@@ -135,6 +135,10 @@ class PanelLibraryAndOrdersTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('panel.dashboard'))
+            ->assertRedirect(route('panel.library.index'));
+
+        $this->actingAs($user)
+            ->get(route('panel.library.index'))
             ->assertOk()
             ->assertSee(route('panel.orders.index'), false);
 

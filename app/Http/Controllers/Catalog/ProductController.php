@@ -191,7 +191,7 @@ class ProductController extends Controller
         $product = Product::query()
             ->where('slug', $slug)
             ->whereIn('type', ['note', 'video'])
-            ->with(['thumbnailMedia', 'parts', 'video.media', 'video.previewMedia'])
+            ->with(['thumbnailMedia', 'parts', 'video.media', 'video.previewMedia', 'institutionCategory', 'categories'])
             ->firstOrFail();
 
         $user = request()->user();

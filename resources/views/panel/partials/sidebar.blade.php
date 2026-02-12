@@ -8,25 +8,22 @@
             <div class="text-sm text-muted">{{ auth()->user()->mobile ?? '' }}</div>
         </div>
         
-        <nav class="stack stack--xs">
-            <a href="{{ route('panel.dashboard') }}" class="btn btn--ghost w-full {{ request()->routeIs('panel.dashboard') ? 'bg-white/10' : '' }}" style="justify-content: flex-start;">
-                داشبورد
-            </a>
-            <a href="{{ route('panel.library.index') }}" class="btn btn--ghost w-full {{ request()->routeIs('panel.library.*') ? 'bg-white/10' : '' }}" style="justify-content: flex-start;">
+        <nav class="stack stack--xs" data-panel-nav>
+            <a href="{{ route('panel.library.index') }}" class="btn btn--ghost panel-nav-link {{ request()->routeIs('panel.library.*') ? 'bg-white/10' : '' }}" style="justify-content: flex-start; width: 100%;">
                 کتابخانه من
             </a>
-            <a href="{{ route('panel.orders.index') }}" class="btn btn--ghost w-full {{ request()->routeIs('panel.orders.*') ? 'bg-white/10' : '' }}" style="justify-content: flex-start;">
+            <a href="{{ route('panel.orders.index') }}" class="btn btn--ghost panel-nav-link {{ request()->routeIs('panel.orders.*') ? 'bg-white/10' : '' }}" style="justify-content: flex-start; width: 100%;">
                 سفارش‌ها
             </a>
-            <a href="{{ route('panel.tickets.index') }}" class="btn btn--ghost w-full {{ request()->routeIs('panel.tickets.*') ? 'bg-white/10' : '' }}" style="justify-content: flex-start;">
+            <a href="{{ route('panel.tickets.index') }}" class="btn btn--ghost panel-nav-link {{ request()->routeIs('panel.tickets.*') ? 'bg-white/10' : '' }}" style="justify-content: flex-start; width: 100%;">
                 پشتیبانی
             </a>
-             <a href="{{ route('panel.profile') }}" class="btn btn--ghost w-full {{ request()->routeIs('panel.profile') ? 'bg-white/10' : '' }}" style="justify-content: flex-start;">
+             <a href="{{ route('panel.profile') }}" class="btn btn--ghost panel-nav-link {{ request()->routeIs('panel.profile') ? 'bg-white/10' : '' }}" style="justify-content: flex-start; width: 100%;">
                 تنظیمات حساب
             </a>
-             <form action="{{ route('logout') }}" method="POST" class="w-full">
+             <form action="{{ route('logout') }}" method="POST">
                 @csrf
-                <button type="submit" class="btn btn--ghost text-danger w-full" style="justify-content: flex-start;">خروج</button>
+                <button type="submit" class="btn btn--ghost text-danger" style="justify-content: flex-start; width: 100%;">خروج</button>
             </form>
         </nav>
     </div>

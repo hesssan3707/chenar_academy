@@ -3,11 +3,11 @@
 @section('title', $title ?? ($product->title ?? 'محتوا'))
 
 @section('content')
-    <div class="container h-full py-6">
-        <div class="user-panel-grid">
+    <div class="spa-page-shell">
+        <div class="user-panel-grid" data-panel-shell>
             @include('panel.partials.sidebar')
 
-            <main class="user-content flex flex-col overflow-hidden">
+            <main class="user-content panel-main flex flex-col" data-panel-main>
                 <div class="mb-6">
                     <h2 class="h2 mb-1">{{ $product->title }}</h2>
                     <p class="text-muted">
@@ -21,7 +21,6 @@
                     </p>
                 </div>
 
-                <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
             @php($placeholderThumb = asset('images/default_image.webp'))
             @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
             <div class="panel" style="margin-top: 18px;">
@@ -192,7 +191,6 @@
             <div class="form-actions" style="margin-top: 18px;">
                 <a class="btn btn--ghost" href="{{ route('panel.library.index') }}">بازگشت به کتابخانه</a>
             </div>
-                </div>
             </main>
         </div>
     </div>

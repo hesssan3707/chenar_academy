@@ -24,7 +24,7 @@ class RedirectIfAuthenticated
                     return redirect()->route('admin.dashboard');
                 }
 
-                return redirect()->route('panel.dashboard');
+                return redirect()->route('panel.library.index');
             }
         }
 

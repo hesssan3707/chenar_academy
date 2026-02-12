@@ -94,7 +94,6 @@
                                         @endif
                                     </div>
                                 </div>
-                                <span class="btn btn--secondary btn--sm w-full">مشاهده جزئیات</span>
                              </div>
                         </a>
                     @endforeach
@@ -134,7 +133,6 @@
                                             @endif
                                         </div>
                                     </div>
-                                    <span class="btn btn--secondary btn--sm w-full">مشاهده جزئیات</span>
                                 </div>
                             </a>
                         @endforeach

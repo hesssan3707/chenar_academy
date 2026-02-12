@@ -30,7 +30,7 @@ class CourseController extends Controller
         $course = Product::query()
             ->where('slug', $slug)
             ->where('type', 'course')
-            ->with(['thumbnailMedia', 'course.sections.lessons'])
+            ->with(['thumbnailMedia', 'course.sections.lessons', 'institutionCategory', 'categories'])
             ->firstOrFail();
 
         $isPurchased = false;

@@ -3,24 +3,28 @@
 @section('title', 'پروفایل')
 
 @section('content')
-    <div class="container h-full py-6">
-        <div class="user-panel-grid">
+    <div class="spa-page-shell">
+        <div class="user-panel-grid" data-panel-shell>
             @include('panel.partials.sidebar')
             
-            <main class="user-content">
+            <main class="user-content panel-main" data-panel-main>
                 <h2 class="h2 mb-6">تنظیمات حساب</h2>
                 
                 <div class="stack stack--md">
                     <div class="panel p-6 border border-gray-700 bg-white/5 rounded-xl">
                         <h3 class="h3 mb-4">مشخصات</h3>
-                        <div class="grid grid--2 gap-4">
-                            <div>
-                                <span class="text-sm text-muted block mb-1">نام و نام خانوادگی</span>
-                                <div class="text-lg">{{ auth()->user()->name ?? '-' }}</div>
+                        <div class="panel-account-grid">
+                            <div class="panel panel--soft p-4">
+                                <div class="text-sm text-muted mb-1">نام و نام خانوادگی</div>
+                                <div class="text-lg font-bold">{{ auth()->user()->name ?? '-' }}</div>
                             </div>
-                            <div>
-                                <span class="text-sm text-muted block mb-1">شماره موبایل</span>
-                                <div class="text-lg">{{ auth()->user()->mobile ?? auth()->user()->phone ?? '-' }}</div>
+                            <div class="panel panel--soft p-4" dir="ltr">
+                                <div class="text-sm text-muted mb-1" dir="rtl">شماره موبایل</div>
+                                <div class="text-lg font-bold">{{ auth()->user()->mobile ?? auth()->user()->phone ?? '-' }}</div>
+                            </div>
+                            <div class="panel panel--soft p-4" dir="ltr">
+                                <div class="text-sm text-muted mb-1" dir="rtl">تاریخ عضویت</div>
+                                <div class="text-lg font-bold">{{ auth()->user()?->created_at ? jdate(auth()->user()->created_at)->format('Y/m/d') : '-' }}</div>
                             </div>
                         </div>
                     </div>
