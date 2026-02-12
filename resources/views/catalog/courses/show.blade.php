@@ -3,12 +3,10 @@
 @section('title', $course->title)
 
 @section('content')
-    <div class="container h-full flex flex-col justify-center py-6">
-        <div class="mb-4">
-             <a class="btn btn--ghost btn--sm text-white/70 hover:text-white" href="{{ url()->previous() !== url()->current() ? url()->previous() : route('courses.index') }}">
-                ← بازگشت
-            </a>
-        </div>
+    <div class="container h-full flex flex-col justify-center py-6" style="position: relative;">
+        <a class="btn btn--ghost btn--sm" style="position: absolute; top: 0; right: 0;" href="{{ url()->previous() !== url()->current() ? url()->previous() : route('courses.index') }}">
+            ← بازگشت
+        </a>
 
         <div class="panel p-0 bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex flex-col md:flex-row h-full max-h-[80vh]">
             
@@ -21,7 +19,9 @@
                 </div>
 
                 <h1 class="h3 mb-2">{{ $course->title }}</h1>
-                <div class="text-muted text-sm mb-4">دوره آموزشی</div>
+                <div class="mb-4">
+                    <span class="badge badge--brand">دوره</span>
+                </div>
 
                 <div class="mt-auto">
                     @php($discountLabel = $course->discountLabel())

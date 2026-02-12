@@ -6,18 +6,30 @@
 
 @section('content')
     <div class="spa-page">
-        <div class="mb-6">
-            <h1 class="h2 text-white">{{ $pageTitle }}</h1>
-            <p class="text-muted">
-                @if ($activeType === 'note')
-                    لیست جزوه‌های آموزشی
-                @elseif ($activeType === 'video')
-                    بهترین انتخاب‌ها برای یادگیری ویدیو محور
-                @else
-                    لیست جزوه‌ها، ویدیوها و دوره‌ها
-                @endif
-            </p>
-        </div>
+        @if ($activeType && in_array($activeType, ['note', 'video'], true) && ($activeCategory ?? null))
+            <div style="position: relative; margin-bottom: 24px;">
+                <a class="btn btn--ghost btn--sm" style="position: absolute; top: 0; right: 0;" href="{{ route('products.index', ['type' => $activeType]) }}">
+                    ← بازگشت
+                </a>
+                <div style="text-align: center;">
+                    <span class="badge badge--brand">{{ $activeType === 'video' ? 'ویدیو' : 'جزوه' }}</span>
+                    <h1 class="h2 text-white" style="margin-top: 14px;">{{ $activeCategory->title }}</h1>
+                </div>
+            </div>
+        @else
+            <div class="mb-6">
+                <h1 class="h2 text-white">{{ $pageTitle }}</h1>
+                <p class="text-muted">
+                    @if ($activeType === 'note')
+                        لیست جزوه‌های آموزشی
+                    @elseif ($activeType === 'video')
+                        بهترین انتخاب‌ها برای یادگیری ویدیو محور
+                    @else
+                        لیست جزوه‌ها، ویدیوها و دوره‌ها
+                    @endif
+                </p>
+            </div>
+        @endif
 
         <div>
             @php($categories = $categories ?? collect())
@@ -49,13 +61,6 @@
                     </div>
                 @endif
             @elseif ($activeType && in_array($activeType, ['note', 'video'], true) && ($activeCategory ?? null))
-                <div class="mb-6">
-                    <a class="btn btn--ghost btn--sm" href="{{ route('products.index', ['type' => $activeType]) }}">
-                        ← بازگشت به دسته‌بندی‌ها
-                    </a>
-                    <h2 class="h3 mt-4 text-white">محصولات: {{ $activeCategory->title }}</h2>
-                </div>
-
                 <div class="h-scroll-container">
                     @foreach ($products as $product)
                         @php($purchased = in_array($product->id, ($purchasedProductIds ?? []), true))

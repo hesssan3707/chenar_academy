@@ -4,16 +4,24 @@
 
 @section('content')
     <div class="w-full h-full flex flex-col justify-center max-w-7xl mx-auto">
-        <div class="mb-6 text-center">
-            <h1 class="h2 text-white">جزوات آموزشی</h1>
-            <p class="text-muted">
-                @if ($activeCategory)
-                    مجموعه جزوات: {{ $activeCategory->title }}
-                @else
+        @if ($activeCategory)
+            <div style="position: relative; margin-bottom: 24px;">
+                <a class="btn btn--ghost btn--sm" style="position: absolute; top: 0; right: 0;" href="{{ route('booklets.index') }}">
+                    ← بازگشت
+                </a>
+                <div style="text-align: center;">
+                    <span class="badge badge--brand">جزوه</span>
+                    <h1 class="h2 text-white" style="margin-top: 14px;">{{ $activeCategory->title }}</h1>
+                </div>
+            </div>
+        @else
+            <div class="mb-6 text-center">
+                <h1 class="h2 text-white">جزوات آموزشی</h1>
+                <p class="text-muted">
                     دسترسی به منابع آموزشی دانشگاهی و تخصصی
-                @endif
-            </p>
-        </div>
+                </p>
+            </div>
+        @endif
 
         <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 h-full">
             @if (! $activeCategory)
@@ -40,13 +48,6 @@
                 @endif
             @else
                 {{-- Active Category: Grouped Booklets View --}}
-                <div class="mb-6">
-                    <a class="btn btn--ghost btn--sm mb-4 inline-flex items-center gap-2" href="{{ route('booklets.index') }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                        بازگشت به دسته‌بندی‌ها
-                    </a>
-                </div>
-
                 @if ($groupedBooklets->isEmpty())
                     <div class="panel p-6 bg-white/5 rounded-xl border border-gray-700 text-center">
                         <p class="text-muted">در این دسته‌بندی جزوه‌ای یافت نشد.</p>
