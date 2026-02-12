@@ -62,7 +62,7 @@ Route::get('/debug-vite', function () {
     ];
 });
 
-Route::get('/', HomeController::class)->name('home');
+Route::match(['GET', 'HEAD'], '/', HomeController::class)->name('home');
 Route::get('/about', AboutController::class)->name('about');
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');

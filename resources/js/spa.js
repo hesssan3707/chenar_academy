@@ -191,6 +191,8 @@ async function loadPage(url, direction = 'forward', mode = 'auto') {
     // 1. Fetch new content
     try {
         const response = await fetch(url, {
+            cache: 'no-store',
+            credentials: 'same-origin',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-SPA-Request': 'true'

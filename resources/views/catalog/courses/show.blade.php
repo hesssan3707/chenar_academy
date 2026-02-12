@@ -6,16 +6,19 @@
     @php($placeholderThumb = asset('images/default_image.webp'))
     @php($thumbUrl = ($course->thumbnailMedia?->disk ?? null) === 'public' && ($course->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($course->thumbnailMedia->path) : $placeholderThumb)
     @php($institutionTitle = $course->institutionCategory?->title)
-    @php($categoryTitle = ($course->categories ?? collect())->firstWhere('type', 'course')?->title ?? ($course->categories ?? collect())->first()?->title)
+    @php($categoryTitle = ($course->categories ?? collect())->firstWhere('type', 'video')?->title ?? ($course->categories ?? collect())->first()?->title)
     @php($publishedAtLabel = $course->published_at ? jdate($course->published_at)->format('Y/m/d') : null)
     @php($totalVideosCount = (int) ($course->course?->total_videos_count ?? 0))
     @php($totalDurationSeconds = (int) ($course->course?->total_duration_seconds ?? 0))
     @php($totalDurationMinutes = $totalDurationSeconds > 0 ? (int) floor($totalDurationSeconds / 60) : 0)
     @php($totalDurationRemainderSeconds = $totalDurationSeconds > 0 ? $totalDurationSeconds % 60 : 0)
+    @php($backCategory = ($course->categories ?? collect())->firstWhere('type', 'video') ?: ($course->categories ?? collect())->firstWhere('type', 'course') ?: ($course->categories ?? collect())->first())
+    @php($backParams = $backCategory?->slug ? ['type' => 'video', 'category' => $backCategory->slug] : ['type' => 'video'])
+    @php($backUrl = route('products.index', $backParams))
 
     <div class="detail-shell">
         <div class="detail-header">
-            <a class="btn btn--ghost btn--sm text-white/70 hover:text-white" href="{{ url()->previous() !== url()->current() ? url()->previous() : route('courses.index') }}">← بازگشت</a>
+            <a class="btn btn--ghost btn--sm text-white/70 hover:text-white" href="{{ $backUrl }}">← بازگشت</a>
             <span class="badge badge--brand">دوره</span>
         </div>
 

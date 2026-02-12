@@ -19,6 +19,14 @@
             @php($isEdit = $category && $category->exists)
             @php($parents = $parents ?? collect())
             @php($types = $types ?? [])
+            @php($typeLabels = [
+                'institution' => 'دانشگاه',
+                'note' => 'جزوه',
+                'video' => 'ویدیو',
+                'course' => 'دوره',
+                'post' => 'مقاله',
+                'ticket' => 'تیکت',
+            ])
 
             <div class="panel">
                 <form method="post"
@@ -37,7 +45,7 @@
                             <select name="type" required data-category-type>
                                 <option value="" @selected($typeValue === '')>—</option>
                                 @foreach ($types as $type)
-                                    <option value="{{ $type }}" @selected((string) $type === (string) $typeValue)>{{ $type }}</option>
+                                    <option value="{{ $type }}" @selected((string) $type === (string) $typeValue)>{{ $typeLabels[$type] ?? $type }}</option>
                                 @endforeach
                             </select>
                             @error('type')
@@ -61,7 +69,7 @@
                             <option value="">—</option>
                             @foreach ($parents as $parent)
                                 <option value="{{ $parent->id }}" data-type="{{ $parent->type }}" @selected((string) $parent->id === (string) $parentValue)>
-                                    {{ $parent->type }} — {{ $parent->title }}
+                                    {{ $typeLabels[$parent->type] ?? $parent->type }} — {{ $parent->title }}
                                 </option>
                             @endforeach
                         </select>

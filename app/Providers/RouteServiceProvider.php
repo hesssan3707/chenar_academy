@@ -28,6 +28,16 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        $env = (string) config('app.env', 'production');
+        $debug = (bool) config('app.debug', false);
+        $app = resolve(\Illuminate\Foundation\Application::class);
+        if (($debug || in_array($env, ['local', 'testing', 'development'], true)) && $app->routesAreCached()) {
+            $cachedRoutesPath = $app->getCachedRoutesPath();
+            if (is_string($cachedRoutesPath) && $cachedRoutesPath !== '' && is_file($cachedRoutesPath)) {
+                @unlink($cachedRoutesPath);
+            }
+        }
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

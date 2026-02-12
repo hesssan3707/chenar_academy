@@ -28,6 +28,17 @@ html[data-theme='light'] .btn--primary {
     color: rgba(2, 6, 23, 0.92);
 }
 
+.btn--payment {
+    background: rgba(96, 165, 250, 0.92);
+    border-color: rgba(96, 165, 250, 0.35);
+    color: #fff;
+    transition: filter 0.12s ease;
+}
+
+.btn--payment:hover {
+    filter: brightness(0.96);
+}
+
 .btn--danger {
     background: var(--ds-color-danger);
     border-color: var(--ds-color-danger);

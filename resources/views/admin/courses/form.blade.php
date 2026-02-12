@@ -59,7 +59,7 @@
 
                         <label class="field">
                             <span class="field__label">دسته‌بندی</span>
-                            @php($categoryValue = old('category_id', (string) ($isEdit ? ($courseProduct?->categories()->where('type', 'course')->value('categories.id') ?? '') : '')))
+                            @php($categoryValue = old('category_id', (string) ($isEdit ? ($courseProduct?->categories()->where('type', 'video')->value('categories.id') ?? '') : '')))
                             <select name="category_id">
                                 <option value="" @selected($categoryValue === '')>—</option>
                                 @foreach ($categories as $category)

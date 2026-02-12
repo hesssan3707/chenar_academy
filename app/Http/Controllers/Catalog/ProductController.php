@@ -46,25 +46,16 @@ class ProductController extends Controller
             }
         }
 
-        $courses = collect();
-        if ($type === 'video') {
-            $courses = Product::query()
-                ->where('status', 'published')
-                ->where('type', 'course')
-                ->orderByDesc('published_at')
-                ->with('thumbnailMedia')
-                ->get();
-        }
-
         $categories = collect();
         $activeInstitution = null;
         $activeCategory = null;
 
         if ($type && in_array($type, ['note', 'video'], true)) {
             $typesForCategory = $type === 'note' ? ['note'] : ['video', 'course'];
+            $categoryTypes = $type === 'video' ? ['video', 'course'] : [$type];
 
-            $categories = Category::query()
-                ->where('type', $type)
+            $rawCategories = Category::query()
+                ->whereIn('type', $categoryTypes)
                 ->where('is_active', true)
                 ->withCount(['products' => function ($q) use ($typesForCategory) {
                     $q->where('products.status', 'published')
@@ -78,16 +69,52 @@ class ProductController extends Controller
                 ->orderBy('id')
                 ->get();
 
+            if ($type === 'video') {
+                $categories = $rawCategories
+                    ->groupBy(function (Category $category) {
+                        return ((int) ($category->parent_id ?? 0)).'|'.trim((string) ($category->title ?? ''));
+                    })
+                    ->map(function ($group) {
+                        $preferred = $group->firstWhere('type', 'video') ?: $group->first();
+                        if ($preferred) {
+                            $preferred->setAttribute('products_count', (int) $group->sum('products_count'));
+                        }
+
+                        return $preferred;
+                    })
+                    ->filter()
+                    ->values();
+            } else {
+                $categories = $rawCategories;
+            }
+
             if ($categorySlug) {
-                $activeCategory = Category::query()
-                    ->where('type', $type)
+                $activeCategories = Category::query()
+                    ->whereIn('type', $categoryTypes)
                     ->where('slug', $categorySlug)
                     ->where('is_active', true)
-                    ->first();
+                    ->get();
+
+                $activeCategory = $type === 'video'
+                    ? ($activeCategories->firstWhere('type', 'video') ?: $activeCategories->first())
+                    : $activeCategories->first();
 
                 if ($activeCategory) {
-                    $query->whereHas('categories', function ($q) use ($activeCategory) {
-                        $q->where('categories.id', $activeCategory->id);
+                    if ($type === 'video') {
+                        $activeCategoryIds = Category::query()
+                            ->whereIn('type', $categoryTypes)
+                            ->where('is_active', true)
+                            ->where('parent_id', $activeCategory->parent_id)
+                            ->where('title', $activeCategory->title)
+                            ->pluck('id')
+                            ->map(fn ($id) => (int) $id)
+                            ->all();
+                    } else {
+                        $activeCategoryIds = $activeCategories->pluck('id')->map(fn ($id) => (int) $id)->all();
+                    }
+
+                    $query->whereHas('categories', function ($q) use ($activeCategoryIds) {
+                        $q->whereIn('categories.id', $activeCategoryIds);
                     });
                 }
             }
@@ -98,7 +125,7 @@ class ProductController extends Controller
             if ($type === 'video') {
                 $latestProducts = Product::query()
                     ->where('status', 'published')
-                    ->where('type', 'video')
+                    ->whereIn('type', ['video', 'course'])
                     ->orderByDesc('published_at')
                     ->with('thumbnailMedia')
                     ->limit(10)
@@ -129,7 +156,6 @@ class ProductController extends Controller
 
             return view('catalog.products.index', [
                 'products' => $latestProducts,
-                'courses' => $courses,
                 'activeType' => $type,
                 'categories' => $categories,
                 'activeInstitution' => $activeInstitution,
@@ -138,7 +164,7 @@ class ProductController extends Controller
             ]);
         }
 
-        $cacheKey = 'content_cache.products.index.v1.'.sha1(json_encode([
+        $cacheKey = 'content_cache.products.index.v3.'.sha1(json_encode([
             'type' => $type,
             'category' => $categorySlug,
         ], JSON_THROW_ON_ERROR));
@@ -177,7 +203,6 @@ class ProductController extends Controller
 
         return view('catalog.products.index', [
             'products' => $products,
-            'courses' => $courses,
             'activeType' => $type,
             'categories' => $categories,
             'activeInstitution' => $activeInstitution,

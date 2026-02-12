@@ -28,6 +28,7 @@ window.initApp = function() {
     initAdminCategoryFormUi();
     initAdminSettingsTabsUi();
     initAdminWysiwygUi();
+    initHomeRowsAutoHideUi();
 
     const surveyModal = document.querySelector('[data-survey-modal]');
     if (surveyModal) {
@@ -57,6 +58,57 @@ window.initApp = function() {
         });
     }
 };
+
+function initHomeRowsAutoHideUi() {
+    if (typeof window.__homeRowsAutoHideCleanup === 'function') {
+        window.__homeRowsAutoHideCleanup();
+        window.__homeRowsAutoHideCleanup = null;
+    }
+
+    const rows = document.querySelector('[data-home-rows]');
+    if (!rows) {
+        return;
+    }
+
+    const idleMs = 10_000;
+    let idleTimer = null;
+
+    const hide = () => {
+        rows.classList.add('is-hidden');
+    };
+
+    const show = () => {
+        rows.classList.remove('is-hidden');
+    };
+
+    const reset = () => {
+        show();
+        if (idleTimer) {
+            clearTimeout(idleTimer);
+        }
+        idleTimer = setTimeout(hide, idleMs);
+    };
+
+    const onActivity = () => {
+        reset();
+    };
+
+    const events = ['mousemove', 'pointermove', 'touchstart', 'keydown'];
+    events.forEach((eventName) => {
+        window.addEventListener(eventName, onActivity);
+    });
+
+    reset();
+
+    window.__homeRowsAutoHideCleanup = () => {
+        if (idleTimer) {
+            clearTimeout(idleTimer);
+        }
+        events.forEach((eventName) => {
+            window.removeEventListener(eventName, onActivity);
+        });
+    };
+}
 
 function isAdminTheme() {
     return document.documentElement?.dataset?.theme === 'admin';

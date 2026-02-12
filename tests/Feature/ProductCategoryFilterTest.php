@@ -108,15 +108,34 @@ class ProductCategoryFilterTest extends TestCase
         ]);
         $product->categories()->attach($category->id);
 
+        $course = Product::query()->create([
+            'type' => 'course',
+            'title' => 'دوره فصل ۱',
+            'slug' => 'course-ch1',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'status' => 'published',
+            'base_price' => 200000,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+        $course->categories()->attach($category->id);
+
         $this->get(route('products.index', ['type' => 'video']))
             ->assertOk()
             ->assertSee($category->title)
+            ->assertSee('2 آیتم')
             ->assertSee(route('products.index', ['type' => 'video', 'category' => $category->slug]), false)
-            ->assertDontSee($product->title);
+            ->assertDontSee($product->title)
+            ->assertDontSee($course->title);
 
         $this->get(route('products.index', ['type' => 'video', 'category' => $category->slug]))
             ->assertOk()
             ->assertSee($product->title)
+            ->assertSee($course->title)
             ->assertDontSee('مشاهده جزئیات');
     }
 
@@ -186,6 +205,85 @@ class ProductCategoryFilterTest extends TestCase
             ->assertSee($video->title)
             ->assertSee($course->title)
             ->assertDontSee('مشاهده جزئیات');
+    }
+
+    public function test_videos_categories_merge_by_title_and_parent_for_courses_and_videos(): void
+    {
+        $institution = Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'دانشگاه آزاد اسلامی',
+            'slug' => 'iau',
+            'icon_key' => 'university',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $videoCategory = Category::query()->create([
+            'type' => 'video',
+            'parent_id' => $institution->id,
+            'title' => 'ریاضی',
+            'slug' => 'iau-math-video',
+            'icon_key' => 'video',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $courseCategory = Category::query()->create([
+            'type' => 'course',
+            'parent_id' => $institution->id,
+            'title' => 'ریاضی',
+            'slug' => 'iau-math-course',
+            'icon_key' => 'video',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $video = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو ریاضی',
+            'slug' => 'video-math',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'status' => 'published',
+            'base_price' => 100000,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+        $video->categories()->attach($videoCategory->id);
+
+        $course = Product::query()->create([
+            'type' => 'course',
+            'title' => 'دوره ریاضی',
+            'slug' => 'course-math',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'status' => 'published',
+            'base_price' => 200000,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+        $course->categories()->attach($courseCategory->id);
+
+        $this->get(route('products.index', ['type' => 'video']))
+            ->assertOk()
+            ->assertSee($videoCategory->title)
+            ->assertSee('2 آیتم')
+            ->assertSee(route('products.index', ['type' => 'video', 'category' => $videoCategory->slug]), false);
+
+        $this->get(route('products.index', ['type' => 'video', 'category' => $videoCategory->slug]))
+            ->assertOk()
+            ->assertSee($video->title)
+            ->assertSee($course->title);
     }
 
     public function test_products_index_filters_by_category(): void

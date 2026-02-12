@@ -34,7 +34,7 @@ class AdminCourseUploadsTest extends TestCase
         ]);
 
         $category = Category::query()->create([
-            'type' => 'course',
+            'type' => 'video',
             'parent_id' => null,
             'title' => 'Math Courses',
             'slug' => 'math-courses',

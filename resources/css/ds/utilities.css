@@ -3,6 +3,11 @@
     margin-inline: auto;
 }
 
+.container--wide {
+    width: min(1440px, calc(100% - 32px));
+    margin-inline: auto;
+}
+
 .stack {
     display: grid;
     gap: var(--ds-space-4);
@@ -83,4 +88,8 @@ html[data-theme='light'] .section--alt {
 
 .max-w-md {
     max-width: 520px;
+}
+
+.line-through {
+    text-decoration: line-through;
 }

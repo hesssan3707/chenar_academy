@@ -7,7 +7,7 @@
         <div class="user-panel-grid" data-panel-shell>
             @include('panel.partials.sidebar')
             
-            <main class="user-content panel-main" data-panel-main>
+            <main class="user-content panel-main panel-library" data-panel-main>
                 <h2 class="h2 mb-2">{{ $title ?? 'کتابخانه من' }}</h2>
                 <p class="text-muted mb-6">محتواهای خریداری‌شده فقط داخل سایت قابل مشاهده است</p>
 
@@ -27,13 +27,13 @@
                             <div class="h-scroll-container">
                                 @foreach ($videoItems as $row)
                                     @php($product = $row['product'])
-                                    <a href="{{ route('panel.library.show', $product->slug) }}" class="card-product">
+                                    <a href="{{ route('panel.library.show', $product->slug) }}" class="card-product card-product--home">
                                          @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
-                                         <div class="spa-cover mb-4">
+                                         <div class="spa-cover">
                                             <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                                          </div>
-                                         <h4 class="font-bold mb-2 text-lg truncate">{{ $product->title }}</h4>
-                                         <div class="mt-auto">
+                                         <h3 class="card-product__title">{{ $product->title }}</h3>
+                                         <div class="card-product__cta">
                                              <span class="btn btn--primary btn--sm w-full">مشاهده</span>
                                          </div>
                                     </a>
@@ -48,13 +48,13 @@
                             <div class="h-scroll-container">
                                  @foreach ($noteItems as $row)
                                     @php($product = $row['product'])
-                                    <a href="{{ route('panel.library.show', $product->slug) }}" class="card-product">
+                                    <a href="{{ route('panel.library.show', $product->slug) }}" class="card-product card-product--home">
                                          @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
-                                         <div class="spa-cover mb-4">
+                                         <div class="spa-cover">
                                             <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                                          </div>
-                                         <h4 class="font-bold mb-2 text-lg truncate">{{ $product->title }}</h4>
-                                         <div class="mt-auto">
+                                         <h3 class="card-product__title">{{ $product->title }}</h3>
+                                         <div class="card-product__cta">
                                              <span class="btn btn--primary btn--sm w-full">دانلود / مشاهده</span>
                                          </div>
                                     </a>

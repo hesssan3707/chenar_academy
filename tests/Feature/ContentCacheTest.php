@@ -76,7 +76,7 @@ class ContentCacheTest extends TestCase
             'meta' => [],
         ]);
 
-        $cacheKey = 'content_cache.products.index.v1.'.sha1(json_encode([
+        $cacheKey = 'content_cache.products.index.v2.'.sha1(json_encode([
             'type' => null,
             'category' => null,
         ], JSON_THROW_ON_ERROR));

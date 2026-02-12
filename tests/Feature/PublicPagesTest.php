@@ -13,6 +13,11 @@ class PublicPagesTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_home_page_loads(): void
+    {
+        $this->get('/')->assertOk();
+    }
+
     public function test_about_page_loads(): void
     {
         $this->get('/about')->assertOk();
@@ -132,6 +137,7 @@ class PublicPagesTest extends TestCase
             ->assertSee($note->title)
             ->assertSee('پاراگراف اول')
             ->assertSee('پاراگراف دوم')
+            ->assertSee('فایل PDF')
             ->assertSee('detail-shell')
             ->assertSee('detail-grid')
             ->assertDontSee('max-h-[80vh]');

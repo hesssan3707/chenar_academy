@@ -57,7 +57,7 @@ class CourseController extends Controller
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->where('type', 'course')
+                ->where('type', 'video')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
@@ -133,7 +133,7 @@ class CourseController extends Controller
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->where('type', 'course')
+                ->where('type', 'video')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
@@ -214,7 +214,7 @@ class CourseController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:180'],
             'institution_category_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'institution')],
-            'category_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'course')],
+            'category_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'video')],
             'description' => ['nullable', 'string'],
             'status' => ['nullable', 'string', Rule::in(['draft', 'published'])],
             'base_price' => [$shouldPublish ? 'required' : 'nullable', 'integer', 'min:0', 'max:2000000000'],

@@ -92,7 +92,7 @@ class CategoryController extends Controller
 
     public function create(): View
     {
-        $defaultTypes = ['course', 'video', 'note', 'institution', 'post'];
+        $defaultTypes = ['video', 'note', 'institution', 'post'];
         $existingTypes = Category::query()->select('type')->distinct()->orderBy('type')->pluck('type')->all();
         $types = array_values(array_unique(array_merge($defaultTypes, $existingTypes)));
 
@@ -125,7 +125,7 @@ class CategoryController extends Controller
     {
         $categoryModel = Category::query()->findOrFail($category);
 
-        $defaultTypes = ['course', 'video', 'note', 'institution', 'post'];
+        $defaultTypes = ['video', 'note', 'institution', 'post'];
         $existingTypes = Category::query()->select('type')->distinct()->orderBy('type')->pluck('type')->all();
         $types = array_values(array_unique(array_merge($defaultTypes, $existingTypes)));
 
