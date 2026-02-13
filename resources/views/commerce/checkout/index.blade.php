@@ -35,10 +35,6 @@
                             <div class="checkout-item">
                                 <div class="checkout-item__meta">
                                     <div class="checkout-item__title">{{ $item->product?->title ?? 'محصول' }}</div>
-                                    <div class="checkout-item__sub">
-                                        <span class="text-muted">تعداد:</span>
-                                        <span dir="ltr">{{ (int) ($item->quantity ?? 1) }}</span>
-                                    </div>
                                 </div>
                         <div class="checkout-item__price">
                             <span class="price" dir="ltr">{{ number_format((int) $item->unit_price) }}</span>
@@ -113,7 +109,7 @@
                         <div class="stack stack--sm">
                             <form method="post" action="{{ route('checkout.pay') }}">
                                 @csrf
-                            <button class="btn btn--payment w-full" type="submit">پرداخت آنلاین</button>
+                            <button class="btn btn--payment w-full" style="width: 100%;" type="submit">پرداخت آنلاین</button>
                             </form>
                             <a class="btn btn--ghost w-full" href="{{ route('checkout.card-to-card.show') }}">پرداخت کارت‌به‌کارت</a>
                             <a class="btn btn--ghost w-full" href="{{ route('cart.index') }}">سبد خرید</a>

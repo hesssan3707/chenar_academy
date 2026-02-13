@@ -73,6 +73,8 @@ function initHomeRowsAutoHideUi() {
 
     const idleMs = 12_000;
     let idleTimer = null;
+    const scrollers = Array.from(rows.querySelectorAll('.h-scroll-container')).filter((node) => node instanceof HTMLElement);
+    const passiveOpts = { passive: true };
 
     const hide = () => {
         rows.classList.add('is-hidden');
@@ -94,9 +96,16 @@ function initHomeRowsAutoHideUi() {
         reset();
     };
 
-    const events = ['mousemove', 'pointermove', 'touchstart', 'keydown', 'scroll', 'wheel', 'mousedown', 'click'];
-    events.forEach((eventName) => {
-        window.addEventListener(eventName, onActivity);
+    const windowEvents = ['mousemove', 'pointermove', 'touchstart', 'touchmove', 'keydown', 'scroll', 'wheel', 'mousedown', 'click'];
+    windowEvents.forEach((eventName) => {
+        window.addEventListener(eventName, onActivity, passiveOpts);
+    });
+
+    const scrollerEvents = ['scroll', 'touchstart', 'touchmove', 'pointerdown', 'pointermove', 'wheel'];
+    scrollers.forEach((scroller) => {
+        scrollerEvents.forEach((eventName) => {
+            scroller.addEventListener(eventName, onActivity, passiveOpts);
+        });
     });
 
     reset();
@@ -105,8 +114,13 @@ function initHomeRowsAutoHideUi() {
         if (idleTimer) {
             clearTimeout(idleTimer);
         }
-        events.forEach((eventName) => {
-            window.removeEventListener(eventName, onActivity);
+        windowEvents.forEach((eventName) => {
+            window.removeEventListener(eventName, onActivity, passiveOpts);
+        });
+        scrollers.forEach((scroller) => {
+            scrollerEvents.forEach((eventName) => {
+                scroller.removeEventListener(eventName, onActivity, passiveOpts);
+            });
         });
     };
 }

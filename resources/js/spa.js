@@ -988,9 +988,6 @@ async function refreshCart() {
         } else {
             itemsContainer.innerHTML = data.items.map(item => `
                 <div class="cart-item">
-                    <div class="cart-item__cover">
-                        <img src="${item.thumb || '/assets/img/placeholder.png'}" alt="${item.title}">
-                    </div>
                     <div class="cart-item__meta">
                         <div class="cart-item__title">${item.title}</div>
                     </div>

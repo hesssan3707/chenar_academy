@@ -306,7 +306,7 @@
                  <button class="btn btn--ghost btn--sm" onclick="closeModal('cart-modal')">X</button>
             </div>
             
-            <div id="cart-modal-items" class="stack stack--sm custom-scrollbar" style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+            <div id="cart-modal-items" class="stack stack--sm custom-scrollbar" style="max-height: 400px; overflow-y: auto; margin-bottom: 10px;">
                 <!-- Items will be loaded here via AJAX -->
                 <div class="flex flex-col items-center justify-center py-8 opacity-50">
                     <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>

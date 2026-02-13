@@ -38,15 +38,8 @@
                             @php($placeholderThumb = asset('images/default_image.webp'))
                             @php($thumbUrl = ($item->product?->thumbnailMedia?->disk ?? null) === 'public' && ($item->product?->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($item->product->thumbnailMedia->path) : $placeholderThumb)
                             <div class="cart-item">
-                                <div class="cart-item__cover">
-                                    <img src="{{ $thumbUrl }}" alt="{{ $item->product?->title ?? '' }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
-                                </div>
                                 <div class="cart-item__meta">
                                     <div class="cart-item__title">{{ $item->product?->title ?? 'محصول نامشخص' }}</div>
-                                    <div class="cart-item__sub">
-                                        <span class="text-muted">تعداد:</span>
-                                        <span dir="ltr">{{ (int) ($item->quantity ?? 1) }}</span>
-                                    </div>
                                 </div>
                                 <div class="cart-item__price">
                                     <span class="price" dir="ltr">{{ number_format((int) ($item->unit_price ?? 0)) }}</span>

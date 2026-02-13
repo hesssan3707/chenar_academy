@@ -22,6 +22,7 @@
     align-items: center;
     gap: var(--ds-space-3);
     flex-wrap: wrap;
+    padding : 10px 0;
 }
 
 .grid {

@@ -9,7 +9,6 @@
             
             <main class="user-content panel-main panel-library" data-panel-main>
                 <h2 class="h2 mb-2">{{ $title ?? 'کتابخانه من' }}</h2>
-                <p class="text-muted mb-6">محتواهای خریداری‌شده فقط داخل سایت قابل مشاهده است</p>
 
                 @php($noteItems = $noteItems ?? collect())
                 @php($videoItems = $videoItems ?? collect())

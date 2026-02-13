@@ -64,31 +64,46 @@
                                 <div class="h-scroll-container">
                                     @php($placeholderThumb = asset('images/default_image.webp'))
                                     @foreach ($booklets as $booklet)
-                                        <a href="{{ route('products.show', $booklet->slug) }}" class="card-product">
-                                            @php($thumbUrl = ($booklet->thumbnailMedia?->disk ?? null) === 'public' && ($booklet->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($booklet->thumbnailMedia->path) : $placeholderThumb)
-                                            <div class="spa-cover mb-4 group">
-                                                <img src="{{ $thumbUrl }}" alt="{{ $booklet->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
-                                                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
-                                            </div>
-                                            
-                                            <h3 class="card-product__title text-white line-clamp-2">{{ $booklet->title }}</h3>
+                                        <div class="card-product">
+                                            <a href="{{ route('products.show', $booklet->slug) }}" class="block">
+                                                @php($thumbUrl = ($booklet->thumbnailMedia?->disk ?? null) === 'public' && ($booklet->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($booklet->thumbnailMedia->path) : $placeholderThumb)
+                                                <div class="spa-cover group" style="margin-bottom: 5px;">
+                                                    <img src="{{ $thumbUrl }}" alt="{{ $booklet->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
+                                                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
+                                                </div>
+                                                
+                                                <h3 class="card-product__title text-white line-clamp-2">{{ $booklet->title }}</h3>
+                                            </a>
                                             
                                             <div class="card-product__cta">
                                                 <div class="card-product__price mb-3">
-                                                    <div class="flex items-center justify-between">
+                                                    <div class="card-price-row">
                                                         @php($currencyUnit = (($booklet->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($booklet->currency ?? 'IRR'))
                                                         @if($booklet->hasDiscount())
-                                                            <div class="flex flex-col">
+                                                            <div class="card-price-stack flex flex-col">
                                                                 <span class="text-xs text-muted line-through">{{ number_format($booklet->originalPrice()) }}</span>
-                                                                <span class="text-brand font-bold">{{ number_format($booklet->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                                <span class="card-price-amount text-brand font-bold">{{ number_format($booklet->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                                             </div>
                                                         @else
-                                                            <span class="text-brand font-bold">{{ number_format($booklet->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                            <div class="card-price-stack">
+                                                                <span class="card-price-amount text-brand font-bold">{{ number_format($booklet->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                            </div>
                                                         @endif
+                                                        <form method="post" action="{{ route('cart.items.store') }}" class="cart-inline-form">
+                                                            @csrf
+                                                            <input type="hidden" name="product_id" value="{{ $booklet->id }}">
+                                                            <button class="cart-inline-icon" type="submit" aria-label="افزودن به سبد خرید">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                    <circle cx="9" cy="21" r="1"></circle>
+                                                                    <circle cx="20" cy="21" r="1"></circle>
+                                                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                                                </svg>
+                                                            </button>
+                                                        </form>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </a>
+                                        </div>
                                     @endforeach
                                 </div>
                             </div>
