@@ -17,18 +17,39 @@
     @vite(['resources/css/app.css', 'resources/css/spa.css', 'resources/js/app.js'])
 </head>
 <body class="spa-body">
-    <!-- Background Layer -->
-    <div class="spa-background" id="spa-bg"></div>
+    <div class="spa-background" id="spa-bg"
+        data-bg-home="{{ (string) ($spaBackgrounds['home'] ?? '') }}"
+        data-bg-videos="{{ (string) ($spaBackgrounds['videos'] ?? '') }}"
+        data-bg-booklets="{{ (string) ($spaBackgrounds['booklets'] ?? '') }}"
+        data-bg-other="{{ (string) ($spaBackgrounds['other'] ?? '') }}"></div>
+
+    <div class="site-loader" id="site-loader" role="status" aria-live="polite" aria-label="در حال بارگذاری" style="position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(8,12,22,.92);backdrop-filter:blur(10px);">
+        <div class="site-loader__inner" style="width:min(520px,92vw);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;">
+            @if (empty($spaLogoUrl))
+                <div class="site-loader__logo-slot" aria-hidden="true" style="width:min(280px,80vw);height:90px;border-radius:18px;border:1px dashed rgba(255,255,255,.12);background:rgba(255,255,255,.03);"></div>
+            @else
+                <img class="site-loader__logo" src="{{ $spaLogoUrl }}" alt="{{ config('app.name') }}" style="width:min(320px,86vw);max-height:110px;object-fit:contain;display:block;">
+            @endif
+            <div class="site-loader__hourglass" role="img" aria-label="در حال بارگذاری" style="color:var(--ds-brand);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 2h12"></path>
+                    <path d="M6 22h12"></path>
+                    <path d="M6 2v6a6 6 0 0 0 6 6a6 6 0 0 0 6-6V2"></path>
+                    <path d="M6 22v-6a6 6 0 0 1 6-6a6 6 0 0 1 6 6v6"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
 
     <div class="spa-layout">
-        <!-- Main Content Area -->
         <main class="spa-content-wrapper" id="spa-content">
-            <div class="spa-page">
+            @php($spaPageBackgroundGroup = $spaPageBackgroundGroup ?? (request()->routeIs('home') ? 'home' : (request()->routeIs('videos.*') ? 'videos' : ((request()->routeIs('booklets.*') || request()->routeIs('notes.*')) ? 'booklets' : 'other'))))
+            <div class="spa-page" data-bg-group="{{ $spaPageBackgroundGroup }}">
                 @yield('content')
             </div>
         </main>
 
-        <!-- Island Navigation -->
         <nav class="spa-nav">
             <a href="{{ route('home') }}" class="spa-nav-item {{ request()->routeIs('home') ? 'active' : '' }}" data-spa-nav="home">
                 <svg class="spa-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
@@ -46,6 +67,17 @@
                 <svg class="spa-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
                 <span class="nav-text">وبلاگ</span>
             </a>
+            @auth
+                <a href="{{ route('panel.library.index') }}" class="spa-nav-item {{ request()->routeIs('panel.*') ? 'active' : '' }}" data-spa-nav="panel">
+                    <svg class="spa-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <span class="nav-text">پنل</span>
+                </a>
+            @else
+                <a href="#" class="spa-nav-item" onclick="openModal('auth-modal'); return false;" data-spa-nav="auth">
+                    <svg class="spa-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                    <span class="nav-text">ورود</span>
+                </a>
+            @endauth
             <a href="#" class="spa-nav-item spa-nav-item--cart" data-spa-nav="cart" onclick="toggleCart(); return false;">
                 <div class="relative flex items-center justify-center">
                     <svg class="spa-nav-icon mb-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -61,17 +93,6 @@
                 <svg class="spa-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 <span class="nav-text">تماس با ما</span>
             </a>
-            @auth
-                <a href="{{ route('panel.library.index') }}" class="spa-nav-item {{ request()->routeIs('panel.*') ? 'active' : '' }}" data-spa-nav="panel">
-                    <svg class="spa-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    <span class="nav-text">پنل</span>
-                </a>
-            @else
-                <a href="#" class="spa-nav-item" onclick="openModal('auth-modal'); return false;" data-spa-nav="auth">
-                    <svg class="spa-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                    <span class="nav-text">ورود</span>
-                </a>
-            @endauth
         </nav>
     </div>
 
@@ -208,8 +229,8 @@
                         </div>
                     </div>
                     <button type="submit" class="btn btn--primary w-full">ثبت نام</button>
-                    <div class="text-center text-sm mt-4">
-                        <a href="#" onclick="switchAuthView('login'); return false;">بازگشت به ورود</a>
+                    <div class="cluster mt-6" style="justify-content: center; gap: var(--ds-space-4); font-size: 0.85rem; color: var(--muted);">
+                        <a href="#" onclick="switchAuthView('login'); return false;" class="link">بازگشت به ورود</a>
                     </div>
                 </form>
             </div>
@@ -266,8 +287,8 @@
                         </div>
                     </div>
                     <button type="submit" class="btn btn--primary w-full">تغییر رمز عبور</button>
-                    <div class="text-center text-sm mt-4">
-                        <a href="#" onclick="switchAuthView('login'); return false;">بازگشت به ورود</a>
+                    <div class="cluster mt-6" style="justify-content: center; gap: var(--ds-space-4); font-size: 0.85rem; color: var(--muted);">
+                        <a href="#" onclick="switchAuthView('login'); return false;" class="link">بازگشت به ورود</a>
                     </div>
                 </form>
             </div>

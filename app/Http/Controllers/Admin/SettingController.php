@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Media;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
@@ -34,6 +36,18 @@ class SettingController extends Controller
         $socialInstagramUrl = '';
         $socialTelegramUrl = '';
         $socialYoutubeUrl = '';
+        $logoMediaId = null;
+        $backgroundDefaultMediaId = null;
+        $backgroundHomeMediaId = null;
+        $backgroundVideosMediaId = null;
+        $backgroundBookletsMediaId = null;
+        $backgroundOtherMediaId = null;
+        $logoPreviewUrl = null;
+        $backgroundDefaultPreviewUrl = null;
+        $backgroundHomePreviewUrl = null;
+        $backgroundVideosPreviewUrl = null;
+        $backgroundBookletsPreviewUrl = null;
+        $backgroundOtherPreviewUrl = null;
 
         if (Schema::hasTable('settings')) {
             $setting = Setting::query()->where('key', 'page.about')->first();
@@ -58,6 +72,59 @@ class SettingController extends Controller
             $socialInstagramUrl = $this->settingString('social.instagram.url');
             $socialTelegramUrl = $this->settingString('social.telegram.url');
             $socialYoutubeUrl = $this->settingString('social.youtube.url');
+            $logoMediaId = $this->settingInt('ui.logo_media_id');
+
+            $backgroundSetting = Setting::query()->where('key', 'ui.backgrounds')->first();
+            $backgroundValue = $backgroundSetting?->value;
+            if (is_array($backgroundValue)) {
+                $backgroundDefaultMediaId = isset($backgroundValue['default_media_id']) && is_numeric($backgroundValue['default_media_id']) ? (int) $backgroundValue['default_media_id'] : null;
+                $backgroundHomeMediaId = isset($backgroundValue['home_media_id']) && is_numeric($backgroundValue['home_media_id']) ? (int) $backgroundValue['home_media_id'] : null;
+                $backgroundVideosMediaId = isset($backgroundValue['videos_media_id']) && is_numeric($backgroundValue['videos_media_id']) ? (int) $backgroundValue['videos_media_id'] : null;
+                $backgroundBookletsMediaId = isset($backgroundValue['booklets_media_id']) && is_numeric($backgroundValue['booklets_media_id']) ? (int) $backgroundValue['booklets_media_id'] : null;
+                $backgroundOtherMediaId = isset($backgroundValue['other_media_id']) && is_numeric($backgroundValue['other_media_id']) ? (int) $backgroundValue['other_media_id'] : null;
+            }
+
+            if (Schema::hasTable('media')) {
+                $mediaIds = collect([
+                    $logoMediaId,
+                    $backgroundDefaultMediaId,
+                    $backgroundHomeMediaId,
+                    $backgroundVideosMediaId,
+                    $backgroundBookletsMediaId,
+                    $backgroundOtherMediaId,
+                ])->filter(fn ($id) => is_int($id) && $id > 0)->values();
+
+                $mediaById = $mediaIds->isNotEmpty()
+                    ? Media::query()->whereIn('id', $mediaIds)->get()->keyBy('id')
+                    : collect();
+
+                $previewUrlFor = function (?int $mediaId) use ($mediaById): ?string {
+                    if (! $mediaId || $mediaId <= 0) {
+                        return null;
+                    }
+
+                    $media = $mediaById->get($mediaId);
+                    if (! $media) {
+                        return null;
+                    }
+
+                    $disk = (string) ($media->disk ?? '');
+                    $mime = strtolower((string) ($media->mime_type ?? ''));
+                    $path = (string) ($media->path ?? '');
+                    if ($disk !== 'public' || $path === '' || ! str_starts_with($mime, 'image/')) {
+                        return null;
+                    }
+
+                    return route('media.stream', $media->id);
+                };
+
+                $logoPreviewUrl = $previewUrlFor($logoMediaId);
+                $backgroundDefaultPreviewUrl = $previewUrlFor($backgroundDefaultMediaId);
+                $backgroundHomePreviewUrl = $previewUrlFor($backgroundHomeMediaId);
+                $backgroundVideosPreviewUrl = $previewUrlFor($backgroundVideosMediaId);
+                $backgroundBookletsPreviewUrl = $previewUrlFor($backgroundBookletsMediaId);
+                $backgroundOtherPreviewUrl = $previewUrlFor($backgroundOtherMediaId);
+            }
         }
 
         return view('admin.settings.index', [
@@ -78,12 +145,30 @@ class SettingController extends Controller
             'socialInstagramUrl' => $socialInstagramUrl,
             'socialTelegramUrl' => $socialTelegramUrl,
             'socialYoutubeUrl' => $socialYoutubeUrl,
+            'logoMediaId' => $logoMediaId,
+            'backgroundDefaultMediaId' => $backgroundDefaultMediaId,
+            'backgroundHomeMediaId' => $backgroundHomeMediaId,
+            'backgroundVideosMediaId' => $backgroundVideosMediaId,
+            'backgroundBookletsMediaId' => $backgroundBookletsMediaId,
+            'backgroundOtherMediaId' => $backgroundOtherMediaId,
+            'logoPreviewUrl' => $logoPreviewUrl,
+            'backgroundDefaultPreviewUrl' => $backgroundDefaultPreviewUrl,
+            'backgroundHomePreviewUrl' => $backgroundHomePreviewUrl,
+            'backgroundVideosPreviewUrl' => $backgroundVideosPreviewUrl,
+            'backgroundBookletsPreviewUrl' => $backgroundBookletsPreviewUrl,
+            'backgroundOtherPreviewUrl' => $backgroundOtherPreviewUrl,
         ]);
     }
 
     public function update(Request $request): RedirectResponse
     {
         $themes = app('theme')->available();
+
+        $backgroundRule = ['nullable', 'integer'];
+        if (Schema::hasTable('media')) {
+            $backgroundRule[] = Rule::exists('media', 'id')
+                ->where(fn ($query) => $query->where('disk', 'public')->where('mime_type', 'like', 'image/%'));
+        }
 
         $validated = $request->validate([
             'theme' => ['required', 'string', Rule::in($themes)],
@@ -103,6 +188,18 @@ class SettingController extends Controller
             'social_instagram_url' => ['nullable', 'string', 'max:255'],
             'social_telegram_url' => ['nullable', 'string', 'max:255'],
             'social_youtube_url' => ['nullable', 'string', 'max:255'],
+            'logo_media_id' => $backgroundRule,
+            'logo_file' => ['nullable', 'file', 'image', 'max:10240'],
+            'background_default_media_id' => $backgroundRule,
+            'background_home_media_id' => $backgroundRule,
+            'background_videos_media_id' => $backgroundRule,
+            'background_booklets_media_id' => $backgroundRule,
+            'background_other_media_id' => $backgroundRule,
+            'background_default_file' => ['nullable', 'file', 'image', 'max:10240'],
+            'background_home_file' => ['nullable', 'file', 'image', 'max:10240'],
+            'background_videos_file' => ['nullable', 'file', 'image', 'max:10240'],
+            'background_booklets_file' => ['nullable', 'file', 'image', 'max:10240'],
+            'background_other_file' => ['nullable', 'file', 'image', 'max:10240'],
         ]);
 
         if (Schema::hasTable('settings')) {
@@ -195,11 +292,105 @@ class SettingController extends Controller
                 ['key' => 'social.youtube.url', 'group' => 'social'],
                 ['value' => $youtubeUrl]
             );
+
+            $logoMediaId = ($validated['logo_media_id'] ?? null) !== null ? (int) $validated['logo_media_id'] : null;
+            $backgroundDefaultMediaId = ($validated['background_default_media_id'] ?? null) !== null ? (int) $validated['background_default_media_id'] : null;
+            $backgroundHomeMediaId = ($validated['background_home_media_id'] ?? null) !== null ? (int) $validated['background_home_media_id'] : null;
+            $backgroundVideosMediaId = ($validated['background_videos_media_id'] ?? null) !== null ? (int) $validated['background_videos_media_id'] : null;
+            $backgroundBookletsMediaId = ($validated['background_booklets_media_id'] ?? null) !== null ? (int) $validated['background_booklets_media_id'] : null;
+            $backgroundOtherMediaId = ($validated['background_other_media_id'] ?? null) !== null ? (int) $validated['background_other_media_id'] : null;
+
+            if (Schema::hasTable('media')) {
+                $logoFile = $request->file('logo_file');
+                if ($logoFile instanceof UploadedFile) {
+                    $logoMediaId = $this->storeUploadedMedia($logoFile, 'public', 'media')->id;
+                }
+
+                $defaultFile = $request->file('background_default_file');
+                if ($defaultFile instanceof UploadedFile) {
+                    $backgroundDefaultMediaId = $this->storeUploadedMedia($defaultFile, 'public', 'media')->id;
+                }
+
+                $homeFile = $request->file('background_home_file');
+                if ($homeFile instanceof UploadedFile) {
+                    $backgroundHomeMediaId = $this->storeUploadedMedia($homeFile, 'public', 'media')->id;
+                }
+
+                $videosFile = $request->file('background_videos_file');
+                if ($videosFile instanceof UploadedFile) {
+                    $backgroundVideosMediaId = $this->storeUploadedMedia($videosFile, 'public', 'media')->id;
+                }
+
+                $bookletsFile = $request->file('background_booklets_file');
+                if ($bookletsFile instanceof UploadedFile) {
+                    $backgroundBookletsMediaId = $this->storeUploadedMedia($bookletsFile, 'public', 'media')->id;
+                }
+
+                $otherFile = $request->file('background_other_file');
+                if ($otherFile instanceof UploadedFile) {
+                    $backgroundOtherMediaId = $this->storeUploadedMedia($otherFile, 'public', 'media')->id;
+                }
+            }
+
+            Setting::query()->updateOrCreate(
+                ['key' => 'ui.logo_media_id', 'group' => 'ui'],
+                ['value' => $logoMediaId]
+            );
+
+            Setting::query()->updateOrCreate(
+                ['key' => 'ui.backgrounds', 'group' => 'ui'],
+                ['value' => [
+                    'default_media_id' => $backgroundDefaultMediaId,
+                    'home_media_id' => $backgroundHomeMediaId,
+                    'videos_media_id' => $backgroundVideosMediaId,
+                    'booklets_media_id' => $backgroundBookletsMediaId,
+                    'other_media_id' => $backgroundOtherMediaId,
+                ]]
+            );
         }
 
         Cache::forget('theme.active');
 
         return redirect()->route('admin.settings.index');
+    }
+
+    private function storeUploadedMedia(?UploadedFile $file, string $disk, string $directory): Media
+    {
+        $path = $file->store($directory, $disk);
+        $path = str_replace('\\', '/', (string) $path);
+
+        $width = null;
+        $height = null;
+
+        $mime = (string) ($file->getMimeType() ?: '');
+        if ($mime !== '' && str_starts_with(strtolower($mime), 'image/')) {
+            $imageSize = @getimagesize($file->getPathname());
+            if (is_array($imageSize) && isset($imageSize[0], $imageSize[1])) {
+                $width = is_numeric($imageSize[0]) ? (int) $imageSize[0] : null;
+                $height = is_numeric($imageSize[1]) ? (int) $imageSize[1] : null;
+            }
+        }
+
+        $sha1 = null;
+        try {
+            $sha1 = sha1_file($file->getPathname()) ?: null;
+        } catch (\Throwable) {
+            $sha1 = null;
+        }
+
+        return Media::query()->create([
+            'uploaded_by_user_id' => request()->user()?->id,
+            'disk' => $disk,
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'sha1' => $sha1,
+            'width' => $width,
+            'height' => $height,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
     }
 
     private function normalizeCardNumber(string $raw): ?string

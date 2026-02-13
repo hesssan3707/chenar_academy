@@ -29,6 +29,7 @@ window.initApp = function() {
     initAdminSettingsTabsUi();
     initAdminWysiwygUi();
     initHomeRowsAutoHideUi();
+    initCategoryTapPreviewUi();
 
     const surveyModal = document.querySelector('[data-survey-modal]');
     if (surveyModal) {
@@ -70,7 +71,7 @@ function initHomeRowsAutoHideUi() {
         return;
     }
 
-    const idleMs = 10_000;
+    const idleMs = 12_000;
     let idleTimer = null;
 
     const hide = () => {
@@ -93,7 +94,7 @@ function initHomeRowsAutoHideUi() {
         reset();
     };
 
-    const events = ['mousemove', 'pointermove', 'touchstart', 'keydown'];
+    const events = ['mousemove', 'pointermove', 'touchstart', 'keydown', 'scroll', 'wheel', 'mousedown', 'click'];
     events.forEach((eventName) => {
         window.addEventListener(eventName, onActivity);
     });
@@ -107,6 +108,64 @@ function initHomeRowsAutoHideUi() {
         events.forEach((eventName) => {
             window.removeEventListener(eventName, onActivity);
         });
+    };
+}
+
+function initCategoryTapPreviewUi() {
+    if (typeof window.__categoryTapPreviewCleanup === 'function') {
+        window.__categoryTapPreviewCleanup();
+        window.__categoryTapPreviewCleanup = null;
+    }
+
+    const supportsHover = (() => {
+        try {
+            return window.matchMedia && window.matchMedia('(hover: hover)').matches;
+        } catch (e) {
+            return true;
+        }
+    })();
+
+    if (supportsHover) {
+        return;
+    }
+
+    const clearPeek = () => {
+        document.querySelectorAll('a.card-category.is-peek').forEach((node) => {
+            node.classList.remove('is-peek');
+        });
+    };
+
+    const onClickCapture = (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) {
+            return;
+        }
+
+        const link = target.closest('a.card-category');
+        if (!(link instanceof HTMLAnchorElement)) {
+            clearPeek();
+            return;
+        }
+
+        if (!link.querySelector('.card-category__overlay') && !link.querySelector('.info')) {
+            return;
+        }
+
+        if (link.classList.contains('is-peek')) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        clearPeek();
+        link.classList.add('is-peek');
+    };
+
+    document.addEventListener('click', onClickCapture, true);
+
+    window.__categoryTapPreviewCleanup = () => {
+        clearPeek();
+        document.removeEventListener('click', onClickCapture, true);
     };
 }
 

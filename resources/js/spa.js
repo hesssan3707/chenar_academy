@@ -1,10 +1,81 @@
 document.addEventListener('DOMContentLoaded', () => {
+    initSiteLoader();
     initSPA();
     initAuthModal();
     if (typeof window.initCart === 'function') {
         window.initCart();
     }
 });
+
+let siteLoaderTokenCounter = 0;
+let siteLoaderHideTimer = null;
+
+function nowMs() {
+    if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+        return performance.now();
+    }
+    return Date.now();
+}
+
+function getSiteLoaderEl() {
+    const el = document.getElementById('site-loader');
+    return el instanceof HTMLElement ? el : null;
+}
+
+function showSiteLoader() {
+    const el = getSiteLoaderEl();
+    if (!el) return 0;
+
+    if (siteLoaderHideTimer) {
+        clearTimeout(siteLoaderHideTimer);
+        siteLoaderHideTimer = null;
+    }
+
+    siteLoaderTokenCounter += 1;
+    const token = siteLoaderTokenCounter;
+    el.dataset.siteLoaderToken = String(token);
+    el.dataset.siteLoaderShownAt = String(nowMs());
+    el.classList.remove('is-hidden');
+    return token;
+}
+
+function hideSiteLoader(token, minDurationMs = 1000) {
+    const el = getSiteLoaderEl();
+    if (!el) return;
+
+    const activeToken = Number(el.dataset.siteLoaderToken || '0');
+    if (token !== activeToken) return;
+
+    if (el.classList.contains('is-hidden')) {
+        if (siteLoaderHideTimer) {
+            clearTimeout(siteLoaderHideTimer);
+            siteLoaderHideTimer = null;
+        }
+        return;
+    }
+
+    const shownAt = Number(el.dataset.siteLoaderShownAt || '0');
+    const elapsed = nowMs() - shownAt;
+    const remaining = Math.max(0, minDurationMs - elapsed);
+
+    if (siteLoaderHideTimer) {
+        clearTimeout(siteLoaderHideTimer);
+    }
+
+    siteLoaderHideTimer = setTimeout(() => {
+        const currentToken = Number(el.dataset.siteLoaderToken || '0');
+        if (currentToken !== token) return;
+        el.classList.add('is-hidden');
+        siteLoaderHideTimer = null;
+    }, remaining);
+}
+
+function initSiteLoader() {
+    const token = showSiteLoader();
+    window.addEventListener('load', () => {
+        hideSiteLoader(token, 1000);
+    }, { once: true });
+}
 
 function getAppBasePathname() {
     const meta = document.querySelector('meta[name="api-base-url"]');
@@ -27,6 +98,38 @@ function normalizeAppPathname(pathname) {
     if (path === base) return '/';
     if (path.startsWith(base + '/')) return path.slice(base.length);
     return path;
+}
+
+function updateSpaBackground() {
+    const bg = document.getElementById('spa-bg');
+    if (!(bg instanceof HTMLElement)) {
+        return;
+    }
+
+    const page = document.querySelector('#spa-content .spa-page');
+    const groupFromDom = page instanceof HTMLElement ? (page.dataset.bgGroup || '') : '';
+
+    const normalizedPath = normalizeAppPathname(window.location.pathname || '');
+    const cleanPath = (normalizedPath || '/').replace(/\/$/, '') || '/';
+
+    const group = groupFromDom !== ''
+        ? groupFromDom
+        : (cleanPath === '/'
+            ? 'home'
+            : (cleanPath.startsWith('/videos') ? 'videos' : (cleanPath.startsWith('/booklets') || cleanPath.startsWith('/notes') ? 'booklets' : 'other')));
+
+    const url = (() => {
+        if (group === 'home') return bg.dataset.bgHome || '';
+        if (group === 'videos') return bg.dataset.bgVideos || '';
+        if (group === 'booklets') return bg.dataset.bgBooklets || '';
+        return bg.dataset.bgOther || '';
+    })();
+
+    if (typeof url === 'string' && url.trim() !== '') {
+        bg.style.backgroundImage = `linear-gradient(180deg, rgba(8, 12, 22, 0.55), rgba(8, 12, 22, 0.82)), url("${url}")`;
+    } else {
+        bg.style.backgroundImage = '';
+    }
 }
 
 function isPanelRoutePath(pathname) {
@@ -146,7 +249,17 @@ function setPanelMainLoading(isLoading) {
     if (!loader) {
         loader = document.createElement('div');
         loader.className = 'panel-main-loader';
-        loader.innerHTML = '<div class="panel-main-hourglass" role="img" aria-label="در حال بارگذاری"></div>';
+        loader.innerHTML = `
+            <div class="panel-main-hourglass" role="img" aria-label="در حال بارگذاری">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 2h12"></path>
+                    <path d="M6 22h12"></path>
+                    <path d="M6 2v6a6 6 0 0 0 6 6a6 6 0 0 0 6-6V2"></path>
+                    <path d="M6 22v-6a6 6 0 0 1 6-6a6 6 0 0 1 6 6v6"></path>
+                </svg>
+            </div>
+        `.trim();
         main.appendChild(loader);
     }
 
@@ -330,6 +443,7 @@ function setupCurrentPage() {
     // Highlight active nav item
     updateActiveNav(window.location.href);
     updatePanelNav(window.location.href);
+    updateSpaBackground();
 
     // Intercept Add to Cart forms
     document.querySelectorAll('form[action*="/cart/items"]').forEach(form => {
@@ -682,18 +796,20 @@ async function refreshCart() {
             if (totalPrice) totalPrice.textContent = '';
         } else {
             itemsContainer.innerHTML = data.items.map(item => `
-                <div class="panel p-4 bg-white/5 border border-white/10 rounded-xl flex items-center gap-4 group">
-                    <div class="w-16 h-16 rounded-lg bg-white/10 overflow-hidden flex-shrink-0">
-                        <img src="${item.thumb || '/assets/img/placeholder.png'}" alt="${item.title}" class="w-full h-full object-cover">
+                <div class="cart-item">
+                    <div class="cart-item__cover">
+                        <img src="${item.thumb || '/assets/img/placeholder.png'}" alt="${item.title}">
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-start justify-between gap-3 mb-1">
-                            <h4 class="text-sm font-bold text-white truncate">${item.title}</h4>
-                            <button onclick="removeFromCart(${item.id})" class="cart-remove-btn" aria-label="حذف آیتم">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </div>
-                        <div class="text-brand font-bold text-sm">${item.price.toLocaleString('fa-IR')} ${data.currency}</div>
+                    <div class="cart-item__meta">
+                        <div class="cart-item__title">${item.title}</div>
+                    </div>
+                    <div class="cart-item__price" style="font-weight: 800; color: var(--ds-brand);">
+                        ${item.price.toLocaleString('fa-IR')} ${data.currency}
+                    </div>
+                    <div class="cart-item__actions">
+                        <button onclick="removeFromCart(${item.id})" class="cart-remove-btn" aria-label="حذف آیتم">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
                     </div>
                 </div>
             `).join('');

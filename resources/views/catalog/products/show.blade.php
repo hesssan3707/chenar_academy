@@ -311,11 +311,12 @@
                 </div>
             </div>
 
-            <div class="detail-col">
-                <div class="detail-card panel p-0 bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-                    <div class="p-6 detail-scroll">
-                        @if (($product->type ?? null) === 'video')
-                            @if (($ratingsArePublic ?? false) || ($reviewsArePublic ?? false))
+            @php($showFeedbackCol = in_array((string) ($product->type ?? ''), ['video', 'note'], true) && (($ratingsArePublic ?? false) || ($reviewsArePublic ?? false)))
+            @if ($showFeedbackCol)
+                <div class="detail-col">
+                    <div class="detail-card panel p-0 bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                        <div class="p-6 detail-scroll">
+                            @if (($product->type ?? null) === 'video')
                                 @if (($ratingsArePublic ?? false))
                                     <div class="detail-section">
                                         <div class="detail-section__head">
@@ -418,121 +419,115 @@
                                         </div>
                                     </div>
                                 @endif
-                            @else
-                                <div class="text-muted">این بخش برای این محتوا غیرفعال است.</div>
                             @endif
-                        @endif
-                        @if (($product->type ?? null) === 'note')
-                            @if (($ratingsArePublic ?? false))
-                                <div class="detail-section">
-                                    <div class="detail-section__head">
-                                        <div class="detail-section__title">امتیاز</div>
-                                    </div>
-                                    <div class="detail-section__body">
-                                        @if (isset($avgRating) && $avgRating !== null)
-                                            <div class="flex items-center gap-4 bg-white/5 p-4 rounded-lg border border-white/10">
-                                                <div class="text-3xl font-bold text-brand">{{ number_format((float) $avgRating, 1) }}</div>
-                                                <div class="flex flex-col">
-                                                    <div class="text-yellow-400 text-lg tracking-widest">
-                                                        @php($filledStars = (int) round((float) $avgRating))
-                                                        @for ($i = 1; $i <= 5; $i++)
-                                                            {{ $i <= $filledStars ? '★' : '☆' }}
-                                                        @endfor
-                                                    </div>
-                                                    <div class="text-xs text-muted">از {{ (int) ($ratingCount ?? 0) }} رأی</div>
-                                                </div>
-                                            </div>
-                                        @else
-                                            <div class="text-muted">هنوز امتیازی ثبت نشده است.</div>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endif
-
-                            @if (($reviewsArePublic ?? false))
-                                <div class="detail-section">
-                                    <div class="detail-section__head">
-                                        <div class="detail-section__title">نظرات</div>
-                                    </div>
-                                    <div class="detail-section__body">
-                                        @auth
-                                            @if (($userReview ?? null))
-                                                <div class="detail-section">
-                                                    <div class="detail-section__head">
-                                                        <div class="detail-section__title">نظر شما</div>
-                                                    </div>
-                                                    <div class="detail-section__body text-white/80 text-sm">
-                                                        <div class="mb-2">
-                                                            وضعیت نظر شما: {{ (string) ($userReview->status ?? '') === 'approved' ? 'تایید شده' : ((string) ($userReview->status ?? '') === 'rejected' ? 'رد شده' : 'در انتظار بررسی') }}
+                            @if (($product->type ?? null) === 'note')
+                                @if (($ratingsArePublic ?? false))
+                                    <div class="detail-section">
+                                        <div class="detail-section__head">
+                                            <div class="detail-section__title">امتیاز</div>
+                                        </div>
+                                        <div class="detail-section__body">
+                                            @if (isset($avgRating) && $avgRating !== null)
+                                                <div class="flex items-center gap-4 bg-white/5 p-4 rounded-lg border border-white/10">
+                                                    <div class="text-3xl font-bold text-brand">{{ number_format((float) $avgRating, 1) }}</div>
+                                                    <div class="flex flex-col">
+                                                        <div class="text-yellow-400 text-lg tracking-widest">
+                                                            @php($filledStars = (int) round((float) $avgRating))
+                                                            @for ($i = 1; $i <= 5; $i++)
+                                                                {{ $i <= $filledStars ? '★' : '☆' }}
+                                                            @endfor
                                                         </div>
-                                                        @if (($userReview->body ?? '') !== '')
-                                                            <div>{{ $userReview->body }}</div>
-                                                        @endif
+                                                        <div class="text-xs text-muted">از {{ (int) ($ratingCount ?? 0) }} رأی</div>
                                                     </div>
                                                 </div>
-                                            @elseif (($isPurchased ?? false))
+                                            @else
+                                                <div class="text-muted">هنوز امتیازی ثبت نشده است.</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if (($reviewsArePublic ?? false))
+                                    <div class="detail-section">
+                                        <div class="detail-section__head">
+                                            <div class="detail-section__title">نظرات</div>
+                                        </div>
+                                        <div class="detail-section__body">
+                                            @auth
+                                                @if (($userReview ?? null))
+                                                    <div class="detail-section">
+                                                        <div class="detail-section__head">
+                                                            <div class="detail-section__title">نظر شما</div>
+                                                        </div>
+                                                        <div class="detail-section__body text-white/80 text-sm">
+                                                            <div class="mb-2">
+                                                                وضعیت نظر شما: {{ (string) ($userReview->status ?? '') === 'approved' ? 'تایید شده' : ((string) ($userReview->status ?? '') === 'rejected' ? 'رد شده' : 'در انتظار بررسی') }}
+                                                            </div>
+                                                            @if (($userReview->body ?? '') !== '')
+                                                                <div>{{ $userReview->body }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @elseif (($isPurchased ?? false))
+                                                    <div class="detail-section">
+                                                        <div class="detail-section__head">
+                                                            <div class="detail-section__title">ثبت نظر</div>
+                                                        </div>
+                                                        <div class="detail-section__body">
+                                                            <form method="post" action="{{ route('products.reviews.store', $product->slug) }}">
+                                                                @csrf
+                                                                <input type="hidden" name="redirect_to" value="{{ url()->current() }}">
+
+                                                                <div class="field mb-3">
+                                                                    <label class="field__label">امتیاز</label>
+                                                                    <select name="rating" class="field__input bg-black/20">
+                                                                        @for ($i = 5; $i >= 1; $i--)
+                                                                            <option value="{{ $i }}">{{ $i }} ستاره</option>
+                                                                        @endfor
+                                                                    </select>
+                                                                </div>
+
+                                                                <div class="field mb-3">
+                                                                    <label class="field__label">نظر شما</label>
+                                                                    <textarea name="body" class="field__input bg-black/20 h-24"></textarea>
+                                                                </div>
+
+                                                                <button class="btn btn--primary btn--sm" type="submit">ارسال نظر</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            @endauth
+
+                                            @php($reviews = $reviews ?? collect())
+                                            @if ($reviews->isEmpty())
+                                                <div class="text-muted">اولین نفری باشید که این محصول را بررسی می‌کند.</div>
+                                            @else
                                                 <div class="detail-section">
                                                     <div class="detail-section__head">
-                                                        <div class="detail-section__title">ثبت نظر</div>
+                                                        <div class="detail-section__title">آخرین نظرات</div>
                                                     </div>
                                                     <div class="detail-section__body">
-                                                        <form method="post" action="{{ route('products.reviews.store', $product->slug) }}">
-                                                            @csrf
-                                                            <input type="hidden" name="redirect_to" value="{{ url()->current() }}">
-
-                                                            <div class="field mb-3">
-                                                                <label class="field__label">امتیاز</label>
-                                                                <select name="rating" class="field__input bg-black/20">
-                                                                    @for ($i = 5; $i >= 1; $i--)
-                                                                        <option value="{{ $i }}">{{ $i }} ستاره</option>
-                                                                    @endfor
-                                                                </select>
-                                                            </div>
-
-                                                            <div class="field mb-3">
-                                                                <label class="field__label">نظر شما</label>
-                                                                <textarea name="body" class="field__input bg-black/20 h-24"></textarea>
-                                                            </div>
-
-                                                            <button class="btn btn--primary btn--sm" type="submit">ارسال نظر</button>
-                                                        </form>
+                                                        <div class="stack stack--sm">
+                                                            @foreach ($reviews as $review)
+                                                                @if (($review->body ?? '') !== '')
+                                                                    <div class="p-4 bg-white/5 border border-white/10 rounded-lg text-white/80">
+                                                                        <div>{{ $review->body }}</div>
+                                                                    </div>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
                                                     </div>
                                                 </div>
                                             @endif
-                                        @endauth
-
-                                        @php($reviews = $reviews ?? collect())
-                                        @if ($reviews->isEmpty())
-                                            <div class="text-muted">اولین نفری باشید که این محصول را بررسی می‌کند.</div>
-                                        @else
-                                            <div class="detail-section">
-                                                <div class="detail-section__head">
-                                                    <div class="detail-section__title">آخرین نظرات</div>
-                                                </div>
-                                                <div class="detail-section__body">
-                                                    <div class="stack stack--sm">
-                                                        @foreach ($reviews as $review)
-                                                            @if (($review->body ?? '') !== '')
-                                                                <div class="p-4 bg-white/5 border border-white/10 rounded-lg text-white/80">
-                                                                    <div>{{ $review->body }}</div>
-                                                                </div>
-                                                            @endif
-                                                        @endforeach
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endif
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
                             @endif
-
-                            @if (! ($ratingsArePublic ?? false) && ! ($reviewsArePublic ?? false))
-                                <div class="text-muted">این بخش برای این محتوا غیرفعال است.</div>
-                            @endif
-                        @endif
+                        </div>
                     </div>
                 </div>
-            </div>
+            @endif
         </div>
     </div>
 @endsection

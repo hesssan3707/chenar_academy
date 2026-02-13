@@ -206,6 +206,7 @@ class PanelLibraryAndOrdersTest extends TestCase
         $this->actingAs($user)
             ->get(route('panel.library.show', $product->slug))
             ->assertOk()
+            ->assertDontSee('جزوه‌ها')
             ->assertSee('بخش اول')
             ->assertSee('پاراگراف اول')
             ->assertSee('پاراگراف دوم');
@@ -261,6 +262,7 @@ class PanelLibraryAndOrdersTest extends TestCase
         $this->actingAs($user)
             ->get(route('panel.library.show', $product->slug))
             ->assertOk()
+            ->assertDontSee('ویدیوها و دوره‌ها')
             ->assertSee(route('panel.library.video.stream', ['product' => $product->slug]), false);
 
         $response = $this->actingAs($user)

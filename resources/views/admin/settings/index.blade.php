@@ -12,7 +12,7 @@
                 </div>
             </div>
 
-            <form method="post" action="{{ route('admin.settings.update') }}" class="stack stack--sm">
+            <form method="post" action="{{ route('admin.settings.update') }}" class="stack stack--sm" enctype="multipart/form-data">
                 @csrf
                 @method('put')
 
@@ -30,6 +30,8 @@
                             data-settings-tab="card">کارت‌به‌کارت</button>
                         <button class="settings-tab" type="button" role="tab" aria-selected="false"
                             data-settings-tab="social">شبکه‌های اجتماعی</button>
+                        <button class="settings-tab" type="button" role="tab" aria-selected="false"
+                            data-settings-tab="backgrounds">پس‌زمینه‌ها</button>
                     </div>
                 </div>
 
@@ -44,6 +46,32 @@
                                     @endforeach
                                 </select>
                                 @error('theme')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                            </label>
+
+                            <label class="field">
+                                <span class="field__label">لوگوی سایت</span>
+                                <input type="hidden" name="logo_media_id" value="{{ old('logo_media_id', (string) ($logoMediaId ?? '')) }}">
+                                <div class="field__hint" data-bg-id-text="logo_media_id">
+                                    {{ old('logo_media_id', (string) ($logoMediaId ?? '')) ?: '—' }}
+                                </div>
+                                <input type="file" name="logo_file" accept="image/*">
+                                <div class="field__hint">
+                                    <button class="btn btn--secondary btn--sm" type="button"
+                                        data-open-media-picker="logo_media_id">انتخاب از رسانه‌ها</button>
+                                    <button class="btn btn--ghost btn--sm" type="button"
+                                        data-clear-media-picker="logo_media_id">پاک کردن</button>
+                                </div>
+                                @if (! empty($logoPreviewUrl))
+                                    <div class="field__hint">
+                                        <img src="{{ $logoPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                    </div>
+                                @endif
+                                @error('logo_file')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                                @error('logo_media_id')
                                     <div class="field__error">{{ $message }}</div>
                                 @enderror
                             </label>
@@ -208,6 +236,145 @@
                         </div>
                     </div>
 
+                    <div class="settings-tab-panel" data-settings-panel="backgrounds" hidden>
+                        <div class="grid admin-grid-2 admin-grid-2--flush">
+                            <label class="field">
+                                <span class="field__label">پس‌زمینه پیش‌فرض</span>
+                                <input type="hidden" name="background_default_media_id"
+                                    value="{{ old('background_default_media_id', (string) ($backgroundDefaultMediaId ?? '')) }}">
+                                <div class="field__hint" data-bg-id-text="background_default_media_id">
+                                    {{ old('background_default_media_id', (string) ($backgroundDefaultMediaId ?? '')) ?: '—' }}
+                                </div>
+                                <input type="file" name="background_default_file" accept="image/*">
+                                <div class="field__hint">
+                                    <button class="btn btn--secondary btn--sm" type="button"
+                                        data-open-media-picker="background_default_media_id">انتخاب از رسانه‌ها</button>
+                                    <button class="btn btn--ghost btn--sm" type="button"
+                                        data-clear-media-picker="background_default_media_id">پاک کردن</button>
+                                </div>
+                                @if (! empty($backgroundDefaultPreviewUrl))
+                                    <div class="field__hint">
+                                        <img src="{{ $backgroundDefaultPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                    </div>
+                                @endif
+                                @error('background_default_file')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                                @error('background_default_media_id')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                            </label>
+
+                            <label class="field">
+                                <span class="field__label">پس‌زمینه صفحه خانه</span>
+                                <input type="hidden" name="background_home_media_id"
+                                    value="{{ old('background_home_media_id', (string) ($backgroundHomeMediaId ?? '')) }}">
+                                <div class="field__hint" data-bg-id-text="background_home_media_id">
+                                    {{ old('background_home_media_id', (string) ($backgroundHomeMediaId ?? '')) ?: '—' }}
+                                </div>
+                                <input type="file" name="background_home_file" accept="image/*">
+                                <div class="field__hint">
+                                    <button class="btn btn--secondary btn--sm" type="button"
+                                        data-open-media-picker="background_home_media_id">انتخاب از رسانه‌ها</button>
+                                    <button class="btn btn--ghost btn--sm" type="button"
+                                        data-clear-media-picker="background_home_media_id">پاک کردن</button>
+                                </div>
+                                @if (! empty($backgroundHomePreviewUrl))
+                                    <div class="field__hint">
+                                        <img src="{{ $backgroundHomePreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                    </div>
+                                @endif
+                                @error('background_home_file')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                                @error('background_home_media_id')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                            </label>
+
+                            <label class="field">
+                                <span class="field__label">پس‌زمینه صفحات ویدیو</span>
+                                <input type="hidden" name="background_videos_media_id"
+                                    value="{{ old('background_videos_media_id', (string) ($backgroundVideosMediaId ?? '')) }}">
+                                <div class="field__hint" data-bg-id-text="background_videos_media_id">
+                                    {{ old('background_videos_media_id', (string) ($backgroundVideosMediaId ?? '')) ?: '—' }}
+                                </div>
+                                <input type="file" name="background_videos_file" accept="image/*">
+                                <div class="field__hint">
+                                    <button class="btn btn--secondary btn--sm" type="button"
+                                        data-open-media-picker="background_videos_media_id">انتخاب از رسانه‌ها</button>
+                                    <button class="btn btn--ghost btn--sm" type="button"
+                                        data-clear-media-picker="background_videos_media_id">پاک کردن</button>
+                                </div>
+                                @if (! empty($backgroundVideosPreviewUrl))
+                                    <div class="field__hint">
+                                        <img src="{{ $backgroundVideosPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                    </div>
+                                @endif
+                                @error('background_videos_file')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                                @error('background_videos_media_id')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                            </label>
+
+                            <label class="field">
+                                <span class="field__label">پس‌زمینه صفحات جزوه/پی‌دی‌اف</span>
+                                <input type="hidden" name="background_booklets_media_id"
+                                    value="{{ old('background_booklets_media_id', (string) ($backgroundBookletsMediaId ?? '')) }}">
+                                <div class="field__hint" data-bg-id-text="background_booklets_media_id">
+                                    {{ old('background_booklets_media_id', (string) ($backgroundBookletsMediaId ?? '')) ?: '—' }}
+                                </div>
+                                <input type="file" name="background_booklets_file" accept="image/*">
+                                <div class="field__hint">
+                                    <button class="btn btn--secondary btn--sm" type="button"
+                                        data-open-media-picker="background_booklets_media_id">انتخاب از رسانه‌ها</button>
+                                    <button class="btn btn--ghost btn--sm" type="button"
+                                        data-clear-media-picker="background_booklets_media_id">پاک کردن</button>
+                                </div>
+                                @if (! empty($backgroundBookletsPreviewUrl))
+                                    <div class="field__hint">
+                                        <img src="{{ $backgroundBookletsPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                    </div>
+                                @endif
+                                @error('background_booklets_file')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                                @error('background_booklets_media_id')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                            </label>
+
+                            <label class="field">
+                                <span class="field__label">پس‌زمینه سایر صفحات</span>
+                                <input type="hidden" name="background_other_media_id"
+                                    value="{{ old('background_other_media_id', (string) ($backgroundOtherMediaId ?? '')) }}">
+                                <div class="field__hint" data-bg-id-text="background_other_media_id">
+                                    {{ old('background_other_media_id', (string) ($backgroundOtherMediaId ?? '')) ?: '—' }}
+                                </div>
+                                <input type="file" name="background_other_file" accept="image/*">
+                                <div class="field__hint">
+                                    <button class="btn btn--secondary btn--sm" type="button"
+                                        data-open-media-picker="background_other_media_id">انتخاب از رسانه‌ها</button>
+                                    <button class="btn btn--ghost btn--sm" type="button"
+                                        data-clear-media-picker="background_other_media_id">پاک کردن</button>
+                                </div>
+                                @if (! empty($backgroundOtherPreviewUrl))
+                                    <div class="field__hint">
+                                        <img src="{{ $backgroundOtherPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                    </div>
+                                @endif
+                                @error('background_other_file')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                                @error('background_other_media_id')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="form-actions">
                         <button class="btn btn--primary" type="submit">ذخیره</button>
                     </div>
@@ -215,6 +382,17 @@
             </form>
         </div>
     </section>
+
+    <div class="admin-modal" data-media-picker-modal data-media-index-url="{{ route('admin.media.index') }}" hidden>
+        <div class="admin-modal__backdrop" data-media-picker-close></div>
+        <div class="admin-modal__panel">
+            <div class="admin-modal__header">
+                <div class="admin-modal__title">انتخاب از رسانه‌ها</div>
+                <button class="btn btn--ghost btn--sm" type="button" data-media-picker-close>بستن</button>
+            </div>
+            <iframe class="admin-modal__frame" data-media-picker-frame title="Media Picker"></iframe>
+        </div>
+    </div>
 
     <script>
         (function() {
@@ -252,27 +430,91 @@
             });
 
             const firstErrorPanel = panels.find((panel) => panel.querySelector('.field__error'));
+            let initialKey = null;
             if (firstErrorPanel) {
-                const key = firstErrorPanel.getAttribute('data-settings-panel');
-                if (key) {
-                    activate(key);
-                    return;
-                }
+                initialKey = firstErrorPanel.getAttribute('data-settings-panel');
             }
 
-            try {
-                const saved = window.localStorage.getItem('admin_settings_tab');
-                if (saved) {
-                    const exists = tabs.some((t) => t.getAttribute('data-settings-tab') === saved);
-                    if (exists) {
-                        activate(saved);
-                        return;
+            if (!initialKey) {
+                try {
+                    const saved = window.localStorage.getItem('admin_settings_tab');
+                    if (saved) {
+                        const exists = tabs.some((t) => t.getAttribute('data-settings-tab') === saved);
+                        if (exists) {
+                            initialKey = saved;
+                        }
                     }
-                }
-            } catch (e) {}
+                } catch (e) {}
+            }
 
-            const firstKey = tabs[0] ? tabs[0].getAttribute('data-settings-tab') : null;
-            if (firstKey) activate(firstKey);
+            if (!initialKey) {
+                initialKey = tabs[0] ? tabs[0].getAttribute('data-settings-tab') : null;
+            }
+
+            if (initialKey) {
+                activate(initialKey);
+            }
+
+            const modal = document.querySelector('[data-media-picker-modal]');
+            const frame = modal ? modal.querySelector('[data-media-picker-frame]') : null;
+            const mediaIndexUrl = modal instanceof HTMLElement ? (modal.getAttribute('data-media-index-url') || '') : '';
+
+            const closeModal = () => {
+                if (!modal) return;
+                modal.hidden = true;
+                document.body.classList.remove('has-modal');
+                if (frame instanceof HTMLIFrameElement) {
+                    frame.src = 'about:blank';
+                }
+            };
+
+            const openModal = (fieldName) => {
+                if (!modal || !(frame instanceof HTMLIFrameElement)) return;
+                const url = mediaIndexUrl + '?picker=1&field=' + encodeURIComponent(String(fieldName));
+                frame.src = url;
+                modal.hidden = false;
+                document.body.classList.add('has-modal');
+            };
+
+            const setFieldValue = (fieldName, value) => {
+                const input = document.querySelector('input[name="' + String(fieldName) + '"]');
+                if (!(input instanceof HTMLInputElement)) return;
+                input.value = value ? String(value) : '';
+
+                const text = document.querySelector('[data-bg-id-text="' + String(fieldName) + '"]');
+                if (text) {
+                    text.textContent = input.value ? input.value : '—';
+                }
+            };
+
+            document.querySelectorAll('[data-open-media-picker]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const field = btn.getAttribute('data-open-media-picker');
+                    if (field) openModal(field);
+                });
+            });
+
+            document.querySelectorAll('[data-clear-media-picker]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const field = btn.getAttribute('data-clear-media-picker');
+                    if (field) setFieldValue(field, '');
+                });
+            });
+
+            if (modal) {
+                modal.querySelectorAll('[data-media-picker-close]').forEach((btn) => {
+                    btn.addEventListener('click', closeModal);
+                });
+            }
+
+            window.addEventListener('message', (event) => {
+                if (event.origin !== window.location.origin) return;
+                const data = event.data;
+                if (!data || data.type !== 'admin-media-picked') return;
+                if (!data.field || !data.mediaId) return;
+                setFieldValue(data.field, data.mediaId);
+                closeModal();
+            });
         })();
     </script>
 @endsection

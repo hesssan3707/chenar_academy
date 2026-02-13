@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Role;
+use App\Models\Media;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AccessControlTest extends TestCase
@@ -235,6 +238,289 @@ class AccessControlTest extends TestCase
             ->assertSee('https://instagram.com/chenar_academy', false)
             ->assertSee('https://t.me/chenar_academy', false)
             ->assertSee('https://youtube.com/@chenaracademy', false);
+    }
+
+    public function test_admin_can_update_spa_background_settings_and_spa_layout_receives_them(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $home = Media::query()->create([
+            'uploaded_by_user_id' => $user->id,
+            'disk' => 'public',
+            'path' => 'media/home-bg.png',
+            'original_name' => 'home-bg.png',
+            'mime_type' => 'image/png',
+            'size' => 100,
+            'sha1' => null,
+            'width' => 10,
+            'height' => 10,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        $videos = Media::query()->create([
+            'uploaded_by_user_id' => $user->id,
+            'disk' => 'public',
+            'path' => 'media/videos-bg.png',
+            'original_name' => 'videos-bg.png',
+            'mime_type' => 'image/png',
+            'size' => 100,
+            'sha1' => null,
+            'width' => 10,
+            'height' => 10,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        $booklets = Media::query()->create([
+            'uploaded_by_user_id' => $user->id,
+            'disk' => 'public',
+            'path' => 'media/booklets-bg.png',
+            'original_name' => 'booklets-bg.png',
+            'mime_type' => 'image/png',
+            'size' => 100,
+            'sha1' => null,
+            'width' => 10,
+            'height' => 10,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        $other = Media::query()->create([
+            'uploaded_by_user_id' => $user->id,
+            'disk' => 'public',
+            'path' => 'media/other-bg.png',
+            'original_name' => 'other-bg.png',
+            'mime_type' => 'image/png',
+            'size' => 100,
+            'sha1' => null,
+            'width' => 10,
+            'height' => 10,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user, 'admin')
+            ->put(route('admin.settings.update'), [
+                'theme' => 'default',
+                'background_home_media_id' => $home->id,
+                'background_videos_media_id' => $videos->id,
+                'background_booklets_media_id' => $booklets->id,
+                'background_other_media_id' => $other->id,
+            ])->assertRedirect(route('admin.settings.index'));
+
+        $setting = Setting::query()->where('key', 'ui.backgrounds')->first();
+        $this->assertNotNull($setting);
+        $this->assertSame('ui', $setting->group);
+        $this->assertIsArray($setting->value);
+        $this->assertSame($home->id, $setting->value['home_media_id']);
+        $this->assertSame($videos->id, $setting->value['videos_media_id']);
+        $this->assertSame($booklets->id, $setting->value['booklets_media_id']);
+        $this->assertSame($other->id, $setting->value['other_media_id']);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('data-bg-home="'.route('media.stream', $home->id).'"', false)
+            ->assertSee('data-bg-videos="'.route('media.stream', $videos->id).'"', false)
+            ->assertSee('data-bg-booklets="'.route('media.stream', $booklets->id).'"', false)
+            ->assertSee('data-bg-other="'.route('media.stream', $other->id).'"', false)
+            ->assertSee('data-bg-group="home"', false);
+    }
+
+    public function test_spa_backgrounds_use_default_when_group_background_is_not_set(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $default = Media::query()->create([
+            'uploaded_by_user_id' => $user->id,
+            'disk' => 'public',
+            'path' => 'media/default-bg.png',
+            'original_name' => 'default-bg.png',
+            'mime_type' => 'image/png',
+            'size' => 100,
+            'sha1' => null,
+            'width' => 10,
+            'height' => 10,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user, 'admin')
+            ->put(route('admin.settings.update'), [
+                'theme' => 'default',
+                'background_default_media_id' => $default->id,
+                'background_home_media_id' => null,
+                'background_videos_media_id' => null,
+                'background_booklets_media_id' => null,
+                'background_other_media_id' => null,
+            ])->assertRedirect(route('admin.settings.index'));
+
+        $setting = Setting::query()->where('key', 'ui.backgrounds')->first();
+        $this->assertNotNull($setting);
+        $this->assertIsArray($setting->value);
+        $this->assertSame($default->id, $setting->value['default_media_id']);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('data-bg-home="'.route('media.stream', $default->id).'"', false)
+            ->assertSee('data-bg-videos="'.route('media.stream', $default->id).'"', false)
+            ->assertSee('data-bg-booklets="'.route('media.stream', $default->id).'"', false)
+            ->assertSee('data-bg-other="'.route('media.stream', $default->id).'"', false);
+    }
+
+    public function test_admin_can_upload_default_background_image_in_settings(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $file = UploadedFile::fake()->image('settings-default-bg.jpg', 1200, 675);
+
+        $this->actingAs($user, 'admin')
+            ->post(route('admin.settings.update'), [
+                '_method' => 'put',
+                'theme' => 'default',
+                'background_default_file' => $file,
+            ])->assertRedirect(route('admin.settings.index'));
+
+        $mediaId = (int) Media::query()->where('original_name', 'settings-default-bg.jpg')->value('id');
+        $this->assertGreaterThan(0, $mediaId);
+
+        $media = Media::query()->findOrFail($mediaId);
+        $this->assertSame('public', $media->disk);
+        $this->assertSame('settings-default-bg.jpg', $media->original_name);
+        $this->assertSame('image/jpeg', $media->mime_type);
+        $this->assertTrue(Storage::disk('public')->exists($media->path));
+
+        $setting = Setting::query()->where('key', 'ui.backgrounds')->first();
+        $this->assertNotNull($setting);
+        $this->assertIsArray($setting->value);
+        $this->assertSame($mediaId, $setting->value['default_media_id']);
+    }
+
+    public function test_admin_can_set_logo_in_settings_and_spa_loader_uses_it(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $logo = Media::query()->create([
+            'uploaded_by_user_id' => $user->id,
+            'disk' => 'public',
+            'path' => 'media/logo.png',
+            'original_name' => 'logo.png',
+            'mime_type' => 'image/png',
+            'size' => 100,
+            'sha1' => null,
+            'width' => 10,
+            'height' => 10,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user, 'admin')
+            ->put(route('admin.settings.update'), [
+                'theme' => 'default',
+                'logo_media_id' => $logo->id,
+            ])->assertRedirect(route('admin.settings.index'));
+
+        $setting = Setting::query()->where('key', 'ui.logo_media_id')->first();
+        $this->assertNotNull($setting);
+        $this->assertSame('ui', $setting->group);
+        $this->assertSame($logo->id, $setting->value);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('class="site-loader__logo"', false)
+            ->assertSee('src="'.route('media.stream', $logo->id).'"', false);
+    }
+
+    public function test_admin_can_upload_logo_in_settings(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $file = UploadedFile::fake()->image('site-logo.jpg', 600, 200);
+
+        $this->actingAs($user, 'admin')
+            ->post(route('admin.settings.update'), [
+                '_method' => 'put',
+                'theme' => 'default',
+                'logo_file' => $file,
+            ])->assertRedirect(route('admin.settings.index'));
+
+        $mediaId = (int) Media::query()->where('original_name', 'site-logo.jpg')->value('id');
+        $this->assertGreaterThan(0, $mediaId);
+
+        $media = Media::query()->findOrFail($mediaId);
+        $this->assertSame('public', $media->disk);
+        $this->assertSame('site-logo.jpg', $media->original_name);
+        $this->assertSame('image/jpeg', $media->mime_type);
+        $this->assertTrue(Storage::disk('public')->exists($media->path));
+
+        $setting = Setting::query()->where('key', 'ui.logo_media_id')->first();
+        $this->assertNotNull($setting);
+        $this->assertSame($mediaId, $setting->value);
+    }
+
+    public function test_admin_cannot_set_spa_background_to_non_image_media(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $notImage = Media::query()->create([
+            'uploaded_by_user_id' => $user->id,
+            'disk' => 'public',
+            'path' => 'media/file.mp4',
+            'original_name' => 'file.mp4',
+            'mime_type' => 'video/mp4',
+            'size' => 100,
+            'sha1' => null,
+            'width' => null,
+            'height' => null,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user, 'admin')
+            ->put(route('admin.settings.update'), [
+                'theme' => 'default',
+                'background_home_media_id' => $notImage->id,
+            ])->assertSessionHasErrors(['background_home_media_id']);
     }
 
     public function test_admin_can_access_user_panel_routes(): void

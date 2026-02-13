@@ -26,8 +26,7 @@
                             
                             <h3 class="font-bold text-lg mb-2 truncate">{{ $post->title }}</h3>
 
-                            <div class="mt-auto flex justify-between items-center">
-                                <span class="text-xs text-muted">{{ $post->published_at ? jdate($post->published_at)->format('Y/m/d') : '' }}</span>
+                            <div class="mt-auto flex justify-end items-center">
                                 <span class="btn btn--ghost btn--sm">ادامه مطلب</span>
                             </div>
                         </a>

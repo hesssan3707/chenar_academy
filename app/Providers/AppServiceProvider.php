@@ -5,9 +5,11 @@ namespace App\Providers;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Category;
+use App\Models\Media;
 use App\Models\Post;
 use App\Models\Product;
 use App\Models\ProductAccess;
+use App\Models\Setting;
 use App\Models\SocialLink;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
@@ -209,6 +211,113 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $view->with('activeSurvey', $survey);
+        });
+
+        View::composer('layouts.spa', function ($view) {
+            $backgrounds = [
+                'home' => '',
+                'videos' => '',
+                'booklets' => '',
+                'other' => '',
+            ];
+            $logoUrl = '';
+
+            if (! Schema::hasTable('settings')) {
+                $view->with('spaBackgrounds', $backgrounds);
+                $view->with('spaLogoUrl', $logoUrl);
+
+                return;
+            }
+
+            $logoSetting = Setting::query()->where('key', 'ui.logo_media_id')->first();
+            $logoId = $logoSetting?->value;
+            $logoMediaId = is_numeric($logoId) ? (int) $logoId : null;
+
+            $setting = Setting::query()->where('key', 'ui.backgrounds')->first();
+            $value = $setting?->value;
+
+            if (! is_array($value)) {
+                $view->with('spaBackgrounds', $backgrounds);
+                if ($logoMediaId && $logoMediaId > 0 && Schema::hasTable('media')) {
+                    $logoMedia = Media::query()->where('id', $logoMediaId)->first();
+                    if ($logoMedia) {
+                        $disk = (string) ($logoMedia->disk ?? '');
+                        $mime = strtolower((string) ($logoMedia->mime_type ?? ''));
+                        $path = (string) ($logoMedia->path ?? '');
+                        if ($disk === 'public' && $path !== '' && str_starts_with($mime, 'image/')) {
+                            $logoUrl = route('media.stream', $logoMedia->id);
+                        }
+                    }
+                }
+                $view->with('spaLogoUrl', $logoUrl);
+
+                return;
+            }
+
+            $map = [
+                'default' => isset($value['default_media_id']) && is_numeric($value['default_media_id']) ? (int) $value['default_media_id'] : null,
+                'home' => isset($value['home_media_id']) && is_numeric($value['home_media_id']) ? (int) $value['home_media_id'] : null,
+                'videos' => isset($value['videos_media_id']) && is_numeric($value['videos_media_id']) ? (int) $value['videos_media_id'] : null,
+                'booklets' => isset($value['booklets_media_id']) && is_numeric($value['booklets_media_id']) ? (int) $value['booklets_media_id'] : null,
+                'other' => isset($value['other_media_id']) && is_numeric($value['other_media_id']) ? (int) $value['other_media_id'] : null,
+            ];
+
+            $ids = collect($map)->filter(fn ($id) => is_int($id) && $id > 0)->unique()->values();
+            if ($logoMediaId && $logoMediaId > 0) {
+                $ids = $ids->push($logoMediaId)->unique()->values();
+            }
+
+            if ($ids->isEmpty() || ! Schema::hasTable('media')) {
+                $view->with('spaBackgrounds', $backgrounds);
+                $view->with('spaLogoUrl', $logoUrl);
+
+                return;
+            }
+
+            $mediaById = Media::query()->whereIn('id', $ids)->get()->keyBy('id');
+
+            if ($logoMediaId && $logoMediaId > 0) {
+                $logoMedia = $mediaById->get($logoMediaId);
+                if ($logoMedia) {
+                    $disk = (string) ($logoMedia->disk ?? '');
+                    $mime = strtolower((string) ($logoMedia->mime_type ?? ''));
+                    $path = (string) ($logoMedia->path ?? '');
+                    if ($disk === 'public' && $path !== '' && str_starts_with($mime, 'image/')) {
+                        $logoUrl = route('media.stream', $logoMedia->id);
+                    }
+                }
+            }
+
+            foreach ($map as $group => $mediaId) {
+                if (! $mediaId || $mediaId <= 0) {
+                    continue;
+                }
+
+                $media = $mediaById->get($mediaId);
+                if (! $media) {
+                    continue;
+                }
+
+                $disk = (string) ($media->disk ?? '');
+                $mime = strtolower((string) ($media->mime_type ?? ''));
+                $path = (string) ($media->path ?? '');
+                if ($disk !== 'public' || $path === '' || ! str_starts_with($mime, 'image/')) {
+                    continue;
+                }
+
+                if ($group === 'default') {
+                    $backgrounds['home'] = $backgrounds['home'] ?: route('media.stream', $media->id);
+                    $backgrounds['videos'] = $backgrounds['videos'] ?: route('media.stream', $media->id);
+                    $backgrounds['booklets'] = $backgrounds['booklets'] ?: route('media.stream', $media->id);
+                    $backgrounds['other'] = $backgrounds['other'] ?: route('media.stream', $media->id);
+                    continue;
+                }
+
+                $backgrounds[$group] = route('media.stream', $media->id);
+            }
+
+            $view->with('spaBackgrounds', $backgrounds);
+            $view->with('spaLogoUrl', $logoUrl);
         });
     }
 }

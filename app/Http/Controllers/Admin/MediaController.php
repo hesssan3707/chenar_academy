@@ -12,9 +12,9 @@ use Illuminate\View\View;
 
 class MediaController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $mediaItems = Media::query()->orderByDesc('id')->paginate(40);
+        $mediaItems = Media::query()->orderByDesc('id')->paginate(40)->withQueryString();
 
         return view('admin.media.index', [
             'title' => 'رسانه‌ها',
