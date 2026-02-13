@@ -24,7 +24,7 @@
                                 <img src="{{ $coverUrl }}" alt="{{ $post->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                             </div>
                             
-                            <h3 class="font-bold text-lg mb-2 truncate">{{ $post->title }}</h3>
+                            <h3 class="card-product__title text-white mb-2 truncate">{{ $post->title }}</h3>
 
                             <div class="mt-auto flex justify-end items-center">
                                 <span class="btn btn--ghost btn--sm">ادامه مطلب</span>

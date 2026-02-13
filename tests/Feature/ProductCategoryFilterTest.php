@@ -11,6 +11,75 @@ class ProductCategoryFilterTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_products_index_sets_background_group_for_video_type(): void
+    {
+        Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو تست',
+            'slug' => 'video-test',
+            'status' => 'published',
+            'base_price' => 10000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $this->get(route('products.index', ['type' => 'video']))
+            ->assertOk()
+            ->assertViewHas('spaPageBackgroundGroup', 'videos');
+    }
+
+    public function test_products_index_sets_background_group_for_note_type(): void
+    {
+        Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه تست',
+            'slug' => 'note-test',
+            'status' => 'published',
+            'base_price' => 10000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $this->get(route('products.index', ['type' => 'note']))
+            ->assertOk()
+            ->assertViewHas('spaPageBackgroundGroup', 'booklets');
+    }
+
+    public function test_products_show_sets_background_group_by_product_type(): void
+    {
+        $video = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو تست',
+            'slug' => 'video-bg-test',
+            'status' => 'published',
+            'base_price' => 10000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $note = Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه تست',
+            'slug' => 'note-bg-test',
+            'status' => 'published',
+            'base_price' => 10000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $this->get(route('products.show', $video->slug))
+            ->assertOk()
+            ->assertViewHas('spaPageBackgroundGroup', 'videos');
+
+        $this->get(route('products.show', $note->slug))
+            ->assertOk()
+            ->assertViewHas('spaPageBackgroundGroup', 'booklets');
+    }
+
     public function test_booklets_page_shows_only_categories_until_category_selected(): void
     {
         $institution = Category::query()->create([

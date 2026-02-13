@@ -1,4 +1,4 @@
-<aside class="user-sidebar">
+<aside class="user-sidebar" id="panel-sidebar" data-panel-sidebar>
     <div class="stack stack--sm">
         <div class="text-center mb-4 pb-4 border-b border-gray-700">
             <div class="avatar avatar--xl mb-2 mx-auto" style="background: var(--ds-brand); color: white; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 24px;">

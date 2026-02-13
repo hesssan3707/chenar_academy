@@ -64,7 +64,7 @@
                                 <div class="h-scroll-container">
                                     @php($placeholderThumb = asset('images/default_image.webp'))
                                     @foreach ($booklets as $booklet)
-                                        <a href="{{ route('products.show', $booklet->slug) }}" class="card-product" style="min-width: 260px;">
+                                        <a href="{{ route('products.show', $booklet->slug) }}" class="card-product">
                                             @php($thumbUrl = ($booklet->thumbnailMedia?->disk ?? null) === 'public' && ($booklet->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($booklet->thumbnailMedia->path) : $placeholderThumb)
                                             <div class="spa-cover mb-4 group">
                                                 <img src="{{ $thumbUrl }}" alt="{{ $booklet->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">

@@ -100,36 +100,135 @@ function normalizeAppPathname(pathname) {
     return path;
 }
 
-function updateSpaBackground() {
-    const bg = document.getElementById('spa-bg');
-    if (!(bg instanceof HTMLElement)) {
+function getSpaBgEl() {
+    const el = document.getElementById('spa-bg');
+    return el instanceof HTMLElement ? el : null;
+}
+
+function getSpaBgLayers(bgEl) {
+    const a = bgEl.querySelector('[data-bg-layer="a"]');
+    const b = bgEl.querySelector('[data-bg-layer="b"]');
+    return {
+        a: a instanceof HTMLElement ? a : null,
+        b: b instanceof HTMLElement ? b : null,
+    };
+}
+
+function buildSpaBgCss(url) {
+    if (typeof url !== 'string' || url.trim() === '') {
+        return '';
+    }
+    const safeUrl = url.replace(/"/g, '%22');
+    return `linear-gradient(180deg, rgba(8, 12, 22, 0.55), rgba(8, 12, 22, 0.82)), url("${safeUrl}")`;
+}
+
+function getSpaBgUrlByGroup(bgEl, group) {
+    if (group === 'home') return bgEl.dataset.bgHome || '';
+    if (group === 'videos') return bgEl.dataset.bgVideos || '';
+    if (group === 'booklets') return bgEl.dataset.bgBooklets || '';
+    return bgEl.dataset.bgOther || '';
+}
+
+function preloadSpaBgUrl(url) {
+    if (typeof url !== 'string' || url.trim() === '') {
+        return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+        const img = new Image();
+        const done = () => resolve();
+        img.onload = done;
+        img.onerror = done;
+        img.src = url;
+        if (img.complete) {
+            resolve();
+        }
+    });
+}
+
+function getSpaBgGroupFromUrlString(urlString) {
+    let urlObj;
+    try {
+        urlObj = new URL(urlString, window.location.origin);
+    } catch (e) {
+        return '';
+    }
+
+    const pathname = normalizeAppPathname(urlObj.pathname || '');
+    const cleanPath = (pathname || '/').replace(/\/$/, '') || '/';
+    const typeParam = (urlObj.searchParams.get('type') || '').trim().toLowerCase();
+
+    if (cleanPath === '/') return 'home';
+    if (cleanPath.startsWith('/videos')) return 'videos';
+    if (cleanPath.startsWith('/booklets') || cleanPath.startsWith('/notes')) return 'booklets';
+    if (cleanPath.startsWith('/products') && typeParam) {
+        if (typeParam === 'video') return 'videos';
+        if (typeParam === 'note') return 'booklets';
+    }
+    return 'other';
+}
+
+function setSpaBackgroundGroup(group, { direction = 'forward', animate = true } = {}) {
+    const bg = getSpaBgEl();
+    if (!bg) return;
+
+    const normalizedGroup = typeof group === 'string' && group.trim() !== '' ? group.trim() : 'other';
+    const currentGroup = bg.dataset.activeGroup || '';
+    if (currentGroup === normalizedGroup) return;
+
+    const layers = getSpaBgLayers(bg);
+    if (!layers.a || !layers.b) return;
+
+    const activeLayerKey = bg.dataset.activeLayer === 'b' ? 'b' : 'a';
+    const nextLayerKey = activeLayerKey === 'a' ? 'b' : 'a';
+    const activeLayer = layers[activeLayerKey];
+    const nextLayer = layers[nextLayerKey];
+
+    const url = getSpaBgUrlByGroup(bg, normalizedGroup);
+    nextLayer.style.backgroundImage = buildSpaBgCss(url);
+
+    const enterClass = direction === 'forward' ? 'is-enter-from-left' : 'is-enter-from-right';
+    const leaveClass = direction === 'forward' ? 'is-leave-to-right' : 'is-leave-to-left';
+
+    activeLayer.classList.remove('is-enter-from-left', 'is-enter-from-right', 'is-leave-to-left', 'is-leave-to-right');
+    nextLayer.classList.remove('is-enter-from-left', 'is-enter-from-right', 'is-leave-to-left', 'is-leave-to-right');
+
+    if (!activeLayer.classList.contains('is-visible')) {
+        activeLayer.classList.add('is-visible');
+    }
+
+    if (!animate) {
+        nextLayer.classList.add('is-visible');
+        activeLayer.classList.remove('is-visible');
+        bg.dataset.activeLayer = nextLayerKey;
+        bg.dataset.activeGroup = normalizedGroup;
         return;
     }
 
-    const page = document.querySelector('#spa-content .spa-page');
+    nextLayer.classList.add('is-visible');
+    nextLayer.classList.add(enterClass);
+    activeLayer.classList.add(leaveClass);
+
+    nextLayer.offsetHeight;
+
+    requestAnimationFrame(() => {
+        nextLayer.classList.remove(enterClass);
+        activeLayer.classList.remove('is-visible');
+    });
+
+    setTimeout(() => {
+        activeLayer.classList.remove(leaveClass);
+        nextLayer.classList.remove('is-enter-from-left', 'is-enter-from-right', 'is-leave-to-left', 'is-leave-to-right');
+        bg.dataset.activeLayer = nextLayerKey;
+        bg.dataset.activeGroup = normalizedGroup;
+    }, 420);
+}
+
+function updateSpaBackground() {
+    const page = document.querySelector('#spa-content .spa-page[data-bg-group]');
     const groupFromDom = page instanceof HTMLElement ? (page.dataset.bgGroup || '') : '';
-
-    const normalizedPath = normalizeAppPathname(window.location.pathname || '');
-    const cleanPath = (normalizedPath || '/').replace(/\/$/, '') || '/';
-
-    const group = groupFromDom !== ''
-        ? groupFromDom
-        : (cleanPath === '/'
-            ? 'home'
-            : (cleanPath.startsWith('/videos') ? 'videos' : (cleanPath.startsWith('/booklets') || cleanPath.startsWith('/notes') ? 'booklets' : 'other')));
-
-    const url = (() => {
-        if (group === 'home') return bg.dataset.bgHome || '';
-        if (group === 'videos') return bg.dataset.bgVideos || '';
-        if (group === 'booklets') return bg.dataset.bgBooklets || '';
-        return bg.dataset.bgOther || '';
-    })();
-
-    if (typeof url === 'string' && url.trim() !== '') {
-        bg.style.backgroundImage = `linear-gradient(180deg, rgba(8, 12, 22, 0.55), rgba(8, 12, 22, 0.82)), url("${url}")`;
-    } else {
-        bg.style.backgroundImage = '';
-    }
+    const group = groupFromDom !== '' ? groupFromDom : getSpaBgGroupFromUrlString(window.location.href);
+    setSpaBackgroundGroup(group, { animate: false });
 }
 
 function isPanelRoutePath(pathname) {
@@ -327,6 +426,22 @@ async function loadPage(url, direction = 'forward', mode = 'auto') {
 
         if (newTitle) document.title = newTitle.innerText;
 
+        const newPageForBg = newContent.firstElementChild;
+        const nextGroupFromDom = newPageForBg instanceof HTMLElement ? (newPageForBg.dataset.bgGroup || '') : '';
+        const nextBgGroup = nextGroupFromDom !== '' ? nextGroupFromDom : getSpaBgGroupFromUrlString(url);
+
+        const bgEl = getSpaBgEl();
+        if (bgEl) {
+            const nextUrl = getSpaBgUrlByGroup(bgEl, nextBgGroup);
+            try {
+                await Promise.race([
+                    preloadSpaBgUrl(nextUrl),
+                    new Promise((resolve) => setTimeout(resolve, 900)),
+                ]);
+            } catch (e) {
+            }
+        }
+
         const nextPanelShell = newContent.querySelector('[data-panel-shell]');
         const shouldSwapPanelMain = mode === 'panel-main' || (mode === 'auto' && currentPanelShell && nextPanelShell);
 
@@ -390,6 +505,8 @@ async function loadPage(url, direction = 'forward', mode = 'auto') {
         // 3. Insert new content
         const newPage = newContent.firstElementChild; 
         if (newPage) {
+            setSpaBackgroundGroup(nextBgGroup, { direction, animate: true });
+
             newPage.classList.add('page-enter-active');
             newPage.classList.add(direction === 'forward' ? 'slide-enter-from-left' : 'slide-enter-from-right');
             
@@ -443,6 +560,7 @@ function setupCurrentPage() {
     // Highlight active nav item
     updateActiveNav(window.location.href);
     updatePanelNav(window.location.href);
+    initPanelSidebarUi();
     updateSpaBackground();
 
     // Intercept Add to Cart forms
@@ -598,6 +716,79 @@ function updatePanelNav(url) {
             link.removeAttribute('aria-current');
         }
     });
+}
+
+let panelSidebarUiCleanup = null;
+
+function initPanelSidebarUi() {
+    if (typeof panelSidebarUiCleanup === 'function') {
+        panelSidebarUiCleanup();
+        panelSidebarUiCleanup = null;
+    }
+
+    const panelShell = document.querySelector('[data-panel-shell]');
+    if (!panelShell) return;
+
+    const sidebar = document.querySelector('[data-panel-sidebar]');
+    if (!sidebar) return;
+
+    const body = document.body;
+
+    const toggleButton = document.createElement('button');
+    toggleButton.type = 'button';
+    toggleButton.className = 'panel-menu-toggle';
+    toggleButton.setAttribute('aria-label', 'منوی پنل');
+    toggleButton.setAttribute('aria-controls', 'panel-sidebar');
+    toggleButton.setAttribute('aria-expanded', 'false');
+    toggleButton.innerHTML = `
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 6h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 18h16"></path>
+        </svg>
+    `.trim();
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'panel-sidebar-backdrop';
+
+    const setOpen = (isOpen) => {
+        body.classList.toggle('panel-sidebar-open', isOpen);
+        toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    };
+
+    const onToggleClick = () => {
+        setOpen(!body.classList.contains('panel-sidebar-open'));
+    };
+
+    const onBackdropClick = () => setOpen(false);
+
+    const onKeyDown = (e) => {
+        if (e.key === 'Escape') setOpen(false);
+    };
+
+    const onDocClickCapture = (e) => {
+        const link = e.target?.closest?.('a.panel-nav-link');
+        if (!link) return;
+        setOpen(false);
+    };
+
+    toggleButton.addEventListener('click', onToggleClick);
+    backdrop.addEventListener('click', onBackdropClick);
+    window.addEventListener('keydown', onKeyDown);
+    document.addEventListener('click', onDocClickCapture, true);
+
+    body.appendChild(backdrop);
+    body.appendChild(toggleButton);
+
+    panelSidebarUiCleanup = () => {
+        setOpen(false);
+        toggleButton.removeEventListener('click', onToggleClick);
+        backdrop.removeEventListener('click', onBackdropClick);
+        window.removeEventListener('keydown', onKeyDown);
+        document.removeEventListener('click', onDocClickCapture, true);
+        toggleButton.remove();
+        backdrop.remove();
+    };
 }
 
 // Global helpers for modals

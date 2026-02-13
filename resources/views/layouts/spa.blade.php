@@ -21,7 +21,10 @@
         data-bg-home="{{ (string) ($spaBackgrounds['home'] ?? '') }}"
         data-bg-videos="{{ (string) ($spaBackgrounds['videos'] ?? '') }}"
         data-bg-booklets="{{ (string) ($spaBackgrounds['booklets'] ?? '') }}"
-        data-bg-other="{{ (string) ($spaBackgrounds['other'] ?? '') }}"></div>
+        data-bg-other="{{ (string) ($spaBackgrounds['other'] ?? '') }}">
+        <div class="spa-background__layer" data-bg-layer="a"></div>
+        <div class="spa-background__layer" data-bg-layer="b"></div>
+    </div>
 
     <div class="site-loader" id="site-loader" role="status" aria-live="polite" aria-label="در حال بارگذاری" style="position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(8,12,22,.92);backdrop-filter:blur(10px);">
         <div class="site-loader__inner" style="width:min(520px,92vw);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;">

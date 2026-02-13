@@ -161,6 +161,7 @@ class ProductController extends Controller
                 'activeInstitution' => $activeInstitution,
                 'activeCategory' => $activeCategory,
                 'purchasedProductIds' => $purchasedProductIds,
+                'spaPageBackgroundGroup' => $type === 'video' ? 'videos' : ($type === 'note' ? 'booklets' : 'other'),
             ]);
         }
 
@@ -208,6 +209,7 @@ class ProductController extends Controller
             'activeInstitution' => $activeInstitution,
             'activeCategory' => $activeCategory,
             'purchasedProductIds' => $purchasedProductIds,
+            'spaPageBackgroundGroup' => $type === 'video' ? 'videos' : ($type === 'note' ? 'booklets' : 'other'),
         ]);
     }
 
@@ -275,6 +277,7 @@ class ProductController extends Controller
             'reviews' => $reviews,
             'userReview' => $userReview,
             'reviewsRequireApproval' => $reviewsRequireApproval,
+            'spaPageBackgroundGroup' => $product->type === 'video' ? 'videos' : ($product->type === 'note' ? 'booklets' : 'other'),
         ]);
     }
 
