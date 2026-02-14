@@ -136,7 +136,7 @@ body.spa-body {
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(15, 26, 46, 0.85); /* Semi-transparent dark */
+    background: var(--ds-panel);
     backdrop-filter: blur(12px);
     border: 1px solid var(--ds-border);
     border-radius: var(--ds-radius-pill);
@@ -198,24 +198,6 @@ body.spa-body {
 
 .spa-nav-item:hover .spa-nav-icon {
     transform: scale(1.1);
-}
-
-.spa-cart-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: var(--ds-brand);
-    color: white;
-    font-size: 10px;
-    font-weight: bold;
-    min-width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid rgba(15, 26, 46, 0.9);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .spa-nav-item--cart {
@@ -945,6 +927,11 @@ body.spa-body {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    background: var(--ds-panel-2);
+}
+
+.checkout-panel.checkout-panel--items {
+    background: var(--ds-panel);
 }
 
 .checkout-panel__head {
@@ -953,7 +940,7 @@ body.spa-body {
     justify-content: space-between;
     gap: 12px;
     padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    border-bottom: 1px solid var(--spa-commerce-panel-divider);
 }
 
 .checkout-panel--items {
@@ -977,8 +964,8 @@ body.spa-body {
     gap: 12px;
     padding: 12px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    background: rgba(0, 0, 0, 0.16);
+    border: 1px solid var(--spa-commerce-item-border);
+    background: var(--spa-commerce-item-bg);
 }
 
 .checkout-item__meta {
@@ -996,7 +983,7 @@ body.spa-body {
 
 .checkout-item__sub {
     font-size: 13px;
-    color: rgba(232, 238, 252, 0.72);
+    color: var(--spa-commerce-item-subtext);
     display: flex;
     gap: 6px;
     align-items: baseline;
@@ -1023,12 +1010,12 @@ body.spa-body {
 }
 
 .checkout-kv--discount {
-    color: rgba(74, 222, 128, 0.95);
+    color: var(--spa-commerce-discount);
 }
 
 .checkout-divider {
     height: 1px;
-    background: rgba(255, 255, 255, 0.10);
+    background: var(--spa-commerce-divider);
     margin: 2px 0;
 }
 
@@ -1039,8 +1026,8 @@ body.spa-body {
     gap: 12px;
     padding: 12px;
     border-radius: 16px;
-    border: 1px solid rgba(45, 212, 191, 0.18);
-    background: rgba(45, 212, 191, 0.10);
+    border: 1px solid var(--spa-commerce-payable-border);
+    background: var(--spa-commerce-payable-bg);
 }
 
 .checkout-payable__label {
@@ -1108,6 +1095,11 @@ body.spa-body {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    background: var(--ds-panel-2);
+}
+
+.cart-panel.cart-panel--items {
+    background: var(--ds-panel);
 }
 
 .cart-panel__head {
@@ -1116,7 +1108,7 @@ body.spa-body {
     justify-content: space-between;
     gap: 12px;
     padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    border-bottom: 1px solid var(--spa-commerce-panel-divider);
 }
 
 .cart-panel--items {
@@ -1140,8 +1132,8 @@ body.spa-body {
     gap: 12px;
     padding: 12px;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    background: rgba(0, 0, 0, 0.16);
+    border: 1px solid var(--spa-commerce-item-border);
+    background: var(--spa-commerce-item-bg);
 }
 
 .cart-item__meta {
@@ -1161,7 +1153,7 @@ body.spa-body {
 
 .cart-item__sub {
     font-size: 13px;
-    color: rgba(232, 238, 252, 0.72);
+    color: var(--spa-commerce-item-subtext);
     display: flex;
     gap: 6px;
     align-items: baseline;
@@ -1228,6 +1220,11 @@ body.spa-body {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    background: var(--ds-panel);
+}
+
+.c2c-panel.c2c-panel--summary {
+    background: var(--ds-panel-2);
 }
 
 @media (max-width: 1100px) {
@@ -1254,7 +1251,8 @@ body.spa-body {
 }
 
 .user-sidebar {
-    background: var(--ds-panel);
+    background: var(--spa-panel-sidebar-bg);
+    border: 1px solid var(--spa-panel-sidebar-border);
     border-radius: var(--ds-radius-lg);
     padding: 18px;
     height: 100%;
@@ -1263,7 +1261,8 @@ body.spa-body {
 }
 
 .user-content {
-    background: var(--ds-panel-2);
+    background: var(--spa-panel-content-bg);
+    border: 1px solid var(--spa-panel-content-border);
     border-radius: var(--ds-radius-lg);
     padding: 22px;
     height: 100%;
@@ -1275,6 +1274,38 @@ body.spa-body {
                          I'll use horizontal scroll for lists or internal vertical scroll if absolutely necessary, but try to stick to horizontal.
                       */
     position: relative;
+}
+
+.panel-sidebar-head {
+    border-bottom: 1px solid var(--ds-border);
+}
+
+.panel-nav-link {
+    width: 100%;
+    justify-content: flex-start;
+    background: transparent;
+    border-color: transparent;
+    color: var(--ds-muted);
+}
+
+.panel-nav-link:hover {
+    background: var(--spa-panel-nav-hover-bg);
+    border-color: transparent;
+    color: var(--ds-text);
+}
+
+.panel-nav-link.is-active {
+    background: var(--spa-panel-nav-active-bg);
+    border-color: var(--spa-panel-nav-active-border);
+    color: var(--ds-text);
+}
+
+.panel-nav-link.btn--ghost:hover {
+    background: var(--spa-panel-nav-hover-bg);
+}
+
+.panel-nav-link.btn--ghost.is-active:hover {
+    background: var(--spa-panel-nav-active-bg);
 }
 
 .panel-library .h-scroll-container {
@@ -1448,9 +1479,9 @@ body.spa-body {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: rgba(15, 26, 46, 0.85);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        color: rgba(232, 238, 252, 0.92);
+        background: var(--ds-panel);
+        border: 1px solid var(--ds-border);
+        color: var(--ds-text);
         backdrop-filter: blur(12px);
         box-shadow: var(--ds-shadow);
     }
@@ -1468,6 +1499,10 @@ body.spa-body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.stat-card:hover {
+    background: var(--ds-panel-2);
 }
 
 .stat-card__value {
@@ -1525,24 +1560,23 @@ body.spa-body {
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(232, 238, 252, 0.7);
+    border: 1px solid var(--ds-border);
+    background: var(--ds-panel-2);
+    color: var(--ds-muted);
     transition: all 0.2s;
 }
 
 .cart-remove-btn:hover {
-    color: #f87171;
-    border-color: rgba(248, 113, 113, 0.4);
-    background: rgba(248, 113, 113, 0.12);
+    color: var(--ds-color-danger);
+    border-color: var(--spa-danger-soft-border);
+    background: var(--spa-danger-soft-bg);
 }
 
-/* Cart Badge */
 .spa-cart-badge {
     position: absolute;
     top: -5px;
     right: -8px;
-    background: linear-gradient(135deg, #ff4d4d, #f91d1d);
+    background: var(--ds-color-danger);
     color: white;
     font-size: 11px;
     font-weight: 800;
@@ -1553,8 +1587,8 @@ body.spa-body {
     align-items: center;
     justify-content: center;
     padding: 0 4px;
-    border: 2px solid rgba(15, 26, 46, 0.9);
-    box-shadow: 0 2px 8px rgba(249, 29, 29, 0.4);
+    border: 2px solid var(--ds-panel);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     z-index: 10;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transform: scale(1);

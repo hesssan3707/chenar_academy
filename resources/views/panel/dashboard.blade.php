@@ -11,15 +11,15 @@
                 <h2 class="h2 mb-6">داشبورد</h2>
                 
                 <div class="grid grid--3 gap-4">
-                    <a href="{{ route('panel.library.index') }}" class="stat-card hover:bg-white/5 transition-colors">
+                    <a href="{{ route('panel.library.index') }}" class="stat-card">
                         <div class="stat-card__value">کتابخانه</div>
                         <div class="stat-card__label">دسترسی به محتواهای خریداری شده</div>
                     </a>
-                    <a href="{{ route('panel.orders.index') }}" class="stat-card hover:bg-white/5 transition-colors">
+                    <a href="{{ route('panel.orders.index') }}" class="stat-card">
                         <div class="stat-card__value">سفارش‌ها</div>
                         <div class="stat-card__label">مشاهده وضعیت سفارش‌ها</div>
                     </a>
-                    <a href="{{ route('panel.tickets.index') }}" class="stat-card hover:bg-white/5 transition-colors">
+                    <a href="{{ route('panel.tickets.index') }}" class="stat-card">
                         <div class="stat-card__value">پشتیبانی</div>
                         <div class="stat-card__label">ارسال و پیگیری تیکت</div>
                     </a>
@@ -27,7 +27,7 @@
                 
                 <div class="mt-8">
                     <h3 class="h3 mb-4">اطلاعات حساب</h3>
-                    <div class="bg-black/20 p-4 rounded-xl">
+                    <div class="panel">
                         <div class="cluster" style="justify-content: space-between;">
                             <div>
                                 <div class="text-sm text-muted">نام و نام خانوادگی</div>

@@ -95,3 +95,7 @@ html[data-theme='sand'] .section--alt {
 .line-through {
     text-decoration: line-through;
 }
+
+.text-danger {
+    color: var(--ds-color-danger);
+}
