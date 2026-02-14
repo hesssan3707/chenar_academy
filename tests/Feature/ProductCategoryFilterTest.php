@@ -417,4 +417,28 @@ class ProductCategoryFilterTest extends TestCase
             ->assertDontSee($excluded->title)
             ->assertDontSee('مشاهده جزئیات');
     }
+
+    public function test_product_detail_page_renders_mobile_tab_markup(): void
+    {
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو تست',
+            'slug' => 'video-tabs-test',
+            'status' => 'published',
+            'base_price' => 10000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertSee('data-detail-tabs', false)
+            ->assertSee('data-detail-tab="info"', false)
+            ->assertSee('data-detail-tab="content"', false)
+            ->assertSee('data-detail-tab="feedback"', false)
+            ->assertSee('data-detail-panel="info"', false)
+            ->assertSee('data-detail-panel="content"', false)
+            ->assertSee('data-detail-panel="feedback"', false);
+    }
 }

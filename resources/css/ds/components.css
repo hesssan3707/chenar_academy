@@ -24,7 +24,8 @@
     color: #031017;
 }
 
-html[data-theme='light'] .btn--primary {
+html[data-theme='light'] .btn--primary,
+html[data-theme='sand'] .btn--primary {
     color: rgba(2, 6, 23, 0.92);
 }
 
@@ -79,8 +80,11 @@ textarea {
 }
 
 html[data-theme='light'] input:not([type='checkbox']):not([type='radio']),
+html[data-theme='sand'] input:not([type='checkbox']):not([type='radio']),
 html[data-theme='light'] select,
-html[data-theme='light'] textarea {
+html[data-theme='sand'] select,
+html[data-theme='light'] textarea,
+html[data-theme='sand'] textarea {
     background: rgba(255, 255, 255, 0.9);
 }
 
@@ -107,7 +111,9 @@ textarea::placeholder {
 }
 
 html[data-theme='light'] input::placeholder,
-html[data-theme='light'] textarea::placeholder {
+html[data-theme='sand'] input::placeholder,
+html[data-theme='light'] textarea::placeholder,
+html[data-theme='sand'] textarea::placeholder {
     color: rgba(11, 18, 32, 0.45);
 }
 
@@ -164,7 +170,8 @@ textarea:disabled {
     color: rgba(232, 238, 252, 0.82);
 }
 
-html[data-theme='light'] .badge {
+html[data-theme='light'] .badge,
+html[data-theme='sand'] .badge {
     border-color: rgba(11, 18, 32, 0.12);
     background: rgba(11, 18, 32, 0.04);
     color: rgba(11, 18, 32, 0.72);
@@ -180,6 +187,13 @@ html[data-theme='admin'] .badge {
     background: rgba(45, 212, 191, 0.14);
     border: 1px solid rgba(45, 212, 191, 0.22);
     color: rgba(232, 238, 252, 0.92);
+}
+
+html[data-theme='light'] .badge--brand,
+html[data-theme='sand'] .badge--brand {
+    background: rgba(14, 165, 233, 0.16);
+    border-color: rgba(14, 165, 233, 0.32);
+    color: rgba(2, 6, 23, 0.92);
 }
 
 html[data-theme='admin'] .badge--brand {
@@ -274,7 +288,8 @@ html[data-theme='admin'] .badge--brand {
     border-style: dashed;
 }
 
-html[data-theme='light'] .panel {
+html[data-theme='light'] .panel,
+html[data-theme='sand'] .panel {
     background: rgba(255, 255, 255, 0.86);
 }
 
@@ -339,7 +354,8 @@ html[data-theme='admin'] .panel {
         background 160ms ease;
 }
 
-html[data-theme='light'] .card {
+html[data-theme='light'] .card,
+html[data-theme='sand'] .card {
     background: rgba(255, 255, 255, 0.86);
 }
 
@@ -353,7 +369,8 @@ html[data-theme='admin'] .card {
     background: rgba(17, 31, 55, 0.72);
 }
 
-html[data-theme='light'] .card:hover {
+html[data-theme='light'] .card:hover,
+html[data-theme='sand'] .card:hover {
     background: rgba(241, 244, 251, 0.9);
 }
 
@@ -376,6 +393,13 @@ html[data-theme='light'] .card:hover {
     z-index: 2;
 }
 
+html[data-theme='light'] .card__badge,
+html[data-theme='sand'] .card__badge {
+    background: rgba(14, 165, 233, 0.16);
+    border-color: rgba(14, 165, 233, 0.32);
+    color: rgba(2, 6, 23, 0.92);
+}
+
 .card__badge--discount {
     left: auto;
     right: 14px;
@@ -384,6 +408,14 @@ html[data-theme='light'] .card:hover {
     border-color: rgba(251, 113, 133, 0.28);
     color: rgba(232, 238, 252, 0.95);
     box-shadow: 0 10px 22px rgba(251, 113, 133, 0.14);
+}
+
+html[data-theme='light'] .card__badge--discount,
+html[data-theme='sand'] .card__badge--discount {
+    background: rgba(225, 29, 72, 0.14);
+    border-color: rgba(225, 29, 72, 0.32);
+    color: rgba(225, 29, 72, 0.95);
+    box-shadow: 0 10px 22px rgba(225, 29, 72, 0.12);
 }
 
 .card__title {
@@ -515,7 +547,8 @@ html[data-theme='light'] .card:hover {
     font-size: 13px;
 }
 
-html[data-theme='light'] .card__action {
+html[data-theme='light'] .card__action,
+html[data-theme='sand'] .card__action {
     border-color: rgba(11, 18, 32, 0.12);
     background: rgba(11, 18, 32, 0.04);
 }
@@ -550,7 +583,8 @@ html[data-theme='light'] .card__action {
     gap: 6px;
 }
 
-html[data-theme='light'] .toast {
+html[data-theme='light'] .toast,
+html[data-theme='sand'] .toast {
     background: rgba(255, 255, 255, 0.96);
 }
 
@@ -602,7 +636,8 @@ body.has-modal {
     background: rgba(3, 7, 18, 0.78);
 }
 
-html[data-theme='light'] .modal__backdrop {
+html[data-theme='light'] .modal__backdrop,
+html[data-theme='sand'] .modal__backdrop {
     background: rgba(15, 23, 42, 0.38);
 }
 
@@ -669,7 +704,8 @@ html[data-theme='admin'] .upload.is-dragover .upload__drop {
     background: rgba(15, 26, 46, 0.24);
 }
 
-html[data-theme='light'] .upload__preview {
+html[data-theme='light'] .upload__preview,
+html[data-theme='sand'] .upload__preview {
     background: rgba(255, 255, 255, 0.75);
 }
 
@@ -754,7 +790,7 @@ html[data-theme='admin'] .upload__progress-fill {
 }
 
 .rich-content a {
-    color: rgba(45, 212, 191, 0.95);
+    color: var(--ds-brand);
     text-decoration: underline;
     text-underline-offset: 4px;
 }

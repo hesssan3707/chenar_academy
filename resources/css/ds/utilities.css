@@ -48,7 +48,8 @@
     border-bottom: 1px solid var(--ds-border);
 }
 
-html[data-theme='light'] .section--alt {
+html[data-theme='light'] .section--alt,
+html[data-theme='sand'] .section--alt {
     background: rgba(241, 244, 251, 0.9);
 }
 

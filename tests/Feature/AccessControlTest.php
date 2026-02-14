@@ -111,6 +111,35 @@ class AccessControlTest extends TestCase
         $this->actingAs($user, 'admin')->get('/admin')->assertOk();
     }
 
+    public function test_admin_can_update_site_theme_to_new_themes(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default', 'light', 'midnight', 'sand']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $this->actingAs($user, 'admin')
+            ->put(route('admin.settings.update'), [
+                'theme' => 'midnight',
+            ])->assertRedirect(route('admin.settings.index'));
+
+        $setting = Setting::query()->where('key', 'theme.active')->first();
+        $this->assertNotNull($setting);
+        $this->assertSame('theme', $setting->group);
+        $this->assertSame('midnight', $setting->value);
+
+        $this->actingAs($user, 'admin')
+            ->put(route('admin.settings.update'), [
+                'theme' => 'sand',
+            ])->assertRedirect(route('admin.settings.index'));
+
+        $setting->refresh();
+        $this->assertSame('sand', $setting->value);
+    }
+
     public function test_admin_can_update_about_page_content(): void
     {
         $user = User::factory()->create();

@@ -65,17 +65,29 @@ select {
 }
 
 html[data-theme='light'] input[type='text'],
+html[data-theme='sand'] input[type='text'],
 html[data-theme='light'] input[type='email'],
+html[data-theme='sand'] input[type='email'],
 html[data-theme='light'] input[type='password'],
+html[data-theme='sand'] input[type='password'],
 html[data-theme='light'] input[type='tel'],
+html[data-theme='sand'] input[type='tel'],
 html[data-theme='light'] input[type='number'],
+html[data-theme='sand'] input[type='number'],
 html[data-theme='light'] input[type='search'],
+html[data-theme='sand'] input[type='search'],
 html[data-theme='light'] input[type='url'],
+html[data-theme='sand'] input[type='url'],
 html[data-theme='light'] input[type='date'],
+html[data-theme='sand'] input[type='date'],
 html[data-theme='light'] input[type='datetime-local'],
+html[data-theme='sand'] input[type='datetime-local'],
 html[data-theme='light'] input[type='time'],
+html[data-theme='sand'] input[type='time'],
 html[data-theme='light'] textarea,
-html[data-theme='light'] select {
+html[data-theme='sand'] textarea,
+html[data-theme='light'] select,
+html[data-theme='sand'] select {
     background: rgba(11, 18, 32, 0.03);
     border-color: rgba(11, 18, 32, 0.12);
 }
@@ -93,7 +105,9 @@ textarea::placeholder {
 }
 
 html[data-theme='light'] input::placeholder,
-html[data-theme='light'] textarea::placeholder {
+html[data-theme='sand'] input::placeholder,
+html[data-theme='light'] textarea::placeholder,
+html[data-theme='sand'] textarea::placeholder {
     color: rgba(11, 18, 32, 0.45);
 }
 

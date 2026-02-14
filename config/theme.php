@@ -5,6 +5,10 @@ return [
     'available' => [
         'default',
         'light',
+        'midnight',
+        'sand',
+        'graphite',
+        'wood',
     ],
     'setting_key' => 'theme.active',
 ];

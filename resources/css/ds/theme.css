@@ -61,6 +61,19 @@ html[data-theme='default'] {
 
     --ds-body-bg: radial-gradient(1200px 600px at 85% -10%, rgba(45, 212, 191, 0.22), transparent 60%),
         radial-gradient(900px 500px at 10% 0%, rgba(96, 165, 250, 0.18), transparent 55%), var(--ds-bg);
+
+    --spa-detail-section-bg: rgba(255, 255, 255, 0.04);
+    --spa-detail-section-border: rgba(255, 255, 255, 0.10);
+    --spa-detail-head-bg: rgba(0, 0, 0, 0.16);
+    --spa-detail-head-border: rgba(255, 255, 255, 0.08);
+    --spa-detail-title: rgba(255, 255, 255, 0.92);
+    --spa-detail-facts-bg: rgba(255, 255, 255, 0.04);
+    --spa-detail-facts-border: rgba(255, 255, 255, 0.10);
+    --spa-detail-fact-label: rgba(232, 238, 252, 0.62);
+    --spa-detail-fact-value: rgba(255, 255, 255, 0.90);
+
+    --spa-category-count-bg: rgba(0, 0, 0, 0.6);
+    --spa-category-count-text: rgba(255, 255, 255, 0.92);
 }
 
 html[data-theme='light'] {
@@ -100,6 +113,227 @@ html[data-theme='light'] {
 
     --ds-body-bg: radial-gradient(1100px 520px at 80% -10%, rgba(14, 165, 233, 0.16), transparent 60%),
         radial-gradient(900px 500px at 10% 0%, rgba(34, 197, 94, 0.12), transparent 55%), var(--ds-bg);
+
+    --spa-detail-section-bg: rgba(11, 18, 32, 0.03);
+    --spa-detail-section-border: rgba(11, 18, 32, 0.10);
+    --spa-detail-head-bg: rgba(11, 18, 32, 0.06);
+    --spa-detail-head-border: rgba(11, 18, 32, 0.08);
+    --spa-detail-title: rgba(11, 18, 32, 0.92);
+    --spa-detail-facts-bg: rgba(11, 18, 32, 0.03);
+    --spa-detail-facts-border: rgba(11, 18, 32, 0.10);
+    --spa-detail-fact-label: rgba(11, 18, 32, 0.60);
+    --spa-detail-fact-value: rgba(11, 18, 32, 0.88);
+
+    --spa-category-count-bg: rgba(11, 18, 32, 0.7);
+    --spa-category-count-text: rgba(255, 255, 255, 0.92);
+}
+
+html[data-theme='midnight'] {
+    color-scheme: dark;
+
+    --ds-color-bg: #070b18;
+    --ds-color-surface-1: #0b1024;
+    --ds-color-surface-2: #0e1630;
+    --ds-color-text: #ecf1ff;
+    --ds-color-muted: rgba(236, 241, 255, 0.7);
+    --ds-color-border: rgba(236, 241, 255, 0.12);
+    --ds-color-brand: #a78bfa;
+    --ds-color-brand-2: #22d3ee;
+    --ds-color-danger: #fb7185;
+    --ds-color-warning: #fbbf24;
+    --ds-color-success: #34d399;
+
+    --ds-bg: var(--ds-color-bg);
+    --ds-panel: var(--ds-color-surface-1);
+    --ds-panel-2: var(--ds-color-surface-2);
+    --ds-text: var(--ds-color-text);
+    --ds-muted: var(--ds-color-muted);
+    --ds-border: var(--ds-color-border);
+    --ds-brand: var(--ds-color-brand);
+    --ds-brand-2: var(--ds-color-brand-2);
+    --ds-shadow: var(--ds-shadow-lg);
+
+    --bg: var(--ds-bg);
+    --panel: var(--ds-panel);
+    --panel-2: var(--ds-panel-2);
+    --text: var(--ds-text);
+    --muted: var(--ds-muted);
+    --border: var(--ds-border);
+    --brand: var(--ds-brand);
+    --brand-2: var(--ds-brand-2);
+    --shadow: var(--ds-shadow);
+
+    --ds-body-bg: radial-gradient(1100px 560px at 85% -12%, rgba(167, 139, 250, 0.22), transparent 60%),
+        radial-gradient(900px 520px at 10% 0%, rgba(34, 211, 238, 0.16), transparent 55%), var(--ds-bg);
+
+    --spa-detail-section-bg: rgba(255, 255, 255, 0.04);
+    --spa-detail-section-border: rgba(255, 255, 255, 0.10);
+    --spa-detail-head-bg: rgba(0, 0, 0, 0.16);
+    --spa-detail-head-border: rgba(255, 255, 255, 0.08);
+    --spa-detail-title: rgba(255, 255, 255, 0.92);
+    --spa-detail-facts-bg: rgba(255, 255, 255, 0.04);
+    --spa-detail-facts-border: rgba(255, 255, 255, 0.10);
+    --spa-detail-fact-label: rgba(236, 241, 255, 0.62);
+    --spa-detail-fact-value: rgba(255, 255, 255, 0.90);
+
+    --spa-category-count-bg: rgba(0, 0, 0, 0.6);
+    --spa-category-count-text: rgba(255, 255, 255, 0.92);
+}
+
+html[data-theme='sand'] {
+    color-scheme: light;
+
+    --ds-color-bg: #fbf7f0;
+    --ds-color-surface-1: #ffffff;
+    --ds-color-surface-2: #f6efe5;
+    --ds-color-text: #1f2937;
+    --ds-color-muted: rgba(31, 41, 55, 0.7);
+    --ds-color-border: rgba(31, 41, 55, 0.12);
+    --ds-color-brand: #f97316;
+    --ds-color-brand-2: #0ea5e9;
+    --ds-color-danger: #e11d48;
+    --ds-color-warning: #f59e0b;
+    --ds-color-success: #16a34a;
+
+    --ds-bg: var(--ds-color-bg);
+    --ds-panel: var(--ds-color-surface-1);
+    --ds-panel-2: var(--ds-color-surface-2);
+    --ds-text: var(--ds-color-text);
+    --ds-muted: var(--ds-color-muted);
+    --ds-border: var(--ds-color-border);
+    --ds-brand: var(--ds-color-brand);
+    --ds-brand-2: var(--ds-color-brand-2);
+    --ds-shadow: 0 18px 70px rgba(2, 6, 23, 0.12);
+
+    --bg: var(--ds-bg);
+    --panel: var(--ds-panel);
+    --panel-2: var(--ds-panel-2);
+    --text: var(--ds-text);
+    --muted: var(--ds-muted);
+    --border: var(--ds-border);
+    --brand: var(--ds-brand);
+    --brand-2: var(--ds-brand-2);
+    --shadow: var(--ds-shadow);
+
+    --ds-body-bg: radial-gradient(1100px 520px at 80% -10%, rgba(249, 115, 22, 0.16), transparent 60%),
+        radial-gradient(900px 520px at 10% 0%, rgba(14, 165, 233, 0.12), transparent 55%), var(--ds-bg);
+
+    --spa-detail-section-bg: rgba(31, 41, 55, 0.03);
+    --spa-detail-section-border: rgba(31, 41, 55, 0.10);
+    --spa-detail-head-bg: rgba(31, 41, 55, 0.06);
+    --spa-detail-head-border: rgba(31, 41, 55, 0.08);
+    --spa-detail-title: rgba(31, 41, 55, 0.92);
+    --spa-detail-facts-bg: rgba(31, 41, 55, 0.03);
+    --spa-detail-facts-border: rgba(31, 41, 55, 0.10);
+    --spa-detail-fact-label: rgba(31, 41, 55, 0.60);
+    --spa-detail-fact-value: rgba(31, 41, 55, 0.88);
+
+    --spa-category-count-bg: rgba(31, 41, 55, 0.7);
+    --spa-category-count-text: rgba(255, 255, 255, 0.92);
+}
+
+html[data-theme='graphite'] {
+    color-scheme: dark;
+
+    --ds-color-bg: #0b0f16;
+    --ds-color-surface-1: #101826;
+    --ds-color-surface-2: #141f2f;
+    --ds-color-text: #eef2ff;
+    --ds-color-muted: rgba(238, 242, 255, 0.7);
+    --ds-color-border: rgba(238, 242, 255, 0.12);
+    --ds-color-brand: #22c55e;
+    --ds-color-brand-2: #38bdf8;
+    --ds-color-danger: #fb7185;
+    --ds-color-warning: #fbbf24;
+    --ds-color-success: #34d399;
+
+    --ds-bg: var(--ds-color-bg);
+    --ds-panel: var(--ds-color-surface-1);
+    --ds-panel-2: var(--ds-color-surface-2);
+    --ds-text: var(--ds-color-text);
+    --ds-muted: var(--ds-color-muted);
+    --ds-border: var(--ds-color-border);
+    --ds-brand: var(--ds-color-brand);
+    --ds-brand-2: var(--ds-color-brand-2);
+    --ds-shadow: var(--ds-shadow-lg);
+
+    --bg: var(--ds-bg);
+    --panel: var(--ds-panel);
+    --panel-2: var(--ds-panel-2);
+    --text: var(--ds-text);
+    --muted: var(--ds-muted);
+    --border: var(--ds-border);
+    --brand: var(--ds-brand);
+    --brand-2: var(--ds-brand-2);
+    --shadow: var(--ds-shadow);
+
+    --ds-body-bg: radial-gradient(1100px 560px at 85% -12%, rgba(34, 197, 94, 0.22), transparent 60%),
+        radial-gradient(900px 520px at 10% 0%, rgba(56, 189, 248, 0.16), transparent 55%), var(--ds-bg);
+
+    --spa-detail-section-bg: rgba(255, 255, 255, 0.04);
+    --spa-detail-section-border: rgba(255, 255, 255, 0.10);
+    --spa-detail-head-bg: rgba(0, 0, 0, 0.16);
+    --spa-detail-head-border: rgba(255, 255, 255, 0.08);
+    --spa-detail-title: rgba(255, 255, 255, 0.92);
+    --spa-detail-facts-bg: rgba(255, 255, 255, 0.04);
+    --spa-detail-facts-border: rgba(255, 255, 255, 0.10);
+    --spa-detail-fact-label: rgba(238, 242, 255, 0.62);
+    --spa-detail-fact-value: rgba(255, 255, 255, 0.90);
+
+    --spa-category-count-bg: rgba(0, 0, 0, 0.6);
+    --spa-category-count-text: rgba(255, 255, 255, 0.92);
+}
+
+html[data-theme='wood'] {
+    color-scheme: dark;
+
+    --ds-color-bg: #120b08;
+    --ds-color-surface-1: #1b120d;
+    --ds-color-surface-2: #261a13;
+    --ds-color-text: #fff7ed;
+    --ds-color-muted: rgba(255, 247, 237, 0.7);
+    --ds-color-border: rgba(255, 247, 237, 0.12);
+    --ds-color-brand: #f59e0b;
+    --ds-color-brand-2: #22c55e;
+    --ds-color-danger: #fb7185;
+    --ds-color-warning: #fbbf24;
+    --ds-color-success: #34d399;
+
+    --ds-bg: var(--ds-color-bg);
+    --ds-panel: var(--ds-color-surface-1);
+    --ds-panel-2: var(--ds-color-surface-2);
+    --ds-text: var(--ds-color-text);
+    --ds-muted: var(--ds-color-muted);
+    --ds-border: var(--ds-color-border);
+    --ds-brand: var(--ds-color-brand);
+    --ds-brand-2: var(--ds-color-brand-2);
+    --ds-shadow: var(--ds-shadow-lg);
+
+    --bg: var(--ds-bg);
+    --panel: var(--ds-panel);
+    --panel-2: var(--ds-panel-2);
+    --text: var(--ds-text);
+    --muted: var(--ds-muted);
+    --border: var(--ds-border);
+    --brand: var(--ds-brand);
+    --brand-2: var(--ds-brand-2);
+    --shadow: var(--ds-shadow);
+
+    --ds-body-bg: radial-gradient(1100px 560px at 85% -12%, rgba(245, 158, 11, 0.22), transparent 60%),
+        radial-gradient(900px 520px at 10% 0%, rgba(34, 197, 94, 0.16), transparent 55%), var(--ds-bg);
+
+    --spa-detail-section-bg: rgba(255,  247, 237, 0.04);
+    --spa-detail-section-border: rgba(255, 247, 237, 0.10);
+    --spa-detail-head-bg: rgba(0, 0, 0, 0.16);
+    --spa-detail-head-border: rgba(255, 247, 237, 0.08);
+    --spa-detail-title: rgba(255, 247, 237, 0.92);
+    --spa-detail-facts-bg: rgba(255, 247, 237, 0.04);
+    --spa-detail-facts-border: rgba(255, 247, 237, 0.10);
+    --spa-detail-fact-label: rgba(255, 247, 237, 0.62);
+    --spa-detail-fact-value: rgba(255, 247, 237, 0.90);
+
+    --spa-category-count-bg: rgba(0, 0, 0, 0.6);
+    --spa-category-count-text: rgba(255, 255, 255, 0.92);
 }
 
 html[data-theme='admin'] {
@@ -141,4 +375,17 @@ html[data-theme='admin'] {
 
     --ds-body-bg: radial-gradient(1100px 520px at 80% -10%, rgba(124, 58, 237, 0.16), transparent 60%),
         radial-gradient(900px 500px at 10% 0%, rgba(14, 165, 233, 0.12), transparent 55%), var(--ds-bg);
+
+    --spa-detail-section-bg: rgba(15, 23, 42, 0.03);
+    --spa-detail-section-border: rgba(15, 23, 42, 0.10);
+    --spa-detail-head-bg: rgba(15, 23, 42, 0.06);
+    --spa-detail-head-border: rgba(15, 23, 42, 0.08);
+    --spa-detail-title: rgba(15, 23, 42, 0.92);
+    --spa-detail-facts-bg: rgba(15, 23, 42, 0.03);
+    --spa-detail-facts-border: rgba(15, 23, 42, 0.10);
+    --spa-detail-fact-label: rgba(15, 23, 42, 0.60);
+    --spa-detail-fact-value: rgba(15, 23, 42, 0.88);
+
+    --spa-category-count-bg: rgba(15, 23, 42, 0.7);
+    --spa-category-count-text: rgba(255, 255, 255, 0.92);
 }

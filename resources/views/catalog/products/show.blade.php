@@ -21,6 +21,7 @@
     @php($backCategory = ($product->categories ?? collect())->firstWhere('type', (string) ($product->type ?? '')) ?: ($product->categories ?? collect())->first())
     @php($backParams = $backCategory?->slug ? ['type' => $listingType, 'category' => $backCategory->slug] : ['type' => $listingType])
     @php($backUrl = route('products.index', $backParams))
+    @php($showFeedbackCol = in_array((string) ($product->type ?? ''), ['video', 'note'], true) && (($ratingsArePublic ?? false) || ($reviewsArePublic ?? false)))
 
     <div class="detail-shell">
         <div class="detail-header">
@@ -28,8 +29,16 @@
             <div class="text-muted text-sm">{{ $productTypeLabel }}</div>
         </div>
 
+        <div class="detail-tabs" data-detail-tabs role="tablist" aria-label="بخش‌ها">
+            <button type="button" class="detail-tab is-active" data-detail-tab="info" role="tab" aria-selected="true">اطلاعات و خرید</button>
+            <button type="button" class="detail-tab" data-detail-tab="content" role="tab" aria-selected="false" tabindex="-1">محتوا</button>
+            @if ($showFeedbackCol)
+                <button type="button" class="detail-tab" data-detail-tab="feedback" role="tab" aria-selected="false" tabindex="-1">نظرات و امتیاز</button>
+            @endif
+        </div>
+
         <div class="detail-grid">
-            <div class="detail-col">
+            <div class="detail-col" data-detail-panel="info" role="tabpanel">
                 <div class="detail-card panel p-0 bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
                     <div class="p-6 bg-black/20 border-b border-white/10">
                         <div class="spa-cover shadow-lg border border-white/5">
@@ -143,7 +152,7 @@
                 </div>
             </div>
 
-            <div class="detail-col">
+            <div class="detail-col" data-detail-panel="content" role="tabpanel">
                 <div class="detail-card panel p-0 bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
                     @if (($product->type ?? null) !== 'video' && ($product->type ?? null) !== 'note')
                         <div class="p-6 border-b border-white/10 bg-black/10">
@@ -298,9 +307,8 @@
                 </div>
             </div>
 
-            @php($showFeedbackCol = in_array((string) ($product->type ?? ''), ['video', 'note'], true) && (($ratingsArePublic ?? false) || ($reviewsArePublic ?? false)))
             @if ($showFeedbackCol)
-                <div class="detail-col">
+                <div class="detail-col" data-detail-panel="feedback" role="tabpanel">
                     <div class="detail-card panel p-0 bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
                         <div class="p-6 detail-scroll">
                             @if (($product->type ?? null) === 'video')

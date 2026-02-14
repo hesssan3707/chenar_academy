@@ -32,6 +32,7 @@ window.initApp = function() {
     initHomeRowsAutoHideUi();
     initCategoryTapPreviewUi();
     initHorizontalWheelScrollUi();
+    initProductDetailTabsUi();
 
     const surveyModal = document.querySelector('[data-survey-modal]');
     if (surveyModal) {
@@ -255,6 +256,102 @@ function initHorizontalWheelScrollUi() {
             event.preventDefault();
             container.scrollBy({ left: delta, top: 0, behavior: 'auto' });
         }, { passive: false });
+    });
+}
+
+function initProductDetailTabsUi() {
+    const containers = Array.from(document.querySelectorAll('[data-detail-tabs]')).filter((node) => node instanceof HTMLElement);
+    if (containers.length === 0) {
+        return;
+    }
+
+    const mobileQuery = (() => {
+        try {
+            return window.matchMedia('(max-width: 900px)');
+        } catch (e) {
+            return null;
+        }
+    })();
+
+    containers.forEach((container) => {
+        if (container.dataset.detailTabsBound === '1') {
+            return;
+        }
+        container.dataset.detailTabsBound = '1';
+
+        const root = container.parentElement;
+        if (!root) {
+            return;
+        }
+
+        const tabs = Array.from(container.querySelectorAll('[data-detail-tab]')).filter((node) => node instanceof HTMLButtonElement);
+        const panels = Array.from(root.querySelectorAll('[data-detail-panel]')).filter((node) => node instanceof HTMLElement);
+        if (tabs.length === 0 || panels.length === 0) {
+            return;
+        }
+
+        const firstValue = String(tabs[0].dataset.detailTab || '');
+        const validValues = new Set(tabs.map((tab) => String(tab.dataset.detailTab || '')).filter((value) => value !== ''));
+
+        const setActive = (value) => {
+            const targetValue = validValues.has(String(value)) ? String(value) : firstValue;
+
+            tabs.forEach((tab) => {
+                const tabValue = String(tab.dataset.detailTab || '');
+                const isActive = tabValue === targetValue;
+                tab.classList.toggle('is-active', isActive);
+                tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                tab.toggleAttribute('tabindex', !isActive);
+                if (!isActive) {
+                    tab.setAttribute('tabindex', '-1');
+                }
+            });
+
+            const shouldHide = mobileQuery ? mobileQuery.matches : window.innerWidth <= 900;
+
+            panels.forEach((panel) => {
+                const panelValue = String(panel.dataset.detailPanel || '');
+                const isPanelActive = panelValue === targetValue;
+                if (shouldHide) {
+                    panel.hidden = !isPanelActive;
+                } else {
+                    panel.hidden = false;
+                }
+            });
+        };
+
+        const onClick = (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) {
+                return;
+            }
+
+            const button = target.closest('[data-detail-tab]');
+            if (!(button instanceof HTMLButtonElement)) {
+                return;
+            }
+
+            setActive(button.dataset.detailTab || firstValue);
+        };
+
+        container.addEventListener('click', onClick);
+
+        const onLayoutChange = () => {
+            const active = tabs.find((tab) => tab.classList.contains('is-active'));
+            setActive(active?.dataset.detailTab || firstValue);
+        };
+
+        if (mobileQuery) {
+            if (typeof mobileQuery.addEventListener === 'function') {
+                mobileQuery.addEventListener('change', onLayoutChange);
+            } else if (typeof mobileQuery.addListener === 'function') {
+                mobileQuery.addListener(onLayoutChange);
+            }
+        } else {
+            window.addEventListener('resize', onLayoutChange, { passive: true });
+        }
+
+        setActive(firstValue);
     });
 }
 
