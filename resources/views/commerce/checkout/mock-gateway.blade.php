@@ -11,7 +11,8 @@
             <div class="panel p-6 bg-white/5 border border-white/10 rounded-xl w-80">
                 <div class="stack stack--sm">
                     <div class="h4">اطلاعات پرداخت</div>
-                    @php($currencyUnit = (($payment->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($payment->currency ?? 'IRR'))
+                    @php($currencyCode = strtoupper((string) ($payment->currency ?? 'IRR')))
+                    @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
 
                     <div class="flex justify-between">
                         <div class="text-muted">شماره سفارش</div>

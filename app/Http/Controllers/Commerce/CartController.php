@@ -8,7 +8,6 @@ use App\Models\CartItem;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Cookie;
 
@@ -28,9 +27,8 @@ class CartController extends Controller
         }
 
         $subtotal = (int) $items->sum(fn (CartItem $item) => (int) $item->unit_price * (int) $item->quantity);
-        $currencyUnit = (($cart?->currency ?: $this->commerceCurrency()) === 'IRR')
-            ? 'تومان'
-            : ($cart?->currency ?: $this->commerceCurrency());
+        $currency = strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()));
+        $currencyUnit = $currency === 'IRT' ? 'تومان' : 'ریال';
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -39,7 +37,7 @@ class CartController extends Controller
                     'title' => $item->product?->title,
                     'price' => (int) $item->unit_price,
                     'quantity' => (int) $item->quantity,
-                    'thumb' => $item->product?->thumbnailMedia ? Storage::disk('public')->url($item->product->thumbnailMedia->path) : null,
+                    'thumb' => $item->product?->thumbnailMedia ? asset('storage/'.ltrim((string) $item->product->thumbnailMedia->path, '/')) : null,
                 ]),
                 'subtotal' => $subtotal,
                 'currency' => $currencyUnit,

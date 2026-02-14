@@ -35,6 +35,18 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
+        $commerceCurrency = 'IRR';
+        if (Schema::hasTable('settings')) {
+            $raw = Setting::query()->where('key', 'commerce.currency')->value('value');
+            $raw = is_string($raw) ? strtoupper(trim($raw)) : '';
+            if (in_array($raw, ['IRR', 'IRT'], true)) {
+                $commerceCurrency = $raw;
+            }
+        }
+
+        View::share('commerceCurrency', $commerceCurrency);
+        View::share('commerceCurrencyLabel', $commerceCurrency === 'IRT' ? 'تومان' : 'ریال');
+
         $clearCacheGroup = function (string $group): void {
             $keyListKey = "content_cache_keys.{$group}";
 
@@ -141,7 +153,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('socialLinks', $socialLinks);
         });
 
-        View::composer('layouts.app', function ($view) {
+        View::composer(['layouts.app', 'layouts.spa'], function ($view) {
             if (! Schema::hasTable('surveys') || ! Schema::hasTable('survey_responses')) {
                 return;
             }
@@ -310,6 +322,7 @@ class AppServiceProvider extends ServiceProvider
                     $backgrounds['videos'] = $backgrounds['videos'] ?: route('media.stream', $media->id);
                     $backgrounds['booklets'] = $backgrounds['booklets'] ?: route('media.stream', $media->id);
                     $backgrounds['other'] = $backgrounds['other'] ?: route('media.stream', $media->id);
+
                     continue;
                 }
 

@@ -19,7 +19,8 @@
                 <div class="stack stack--md">
                     <div class="panel p-6 bg-white/5 border border-white/10 rounded-xl">
                         <div class="stack stack--sm">
-                            @php($currencyUnit = (($order->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($order->currency ?? 'IRR'))
+                            @php($currencyCode = strtoupper((string) ($order->currency ?? 'IRR')))
+                            @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
                             @php($statusLabel = match ((string) ($order->status ?? '')) {
                                 'pending_review' => 'در انتظار تایید',
                                 'rejected' => 'رد شده',

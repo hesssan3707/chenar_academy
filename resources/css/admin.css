@@ -334,6 +334,12 @@ html[data-theme='admin'] tr.is-dragging {
     min-width: 720px;
 }
 
+.table-wrap--max-h {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: clip;
+}
+
 .table th,
 .table td {
     padding: 12px 14px;
@@ -342,11 +348,51 @@ html[data-theme='admin'] tr.is-dragging {
     vertical-align: middle;
 }
 
+.table--sm th,
+.table--sm td {
+    padding: 8px 10px;
+    font-size: 12px;
+}
+
+.table--compact {
+    min-width: 0;
+}
+
+.table--fixed {
+    table-layout: fixed;
+}
+
+.table--fixed td {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.panel--max-h-400 {
+    max-height: 400px;
+    overflow: auto;
+}
+
+.admin-col-check {
+    width: 44px;
+}
+
+.admin-col-type {
+    width: 96px;
+}
+
+.admin-col-discount {
+    width: 140px;
+}
+
 .table thead th {
     font-size: 12px;
     font-weight: 700;
     color: var(--muted);
     background: rgba(232, 238, 252, 0.04);
+}
+
+.table--sm thead th {
+    font-size: 11px;
 }
 
 .table tbody tr:hover {

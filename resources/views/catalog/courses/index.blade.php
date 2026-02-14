@@ -37,15 +37,18 @@
                              <div class="card-product__cta">
                                 <div class="card-product__price mb-3">
                                     <div class="card-price-row mb-3">
-                                        @php($currencyUnit = (($course->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($course->currency ?? 'IRR'))
+                                        @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
+                                        @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                        @php($originalPrice = $course->displayOriginalPrice($currencyCode))
+                                        @php($finalPrice = $course->displayFinalPrice($currencyCode))
                                         @if($course->hasDiscount())
                                             <div class="card-price-stack flex flex-col">
-                                                <span class="text-xs text-muted line-through">{{ number_format($course->originalPrice()) }}</span>
-                                                <span class="card-price-amount text-brand font-bold">{{ number_format($course->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                <span class="text-xs text-muted line-through">{{ number_format($originalPrice) }}</span>
+                                                <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                             </div>
                                         @else
                                             <div class="card-price-stack">
-                                                <span class="card-price-amount text-brand font-bold">{{ number_format($course->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                             </div>
                                         @endif
                                         <form method="post" action="{{ route('cart.items.store') }}" class="cart-inline-form">

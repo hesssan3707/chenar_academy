@@ -115,6 +115,7 @@ Route::prefix('admin')
         Route::resource('categories', AdminCategoryController::class);
         Route::get('discounts/category', [AdminDiscountController::class, 'category'])->name('discounts.category');
         Route::post('discounts/category', [AdminDiscountController::class, 'applyCategory'])->name('discounts.category.apply');
+        Route::post('discounts/products', [AdminDiscountController::class, 'applyProducts'])->name('discounts.products.apply');
         Route::resource('products', AdminProductController::class);
         Route::resource('courses', AdminCourseController::class);
 

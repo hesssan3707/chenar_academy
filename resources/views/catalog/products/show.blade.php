@@ -101,11 +101,11 @@
                     </div>
 
                     <div class="p-6 border-t border-white/10">
-                        @php($discountLabel = $product->discountLabel())
-                        @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
-                        @php($original = $product->originalPrice())
-                        @php($final = $product->finalPrice())
-                        @php($savings = $product->hasDiscount() ? max(0, (int) $original - (int) $final) : 0)
+                        @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
+                        @php($displayCurrencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                        @php($original = $product->displayOriginalPrice($currencyCode))
+                        @php($final = $product->displayFinalPrice($currencyCode))
+                        @php($discountLabel = $product->discountLabelFor($currencyCode))
 
                         <div class="detail-section">
                             <div class="detail-section__head">
@@ -114,30 +114,17 @@
                             <div class="detail-section__body">
                                 <div class="p-4 bg-white/5 border border-white/10 rounded-xl mb-4">
                                     @if ($product->hasDiscount())
-                                        <div class="flex items-center justify-between gap-3">
-                                            <div class="text-muted text-sm">قیمت نهایی</div>
+                                        <div class="flex flex-col">
+                                            <span class="text-sm text-muted line-through">{{ number_format($original) }} <span class="text-xs">{{ $displayCurrencyUnit }}</span></span>
                                             <div class="flex items-center gap-2">
-                                                <span class="text-2xl font-bold text-brand">{{ number_format($final) }} <span class="text-sm">{{ $currencyUnit }}</span></span>
+                                                <span class="text-2xl font-bold text-brand">{{ number_format($final) }} <span class="text-sm">{{ $displayCurrencyUnit }}</span></span>
                                                 @if ($discountLabel)
                                                     <span class="badge badge--danger text-xs">{{ $discountLabel }}</span>
                                                 @endif
                                             </div>
                                         </div>
-                                        <div class="mt-3 flex items-center justify-between gap-3 text-sm">
-                                            <div class="text-muted">قیمت اصلی</div>
-                                            <div class="text-muted line-through">{{ number_format($original) }} {{ $currencyUnit }}</div>
-                                        </div>
-                                        @if ($savings > 0)
-                                            <div class="mt-2 flex items-center justify-between gap-3 text-sm">
-                                                <div class="text-muted">صرفه‌جویی</div>
-                                                <div class="font-bold text-white/90">{{ number_format($savings) }} {{ $currencyUnit }}</div>
-                                            </div>
-                                        @endif
                                     @else
-                                        <div class="flex items-center justify-between gap-3">
-                                            <div class="text-muted text-sm">قیمت</div>
-                                            <div class="text-2xl font-bold text-brand">{{ number_format($final) }} <span class="text-sm">{{ $currencyUnit }}</span></div>
-                                        </div>
+                                        <div class="text-2xl font-bold text-brand">{{ number_format($final) }} <span class="text-sm">{{ $displayCurrencyUnit }}</span></div>
                                     @endif
                                 </div>
 

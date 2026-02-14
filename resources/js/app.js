@@ -28,8 +28,10 @@ window.initApp = function() {
     initAdminCategoryFormUi();
     initAdminSettingsTabsUi();
     initAdminWysiwygUi();
+    initAdminBulkDiscountUi();
     initHomeRowsAutoHideUi();
     initCategoryTapPreviewUi();
+    initHorizontalWheelScrollUi();
 
     const surveyModal = document.querySelector('[data-survey-modal]');
     if (surveyModal) {
@@ -59,6 +61,39 @@ window.initApp = function() {
         });
     }
 };
+
+function initAdminBulkDiscountUi() {
+    if (!isAdminTheme()) {
+        return;
+    }
+
+    document.querySelectorAll('form[data-discount-unit-form]').forEach((form) => {
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const typeSelect = form.querySelector('select[name="discount_type"]');
+        const unitNode = form.querySelector('[data-discount-unit]');
+        if (!(typeSelect instanceof HTMLSelectElement) || !(unitNode instanceof HTMLElement)) {
+            return;
+        }
+
+        if (typeSelect.dataset.boundDiscountUnit === '1') {
+            return;
+        }
+        typeSelect.dataset.boundDiscountUnit = '1';
+
+        const currencyUnit = form.getAttribute('data-currency-unit') || '';
+
+        const sync = () => {
+            const typeValue = String(typeSelect.value || '');
+            unitNode.textContent = typeValue === 'percent' ? '٪' : currencyUnit;
+        };
+
+        typeSelect.addEventListener('change', sync);
+        sync();
+    });
+}
 
 function initHomeRowsAutoHideUi() {
     if (typeof window.__homeRowsAutoHideCleanup === 'function') {
@@ -181,6 +216,46 @@ function initCategoryTapPreviewUi() {
         clearPeek();
         document.removeEventListener('click', onClickCapture, true);
     };
+}
+
+function initHorizontalWheelScrollUi() {
+    const containers = Array.from(document.querySelectorAll('.h-scroll-container')).filter((node) => node instanceof HTMLElement);
+    if (containers.length === 0) {
+        return;
+    }
+
+    containers.forEach((container) => {
+        if (container.dataset.hWheelBound === '1') {
+            return;
+        }
+        container.dataset.hWheelBound = '1';
+
+        container.addEventListener('wheel', (event) => {
+            if (event.defaultPrevented) {
+                return;
+            }
+
+            if (container.scrollWidth <= container.clientWidth + 1) {
+                return;
+            }
+
+            const absX = Math.abs(event.deltaX);
+            const absY = Math.abs(event.deltaY);
+            if (absY === 0 || absY <= absX) {
+                return;
+            }
+
+            let delta = event.deltaY;
+            if (event.deltaMode === 1) {
+                delta *= 16;
+            } else if (event.deltaMode === 2) {
+                delta *= window.innerHeight;
+            }
+
+            event.preventDefault();
+            container.scrollBy({ left: delta, top: 0, behavior: 'auto' });
+        }, { passive: false });
+    });
 }
 
 function isAdminTheme() {

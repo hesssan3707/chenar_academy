@@ -42,18 +42,20 @@
                     <div class="p-6 border-t border-white/10">
                         @php($discountLabel = $course->discountLabel())
                         <div class="flex items-center justify-between mb-4">
-                            @php($currencyUnit = (($course->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($course->currency ?? 'IRR'))
-                            @php($original = $course->originalPrice())
-                            @php($final = $course->finalPrice())
+                        @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
+                        @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                        @php($original = $course->displayOriginalPrice($currencyCode))
+                        @php($final = $course->displayFinalPrice($currencyCode))
+                        @php($discountLabel = $course->discountLabelFor($currencyCode))
 
                             @if ($course->hasDiscount())
                                 <div class="flex flex-col">
                                     <span class="text-sm text-muted line-through">{{ number_format($original) }}</span>
                                     <div class="flex items-center gap-2">
                                         <span class="text-2xl font-bold text-brand">{{ number_format($final) }} <span class="text-sm">{{ $currencyUnit }}</span></span>
-                                        @if ($discountLabel)
-                                            <span class="badge badge--danger text-xs">{{ $discountLabel }}</span>
-                                        @endif
+                                    @if ($discountLabel)
+                                        <span class="badge badge--danger text-xs">{{ $discountLabel }}</span>
+                                    @endif
                                     </div>
                                 </div>
                             @else

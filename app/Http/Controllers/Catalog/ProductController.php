@@ -270,6 +270,7 @@ class ProductController extends Controller
         return view('catalog.products.show', [
             'product' => $product,
             'isPurchased' => $isPurchased,
+            'currencyUnit' => $product->currency ?: $this->commerceCurrency(),
             'reviewsArePublic' => $reviewsArePublic,
             'ratingsArePublic' => $ratingsArePublic,
             'avgRating' => $avgRating,

@@ -32,7 +32,7 @@ class ProductDiscountTest extends TestCase
 
         $this->assertSame(100000, $product->finalPrice());
         $this->assertTrue($product->hasDiscount());
-        $this->assertSame('17% OFF', $product->discountLabel());
+        $this->assertSame('۱۷٪ تخفیف', $product->discountLabel());
     }
 
     public function test_sale_price_higher_than_base_price_is_ignored(): void
@@ -61,7 +61,7 @@ class ProductDiscountTest extends TestCase
         $this->assertSame(150000, $product->sale_price);
         $this->assertSame(150000, $product->finalPrice());
         $this->assertTrue($product->hasDiscount());
-        $this->assertSame('25% OFF', $product->discountLabel());
+        $this->assertSame('۲۵٪ تخفیف', $product->discountLabel());
     }
 
     public function test_amount_discount_generates_amount_label(): void
@@ -75,6 +75,35 @@ class ProductDiscountTest extends TestCase
 
         $this->assertSame(150000, $product->finalPrice());
         $this->assertTrue($product->hasDiscount());
-        $this->assertSame('50,000 OFF', $product->discountLabel());
+        $this->assertSame('۵۰٬۰۰۰ ریال تخفیف', $product->discountLabel());
+    }
+
+    public function test_display_price_converts_between_rial_and_toman(): void
+    {
+        $product = new Product([
+            'base_price' => 120000,
+            'currency' => 'IRR',
+        ]);
+
+        $this->assertSame(120000, $product->displayOriginalPrice('IRR'));
+        $this->assertSame(12000, $product->displayOriginalPrice('IRT'));
+
+        $product->currency = 'IRT';
+        $product->base_price = 12000;
+        $this->assertSame(12000, $product->displayOriginalPrice('IRT'));
+        $this->assertSame(120000, $product->displayOriginalPrice('IRR'));
+    }
+
+    public function test_amount_discount_label_converts_currency_unit(): void
+    {
+        $product = new Product([
+            'base_price' => 200000,
+            'discount_type' => 'amount',
+            'discount_value' => 50000,
+            'currency' => 'IRR',
+        ]);
+
+        $this->assertSame('۵۰٬۰۰۰ ریال تخفیف', $product->discountLabelFor('IRR'));
+        $this->assertSame('۵٬۰۰۰ تومان تخفیف', $product->discountLabelFor('IRT'));
     }
 }

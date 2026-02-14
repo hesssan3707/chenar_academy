@@ -135,10 +135,83 @@ class Product extends Model
         return $this->discountAmount() > 0;
     }
 
+    public function currencyCode(): string
+    {
+        $currency = strtoupper((string) ($this->currency ?? 'IRR'));
+
+        return in_array($currency, ['IRR', 'IRT'], true) ? $currency : 'IRR';
+    }
+
+    private function currencyLabelFor(string $currency): string
+    {
+        $currency = strtoupper($currency);
+
+        return $currency === 'IRT' ? 'تومان' : 'ریال';
+    }
+
+    private function convertCurrencyAmount(int $amount, string $from, string $to): int
+    {
+        $from = strtoupper($from);
+        $to = strtoupper($to);
+
+        if ($from === $to) {
+            return $amount;
+        }
+
+        if ($from === 'IRR' && $to === 'IRT') {
+            return (int) floor(max(0, $amount) / 10);
+        }
+
+        if ($from === 'IRT' && $to === 'IRR') {
+            return max(0, $amount) * 10;
+        }
+
+        return $amount;
+    }
+
+    public function displayOriginalPrice(string $currency): int
+    {
+        return $this->convertCurrencyAmount($this->originalPrice(), $this->currencyCode(), $currency);
+    }
+
+    public function displayFinalPrice(string $currency): int
+    {
+        return $this->convertCurrencyAmount($this->finalPrice(), $this->currencyCode(), $currency);
+    }
+
+    private function formatPersianNumber(int $value): string
+    {
+        $formatted = number_format(max(0, $value));
+        $formatted = str_replace(',', '٬', $formatted);
+
+        return strtr($formatted, [
+            '0' => '۰',
+            '1' => '۱',
+            '2' => '۲',
+            '3' => '۳',
+            '4' => '۴',
+            '5' => '۵',
+            '6' => '۶',
+            '7' => '۷',
+            '8' => '۸',
+            '9' => '۹',
+        ]);
+    }
+
     public function discountLabel(): ?string
+    {
+        return $this->discountLabelFor($this->currencyCode());
+    }
+
+    public function discountLabelFor(string $currency): ?string
     {
         if (! $this->hasDiscount()) {
             return null;
+        }
+
+        $currency = strtoupper($currency);
+        if (! in_array($currency, ['IRR', 'IRT'], true)) {
+            $currency = 'IRR';
         }
 
         $discountType = (string) ($this->discount_type ?? '');
@@ -147,11 +220,13 @@ class Product extends Model
         if ($discountType === 'percent' && $discountValue > 0) {
             $percent = max(0, min(100, $discountValue));
 
-            return $percent.'% OFF';
+            return $this->formatPersianNumber($percent).'٪ تخفیف';
         }
 
         if ($discountType === 'amount' && $discountValue > 0) {
-            return number_format($discountValue).' OFF';
+            $displayAmount = $this->convertCurrencyAmount($discountValue, $this->currencyCode(), $currency);
+
+            return $this->formatPersianNumber($displayAmount).' '.$this->currencyLabelFor($currency).' تخفیف';
         }
 
         $base = $this->originalPrice();
@@ -163,6 +238,6 @@ class Product extends Model
         $percent = (int) round((($base - $final) / $base) * 100);
         $percent = max(1, min(99, $percent));
 
-        return $percent.'% OFF';
+        return $this->formatPersianNumber($percent).'٪ تخفیف';
     }
 }

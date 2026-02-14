@@ -18,7 +18,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class CheckoutController extends Controller
@@ -441,7 +440,7 @@ class CheckoutController extends Controller
             'taxPercent' => $taxPercent,
             'taxAmount' => $taxAmount,
             'payableAmount' => $total,
-            'currencyUnit' => $currency === 'IRR' ? 'تومان' : $currency,
+            'currencyUnit' => $currency === 'IRT' ? 'تومان' : 'ریال',
         ];
     }
 
@@ -451,7 +450,10 @@ class CheckoutController extends Controller
             return null;
         }
 
-        $path = Storage::disk($disk)->putFile($directory, $file);
+        $path = $file->store($directory, $disk);
+        if (! is_string($path) || $path === '') {
+            return null;
+        }
 
         return Media::query()->create([
             'uploaded_by_user_id' => request()->user()?->id,

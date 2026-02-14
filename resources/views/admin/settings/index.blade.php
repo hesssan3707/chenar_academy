@@ -77,8 +77,12 @@
                             </label>
 
                             <label class="field">
-                                <span class="field__label">واحد پول (کد ۳ حرفی)</span>
-                                <input name="currency" value="{{ old('currency', (string) ($currency ?? 'IRR')) }}">
+                                <span class="field__label">واحد پول</span>
+                                @php($currencyValue = strtoupper((string) old('currency', (string) ($currency ?? 'IRR'))))
+                                <select name="currency" required>
+                                    <option value="IRR" @selected($currencyValue === 'IRR')>ریال</option>
+                                    <option value="IRT" @selected($currencyValue === 'IRT')>تومان</option>
+                                </select>
                                 @error('currency')
                                     <div class="field__error">{{ $message }}</div>
                                 @enderror

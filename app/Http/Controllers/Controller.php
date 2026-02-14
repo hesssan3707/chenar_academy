@@ -126,7 +126,7 @@ class Controller extends BaseController
     {
         $currency = strtoupper($this->settingString('commerce.currency', 'IRR'));
 
-        return strlen($currency) === 3 ? $currency : 'IRR';
+        return in_array($currency, ['IRR', 'IRT'], true) ? $currency : 'IRR';
     }
 
     protected function commerceTaxPercent(): int

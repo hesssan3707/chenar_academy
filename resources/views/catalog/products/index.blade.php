@@ -85,15 +85,18 @@
                              <div class="card-product__cta">
                                 <div class="card-product__price mb-3">
                                    <div class="card-price-row">
-                                        @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
+                                        @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
+                                        @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                        @php($originalPrice = $product->displayOriginalPrice($currencyCode))
+                                        @php($finalPrice = $product->displayFinalPrice($currencyCode))
                                         @if($product->hasDiscount())
                                             <div class="card-price-stack flex flex-col">
-                                                <span class="text-xs text-muted line-through">{{ number_format($product->originalPrice()) }}</span>
-                                                <span class="card-price-amount text-brand font-bold">{{ number_format($product->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                <span class="text-xs text-muted line-through">{{ number_format($originalPrice) }}</span>
+                                                <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                             </div>
                                         @else
                                             <div class="card-price-stack">
-                                                <span class="card-price-amount text-brand font-bold">{{ number_format($product->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                             </div>
                                         @endif
                                         @if (! $purchased)
@@ -141,15 +144,18 @@
                                 <div class="card-product__cta">
                                     <div class="card-product__price mb-3">
                                         <div class="card-price-row">
-                                            @php($currencyUnit = (($product->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($product->currency ?? 'IRR'))
+                                            @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
+                                            @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                            @php($originalPrice = $product->displayOriginalPrice($currencyCode))
+                                            @php($finalPrice = $product->displayFinalPrice($currencyCode))
                                             @if($product->hasDiscount())
                                                 <div class="card-price-stack flex flex-col">
-                                                    <span class="text-xs text-muted line-through">{{ number_format($product->originalPrice()) }}</span>
-                                                    <span class="card-price-amount text-brand font-bold">{{ number_format($product->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                    <span class="text-xs text-muted line-through">{{ number_format($originalPrice) }}</span>
+                                                    <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                                 </div>
                                             @else
                                                 <div class="card-price-stack">
-                                                    <span class="card-price-amount text-brand font-bold">{{ number_format($product->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                    <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                                 </div>
                                             @endif
                                             @if (! $purchased)

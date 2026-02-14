@@ -40,7 +40,8 @@
                                         </div>
                                     </div>
                                     <div class="text-left">
-                                        @php($currencyUnit = (($order->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($order->currency ?? 'IRR'))
+                                        @php($currencyCode = strtoupper((string) ($order->currency ?? 'IRR')))
+                                        @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
                                         <div class="text-lg font-bold">
                                             {{ number_format((int) $order->payable_amount) }} <span class="text-sm font-normal text-muted">{{ $currencyUnit }}</span>
                                         </div>

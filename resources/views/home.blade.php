@@ -69,14 +69,17 @@
 
                                     <div class="card-product__cta">
                                         <div class="home-price-row">
-                                            @php($currencyUnit = (($item->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($item->currency ?? 'IRR'))
+                                            @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
+                                            @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                            @php($originalPrice = $item->displayOriginalPrice($currencyCode))
+                                            @php($finalPrice = $item->displayFinalPrice($currencyCode))
                                             @if($item->hasDiscount())
                                                 <div class="home-price-stack">
-                                                    <span class="text-xs text-muted line-through">{{ number_format($item->originalPrice()) }}</span>
-                                                    <span class="text-brand font-bold">{{ number_format($item->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                    <span class="text-xs text-muted line-through">{{ number_format($originalPrice) }}</span>
+                                                    <span class="text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                                 </div>
                                             @else
-                                                <span class="text-brand font-bold">{{ number_format($item->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                <span class="text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                             @endif
                                         </div>
                                         <span class="btn btn--secondary btn--sm w-full">مشاهده جزئیات</span>
@@ -120,14 +123,17 @@
 
                             <div class="card-product__cta">
                                 <div class="home-price-row">
-                                    @php($currencyUnit = (($item->currency ?? 'IRR') === 'IRR') ? 'تومان' : ($item->currency ?? 'IRR'))
+                                    @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
+                                    @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                    @php($originalPrice = $item->displayOriginalPrice($currencyCode))
+                                    @php($finalPrice = $item->displayFinalPrice($currencyCode))
                                     @if($item->hasDiscount())
                                         <div class="home-price-stack">
-                                            <span class="text-xs text-muted line-through">{{ number_format($item->originalPrice()) }}</span>
-                                            <span class="text-brand font-bold">{{ number_format($item->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                            <span class="text-xs text-muted line-through">{{ number_format($originalPrice) }}</span>
+                                            <span class="text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                         </div>
                                     @else
-                                        <span class="text-brand font-bold">{{ number_format($item->finalPrice()) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                        <span class="text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                     @endif
                                 </div>
                                 <span class="btn btn--secondary btn--sm w-full">مشاهده جزئیات</span>

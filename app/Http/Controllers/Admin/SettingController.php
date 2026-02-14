@@ -179,7 +179,7 @@ class SettingController extends Controller
             'ratings_public' => ['nullable', 'boolean'],
             'reviews_require_approval' => ['nullable', 'boolean'],
             'access_expiration_days' => ['nullable', 'integer', 'min:0', 'max:36500'],
-            'currency' => ['nullable', 'string', 'size:3'],
+            'currency' => ['nullable', 'string', Rule::in(['IRR', 'IRT'])],
             'tax_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
             'card_to_card_card1_name' => ['nullable', 'string', 'max:120'],
             'card_to_card_card1_number' => ['nullable', 'string', 'max:50'],
@@ -245,7 +245,7 @@ class SettingController extends Controller
             $currency = strtoupper(trim((string) ($validated['currency'] ?? 'IRR')));
             Setting::query()->updateOrCreate(
                 ['key' => 'commerce.currency', 'group' => 'commerce'],
-                ['value' => strlen($currency) === 3 ? $currency : 'IRR']
+                ['value' => in_array($currency, ['IRR', 'IRT'], true) ? $currency : 'IRR']
             );
 
             $taxPercent = (int) ($validated['tax_percent'] ?? 0);
