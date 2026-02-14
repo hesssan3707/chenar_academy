@@ -53,7 +53,7 @@
                                             <span class="badge">{{ $statusValue !== '' ? $statusValue : '—' }}</span>
                                         @endif
                                     </td>
-                                    <td class="admin-nowrap">{{ number_format((int) $product->base_price) }} {{ $product->currency }}</td>
+                                    <td class="admin-nowrap">{{ number_format((int) ($product->base_price ?? 0)) }} {{ $commerceCurrencyLabel ?? 'ریال' }}</td>
                                     <td class="admin-nowrap">{{ $product->published_at ? jdate($product->published_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <div style="display: inline-flex; gap: 8px; align-items: center;">

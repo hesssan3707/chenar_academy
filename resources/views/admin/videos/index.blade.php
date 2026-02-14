@@ -52,7 +52,7 @@
                                     </td>
                                     <td class="admin-nowrap">
                                         @php($price = (int) ($video->sale_price ?? $video->base_price ?? 0))
-                                        {{ number_format($price) }} {{ $video->currency ?? 'IRR' }}
+                                        {{ number_format($price) }} {{ $commerceCurrencyLabel ?? 'ریال' }}
                                     </td>
                                     <td class="admin-nowrap">
                                         {{ $video->published_at ? jdate($video->published_at)->format('Y/m/d H:i') : '—' }}

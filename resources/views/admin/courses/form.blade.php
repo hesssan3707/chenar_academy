@@ -26,7 +26,9 @@
                     action="{{ $isEdit ? route('admin.courses.update', $courseProduct->id) : route('admin.courses.store') }}"
                     enctype="multipart/form-data"
                     class="stack stack--sm"
-                    id="course-form">
+                    id="course-form"
+                    data-discount-unit-form
+                    data-currency-unit="{{ $commerceCurrencyLabel ?? 'ریال' }}">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -95,8 +97,11 @@
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
                             <span class="field__label">قیمت</span>
-                            <input type="number" name="base_price" min="0" max="2000000000"
-                                value="{{ old('base_price', (string) ($courseProduct->base_price ?? '')) }}">
+                            <div class="input-group">
+                                <input type="number" name="base_price" min="0" max="2000000000"
+                                    value="{{ old('base_price', (string) ($courseProduct->base_price ?? '')) }}">
+                                <span class="card__meta">{{ $commerceCurrencyLabel ?? 'ریال' }}</span>
+                            </div>
                             @error('base_price')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
@@ -129,8 +134,11 @@
 
                         <label class="field">
                             <span class="field__label">مقدار تخفیف</span>
-                            <input type="number" name="discount_value" min="0" max="2000000000"
-                                value="{{ old('discount_value', (string) ($courseProduct->discount_value ?? '')) }}">
+                            <div class="input-group">
+                                <input type="number" name="discount_value" min="0" max="2000000000"
+                                    value="{{ old('discount_value', (string) ($courseProduct->discount_value ?? '')) }}">
+                                <span class="card__meta" data-discount-unit>{{ $discountTypeValue === 'percent' ? '٪' : ($commerceCurrencyLabel ?? 'ریال') }}</span>
+                            </div>
                             @error('discount_value')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror

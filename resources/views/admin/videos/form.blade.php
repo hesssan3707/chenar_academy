@@ -26,7 +26,9 @@
                     action="{{ $isEdit ? route('admin.videos.update', $videoProduct->id) : route('admin.videos.store') }}"
                     enctype="multipart/form-data"
                     class="stack stack--sm"
-                    id="video-form">
+                    id="video-form"
+                    data-discount-unit-form
+                    data-currency-unit="{{ $commerceCurrencyLabel ?? 'ریال' }}">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -110,19 +112,13 @@
 
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
-                            <span class="field__label">قیمت پایه</span>
-                            <input type="number" name="base_price" min="0" max="2000000000"
-                                value="{{ old('base_price', (string) ($videoProduct->base_price ?? 0)) }}">
+                            <span class="field__label">قیمت</span>
+                            <div class="input-group">
+                                <input type="number" name="base_price" min="0" max="2000000000"
+                                    value="{{ old('base_price', (string) ($videoProduct->base_price ?? 0)) }}">
+                                <span class="card__meta">{{ $commerceCurrencyLabel ?? 'ریال' }}</span>
+                            </div>
                             @error('base_price')
-                                <div class="field__error">{{ $message }}</div>
-                            @enderror
-                        </label>
-
-                        <label class="field">
-                            <span class="field__label">قیمت فروش</span>
-                            <input type="number" name="sale_price" min="0" max="2000000000"
-                                value="{{ old('sale_price', (string) ($videoProduct->sale_price ?? '')) }}">
-                            @error('sale_price')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>
@@ -144,8 +140,11 @@
 
                         <label class="field">
                             <span class="field__label">مقدار تخفیف</span>
-                            <input type="number" name="discount_value" min="0" max="2000000000"
-                                value="{{ old('discount_value', (string) ($videoProduct->discount_value ?? '')) }}">
+                            <div class="input-group">
+                                <input type="number" name="discount_value" min="0" max="2000000000"
+                                    value="{{ old('discount_value', (string) ($videoProduct->discount_value ?? '')) }}">
+                                <span class="card__meta" data-discount-unit>{{ $discountTypeValue === 'percent' ? '٪' : ($commerceCurrencyLabel ?? 'ریال') }}</span>
+                            </div>
                             @error('discount_value')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
