@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Post;
 use App\Models\Product;
@@ -582,6 +584,108 @@ class AdminCrudSmokeTest extends TestCase
             ->assertSee('لغو شده');
     }
 
+    public function test_admin_orders_index_shows_user_name_and_phone_instead_of_id(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $customer = User::factory()->create([
+            'name' => 'نام نمایشی',
+            'phone' => '09120000001',
+        ]);
+        $customer->forceFill([
+            'first_name' => 'علی',
+            'last_name' => 'احمدی',
+        ])->save();
+
+        $order = Order::query()->create([
+            'order_number' => 'ORD-USER-1',
+            'user_id' => $customer->id,
+            'status' => 'pending',
+            'currency' => 'IRR',
+            'subtotal_amount' => 1000,
+            'discount_amount' => 0,
+            'total_amount' => 1000,
+            'payable_amount' => 1000,
+            'placed_at' => now(),
+            'paid_at' => null,
+            'cancelled_at' => null,
+            'meta' => [],
+        ]);
+
+        Payment::query()->create([
+            'order_id' => $order->id,
+            'gateway' => 'mock',
+            'status' => 'initiated',
+            'amount' => 1000,
+            'currency' => 'IRR',
+            'authority' => null,
+            'reference_id' => null,
+            'paid_at' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.orders.index'))
+            ->assertOk()
+            ->assertSee('علی احمدی')
+            ->assertSee('09120000001');
+    }
+
+    public function test_admin_order_show_hides_id_and_renders_items_with_product_title_and_price(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $customer = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'محصول تست',
+            'slug' => 'order-item-product',
+            'status' => 'published',
+            'base_price' => 12000,
+            'currency' => 'IRT',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $order = Order::query()->create([
+            'order_number' => 'ORD-ITEMS-1',
+            'user_id' => $customer->id,
+            'status' => 'pending',
+            'currency' => 'IRT',
+            'subtotal_amount' => 12000,
+            'discount_amount' => 0,
+            'total_amount' => 12000,
+            'payable_amount' => 12000,
+            'placed_at' => now(),
+            'paid_at' => null,
+            'cancelled_at' => null,
+            'meta' => [],
+        ]);
+
+        OrderItem::query()->create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'product_type' => 'video',
+            'product_title' => $product->title,
+            'quantity' => 1,
+            'unit_price' => 12000,
+            'total_price' => 12000,
+            'currency' => 'IRT',
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.orders.show', $order->id))
+            ->assertOk()
+            ->assertDontSee('شناسه:')
+            ->assertDontSee('<th>تعداد</th>', false)
+            ->assertSee('محصول تست')
+            ->assertSee('تومان</span> <span dir="ltr">12,000', false);
+    }
+
     public function test_admin_payment_pages_localize_gateway_and_status(): void
     {
         $admin = User::factory()->create();
@@ -627,6 +731,55 @@ class AdminCrudSmokeTest extends TestCase
             ->assertOk()
             ->assertSee('درگاه آزمایشی')
             ->assertSee('در انتظار پرداخت');
+    }
+
+    public function test_admin_payments_index_shows_user_and_hides_order_column(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $customer = User::factory()->create([
+            'name' => 'نام نمایشی',
+            'phone' => '09120000002',
+        ]);
+        $customer->forceFill([
+            'first_name' => 'زهرا',
+            'last_name' => 'محمدی',
+        ])->save();
+
+        $order = Order::query()->create([
+            'order_number' => 'ORD-PAY-USER-1',
+            'user_id' => $customer->id,
+            'status' => 'pending',
+            'currency' => 'IRR',
+            'subtotal_amount' => 1000,
+            'discount_amount' => 0,
+            'total_amount' => 1000,
+            'payable_amount' => 1000,
+            'placed_at' => now(),
+            'paid_at' => null,
+            'cancelled_at' => null,
+            'meta' => [],
+        ]);
+
+        Payment::query()->create([
+            'order_id' => $order->id,
+            'gateway' => 'mock',
+            'status' => 'initiated',
+            'amount' => 1000,
+            'currency' => 'IRR',
+            'authority' => null,
+            'reference_id' => null,
+            'paid_at' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.payments.index'))
+            ->assertOk()
+            ->assertDontSee('<th>سفارش</th>', false)
+            ->assertSee('زهرا محمدی')
+            ->assertSee('09120000002');
     }
 
     public function test_admin_ticket_pages_localize_status_and_priority(): void
@@ -715,5 +868,41 @@ class AdminCrudSmokeTest extends TestCase
         $this->actingAs($admin, 'admin')->get(route('admin.media.index'))->assertOk()->assertDontSee($stubMessage);
         $this->actingAs($admin, 'admin')->get(route('admin.roles.index'))->assertOk()->assertDontSee($stubMessage);
         $this->actingAs($admin, 'admin')->get(route('admin.permissions.index'))->assertOk()->assertDontSee($stubMessage);
+    }
+
+    public function test_admin_can_create_coupon_scoped_to_products(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'محصول تست',
+            'slug' => 'coupon-scope-product',
+            'status' => 'published',
+            'base_price' => 100000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.coupons.store'), [
+                'code' => 'off1a2',
+                'discount_type' => 'percent',
+                'discount_value' => 10,
+                'starts_at' => '',
+                'ends_at' => '',
+                'usage_limit' => '',
+                'per_user_limit' => '',
+                'is_active' => '1',
+                'apply_all_products' => '0',
+                'product_ids' => [$product->id],
+            ])
+            ->assertRedirect();
+
+        $coupon = Coupon::query()->firstOrFail();
+        $this->assertSame('OFF1A2', (string) $coupon->code);
+        $this->assertSame([$product->id], array_values(($coupon->meta ?? [])['product_ids'] ?? []));
     }
 }

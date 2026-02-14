@@ -17,6 +17,8 @@
 
             @php($role = $role ?? null)
             @php($isEdit = $role && $role->exists)
+            @php($permissions = $permissions ?? collect())
+            @php($selectedPermissionIds = collect(old('permission_ids', $selectedPermissionIds ?? []))->map(fn ($v) => (string) $v)->all())
 
             <div class="panel max-w-md">
                 <form method="post"
@@ -43,6 +45,32 @@
                             <div class="field__error">{{ $message }}</div>
                         @enderror
                     </label>
+
+                    @if ($permissions->isNotEmpty())
+                        <div class="divider"></div>
+
+                        <div class="stack stack--xs">
+                            <div class="admin-section-title">دسترسی‌ها</div>
+                            <div class="page-subtitle admin-section-subtitle">دسترسی‌های این نقش</div>
+
+                            <div class="stack stack--xs">
+                                @foreach ($permissions as $permission)
+                                    <label class="cluster">
+                                        <input type="checkbox" name="permission_ids[]"
+                                            value="{{ $permission->id }}" @checked(in_array((string) $permission->id, $selectedPermissionIds, true))>
+                                        <span>{{ $permission->name }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            @error('permission_ids')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                            @error('permission_ids.*')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    @endif
                 </form>
 
                 <div class="form-actions">

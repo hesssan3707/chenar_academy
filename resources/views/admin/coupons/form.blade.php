@@ -17,8 +17,12 @@
 
             @php($coupon = $coupon ?? null)
             @php($isEdit = $coupon && $coupon->exists)
+            @php($products = $products ?? collect())
+            @php($selectedProductIds = $selectedProductIds ?? [])
+            @php($oldSelected = collect(old('product_ids', $selectedProductIds))->map(fn ($id) => (int) $id)->filter(fn ($id) => $id > 0)->unique()->values()->all())
+            @php($applyAll = old('apply_all_products', count($oldSelected) === 0 ? '1' : '0') === '1')
 
-            <div class="panel max-w-md">
+            <div class="panel">
                 <form method="post"
                     action="{{ $isEdit ? route('admin.coupons.update', $coupon->id) : route('admin.coupons.store') }}"
                     class="stack stack--sm"
@@ -30,7 +34,18 @@
 
                     <label class="field">
                         <span class="field__label">کد</span>
-                        <input name="code" required value="{{ old('code', (string) ($coupon->code ?? '')) }}">
+                        <div class="input-group">
+                            <input name="code" required minlength="5" maxlength="8" value="{{ old('code', (string) ($coupon->code ?? '')) }}" data-coupon-code-input>
+                            <button class="btn btn--ghost btn--sm" type="button" data-generate-coupon-code aria-label="تولید کد تصادفی">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 2v6h-6"></path>
+                                    <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+                                    <path d="M3 22v-6h6"></path>
+                                    <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <span class="field__hint">۵ تا ۸ کاراکتر، فقط حروف انگلیسی و عدد.</span>
                         @error('code')
                             <div class="field__error">{{ $message }}</div>
                         @enderror
@@ -86,15 +101,6 @@
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>
-
-                        <label class="field">
-                            <span class="field__label">سقف هر کاربر</span>
-                            <input type="number" name="per_user_limit" min="1" max="2000000000"
-                                value="{{ old('per_user_limit', (string) ($coupon->per_user_limit ?? '')) }}">
-                            @error('per_user_limit')
-                                <div class="field__error">{{ $message }}</div>
-                            @enderror
-                        </label>
                     </div>
 
                     <label class="field">
@@ -104,6 +110,49 @@
                             <span>فعال</span>
                         </label>
                         @error('is_active')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
+                    <label class="field">
+                        <span class="field__label">شرایط استفاده</span>
+                        <label class="cluster">
+                            <input type="checkbox" name="first_purchase_only" value="1" @checked(old('first_purchase_only', (($coupon->meta ?? [])['first_purchase_only'] ?? false) ? '1' : '0') === '1')>
+                            <span>فقط خرید اول</span>
+                        </label>
+                        <span class="field__hint">هر کد فقط یک بار برای هر کاربر قابل استفاده است.</span>
+                        @error('first_purchase_only')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
+                    <div class="section__title section__title--sm">محدودیت محصولات</div>
+
+                    <label class="field">
+                        <span class="field__label">اعمال روی</span>
+                        <label class="cluster">
+                            <input type="checkbox" name="apply_all_products" value="1" @checked($applyAll) data-coupon-all-products>
+                            <span>همه محصولات</span>
+                        </label>
+                        @error('apply_all_products')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
+                    <label class="field">
+                        <span class="field__label">محصولات مجاز</span>
+                        <select name="product_ids[]" multiple size="16" style="min-height: 320px;" @disabled($applyAll) data-coupon-products>
+                            @foreach ($products as $product)
+                                <option value="{{ $product->id }}" @selected(in_array((int) $product->id, $oldSelected, true))>
+                                    #{{ $product->id }} — {{ $product->title ?? 'محصول' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <span class="field__hint">اگر همه محصولات غیرفعال باشد، حداقل یک محصول انتخاب کنید.</span>
+                        @error('product_ids')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                        @error('product_ids.*')
                             <div class="field__error">{{ $message }}</div>
                         @enderror
                     </label>

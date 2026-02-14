@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Media;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Setting;
 use App\Models\User;
@@ -598,5 +599,116 @@ class AccessControlTest extends TestCase
                 'password' => 'newpass123',
                 'password_confirmation' => 'newpass123',
             ])->assertSessionHasErrors(['current_password']);
+    }
+
+    public function test_admin_permissions_are_not_enforced_until_any_role_permission_exists(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        Permission::query()->create([
+            'name' => 'admin.settings',
+            'description' => null,
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.settings.index'))
+            ->assertOk();
+    }
+
+    public function test_admin_cannot_access_route_when_permissions_enabled_but_permission_not_granted(): void
+    {
+        $admin = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $admin->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $permission = Permission::query()->create([
+            'name' => 'admin.settings',
+            'description' => null,
+        ]);
+
+        $otherRole = Role::create(['name' => 'editor']);
+        $otherRole->permissions()->attach($permission->id);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.settings.index'))
+            ->assertForbidden();
+    }
+
+    public function test_admin_can_access_route_when_permissions_enabled_and_permission_granted(): void
+    {
+        $admin = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $admin->roles()->attach($adminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $permission = Permission::query()->create([
+            'name' => 'admin.settings',
+            'description' => null,
+        ]);
+
+        $adminRole->permissions()->attach($permission->id);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.settings.index'))
+            ->assertOk();
+    }
+
+    public function test_super_admin_can_access_routes_even_without_explicit_permissions(): void
+    {
+        $superAdmin = User::factory()->create();
+        $superAdminRole = Role::create(['name' => 'super_admin']);
+        $superAdmin->roles()->attach($superAdminRole->id);
+
+        config()->set('theme.available', ['default']);
+        config()->set('theme.default', 'default');
+        config()->set('theme.setting_key', 'theme.active');
+
+        $permission = Permission::query()->create([
+            'name' => 'admin.settings',
+            'description' => null,
+        ]);
+
+        $otherRole = Role::create(['name' => 'editor']);
+        $otherRole->permissions()->attach($permission->id);
+
+        $this->actingAs($superAdmin, 'admin')
+            ->get(route('admin.settings.index'))
+            ->assertOk();
+    }
+
+    public function test_non_super_admin_cannot_access_roles_page_when_super_admin_exists_and_permissions_enabled(): void
+    {
+        $superAdmin = User::factory()->create();
+        $superAdmin->roles()->attach(Role::create(['name' => 'super_admin'])->id);
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $permission = Permission::query()->create([
+            'name' => 'admin.roles',
+            'description' => null,
+        ]);
+
+        Role::create(['name' => 'editor'])->permissions()->attach($permission->id);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.roles.index'))
+            ->assertForbidden();
+
+        $this->actingAs($superAdmin, 'admin')
+            ->get(route('admin.roles.index'))
+            ->assertOk();
     }
 }

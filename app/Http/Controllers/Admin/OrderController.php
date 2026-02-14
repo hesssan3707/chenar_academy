@@ -22,7 +22,7 @@ class OrderController extends Controller
     public function index(): View
     {
         $orders = Order::query()
-            ->with('payments')
+            ->with(['payments', 'user'])
             ->orderByDesc('id')
             ->paginate(40);
 
@@ -58,7 +58,7 @@ class OrderController extends Controller
 
     public function show(int $order): View
     {
-        $orderModel = Order::query()->with(['items', 'payments'])->findOrFail($order);
+        $orderModel = Order::query()->with(['items', 'items.product', 'payments', 'user'])->findOrFail($order);
 
         $cardToCardPayment = ($orderModel->payments ?? collect())->firstWhere('gateway', 'card_to_card');
         $receiptMediaId = (int) (($cardToCardPayment?->meta ?? [])['receipt_media_id'] ?? 0);

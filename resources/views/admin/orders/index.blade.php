@@ -20,10 +20,9 @@
                 </div>
             @else
                 <div class="table-wrap">
-                    <table class="table">
+                    <table class="table table--sm table--compact table--fixed">
                         <thead>
                             <tr>
-                                <th>شناسه</th>
                                 <th>کاربر</th>
                                 <th>روش پرداخت</th>
                                 <th>وضعیت</th>
@@ -44,12 +43,21 @@
                                     'cancelled' => 'لغو شده',
                                     default => (string) ($order->status ?? '—'),
                                 })
+                                @php($currencyCode = strtoupper((string) ($order->currency ?? 'IRR')))
+                                @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                @php($user = $order->user)
+                                @php($displayName = trim((string) ($user?->first_name ?? '').' '.(string) ($user?->last_name ?? '')))
+                                @php($displayName = $displayName !== '' ? $displayName : (string) ($user?->name ?? ''))
                                 <tr>
-                                    <td>{{ $order->id }}</td>
-                                    <td class="admin-nowrap">{{ $order->user_id ?? '—' }}</td>
+                                    <td class="admin-nowrap">
+                                        <div class="stack stack--xs">
+                                            <div class="admin-nowrap">{{ $displayName !== '' ? $displayName : '—' }}</div>
+                                            <div class="text-muted" dir="ltr">{{ $user?->phone ?: '—' }}</div>
+                                        </div>
+                                    </td>
                                     <td class="admin-nowrap">{{ $methodLabel }}</td>
                                     <td class="admin-nowrap">{{ $statusLabel }}</td>
-                                    <td class="admin-nowrap">{{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }} {{ $order->currency ?? 'IRR' }}</td>
+                                    <td class="admin-nowrap"><span class="text-muted">{{ $currencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }}</span></td>
                                     <td class="admin-nowrap">{{ $order->created_at ? jdate($order->created_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.orders.show', $order->id) }}">نمایش</a>

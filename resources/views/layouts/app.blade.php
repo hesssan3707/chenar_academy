@@ -53,6 +53,7 @@
 
                         <div class="form-actions" style="margin-top: 10px;">
                             <button class="btn btn--primary" type="submit">ثبت پاسخ</button>
+                            <button class="btn btn--ghost" type="button" data-survey-optout>تمایل ندارم</button>
                         </div>
                     </form>
                 </div>

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -63,5 +64,29 @@ class User extends Authenticatable
     public function hasRole(string $roleName): bool
     {
         return $this->roles()->where('name', $roleName)->exists();
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('super_admin');
+    }
+
+    public function hasPermission(string $permissionName): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $permissionName = trim($permissionName);
+        if ($permissionName === '') {
+            return false;
+        }
+
+        return DB::table('permissions')
+            ->join('role_permissions', 'permissions.id', '=', 'role_permissions.permission_id')
+            ->join('user_roles', 'user_roles.role_id', '=', 'role_permissions.role_id')
+            ->where('user_roles.user_id', (int) $this->id)
+            ->where('permissions.name', $permissionName)
+            ->exists();
     }
 }

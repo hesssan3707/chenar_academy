@@ -28,10 +28,14 @@
                             'cancelled' => 'لغو شده',
                             default => (string) ($order->status ?? '—'),
                         })
-                        <div>شناسه: {{ $order->id }}</div>
-                        <div>کاربر: {{ $order->user_id ?? '—' }}</div>
+                        @php($currencyCode = strtoupper((string) ($order->currency ?? 'IRR')))
+                        @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                        @php($user = $order->user)
+                        @php($displayName = trim((string) ($user?->first_name ?? '').' '.(string) ($user?->last_name ?? '')))
+                        @php($displayName = $displayName !== '' ? $displayName : (string) ($user?->name ?? ''))
+                        <div>کاربر: {{ $displayName !== '' ? $displayName : '—' }} <span class="text-muted" dir="ltr">{{ $user?->phone ?: '' }}</span></div>
                         <div>وضعیت: {{ $statusLabel }}</div>
-                        <div>مبلغ: {{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }} {{ $order->currency ?? 'IRR' }}</div>
+                        <div>مبلغ: <span class="text-muted">{{ $currencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }}</span></div>
                         <div>ایجاد: {{ $order->created_at ? jdate($order->created_at)->format('Y/m/d H:i') : '—' }}</div>
                         <div>پرداخت: {{ $order->paid_at ? jdate($order->paid_at)->format('Y/m/d H:i') : '—' }}</div>
                         <div>لغو: {{ $order->cancelled_at ? jdate($order->cancelled_at)->format('Y/m/d H:i') : '—' }}</div>
@@ -45,20 +49,20 @@
                         <p class="page-subtitle">آیتمی ثبت نشده است.</p>
                     @else
                         <div class="table-wrap">
-                            <table class="table">
+                            <table class="table table--sm table--compact table--fixed">
                                 <thead>
                                     <tr>
                                         <th>محصول</th>
-                                        <th>تعداد</th>
                                         <th>مبلغ</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($items as $item)
+                                        @php($itemCurrencyCode = strtoupper((string) ($item->currency ?? ($order->currency ?? 'IRR'))))
+                                        @php($itemCurrencyUnit = $itemCurrencyCode === 'IRT' ? 'تومان' : 'ریال')
                                         <tr>
-                                            <td>{{ $item->product_id ?? '—' }}</td>
-                                            <td>{{ $item->quantity ?? 1 }}</td>
-                                            <td class="admin-nowrap">{{ number_format((int) ($item->total_amount ?? $item->unit_amount ?? 0)) }} {{ $order->currency ?? 'IRR' }}</td>
+                                            <td>{{ $item->product?->title ?: ($item->product_title ?? '—') }}</td>
+                                            <td class="admin-nowrap"><span class="text-muted">{{ $itemCurrencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($item->total_price ?? 0)) }}</span></td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -121,10 +125,9 @@
                     <p class="page-subtitle">پرداختی ثبت نشده است.</p>
                 @else
                     <div class="table-wrap">
-                        <table class="table">
+                        <table class="table table--sm table--compact table--fixed">
                             <thead>
                                 <tr>
-                                    <th>شناسه</th>
                                     <th>وضعیت</th>
                                     <th>مبلغ</th>
                                     <th>مرجع</th>
@@ -141,11 +144,12 @@
                                         'rejected' => 'رد شده',
                                         default => (string) ($payment->status ?? '—'),
                                     })
+                                    @php($paymentCurrencyCode = strtoupper((string) ($payment->currency ?? ($order->currency ?? 'IRR'))))
+                                    @php($paymentCurrencyUnit = $paymentCurrencyCode === 'IRT' ? 'تومان' : 'ریال')
                                     <tr>
-                                        <td>{{ $payment->id }}</td>
                                         <td class="admin-nowrap">{{ $paymentStatusLabel }}</td>
-                                        <td class="admin-nowrap">{{ number_format((int) ($payment->amount ?? 0)) }} {{ $payment->currency ?? ($order->currency ?? 'IRR') }}</td>
-                                        <td class="admin-nowrap">{{ $payment->reference_id ?? '—' }}</td>
+                                        <td class="admin-nowrap"><span class="text-muted">{{ $paymentCurrencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span></td>
+                                        <td dir="ltr">{{ $payment->reference_id ?? '—' }}</td>
                                         <td class="admin-nowrap">
                                             <a class="btn btn--ghost btn--sm" href="{{ route('admin.payments.show', $payment->id) }}">نمایش</a>
                                         </td>

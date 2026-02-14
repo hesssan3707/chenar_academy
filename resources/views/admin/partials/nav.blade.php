@@ -25,8 +25,9 @@
 
         <a class="admin-nav__link" href="{{ route('admin.dashboard') }}">داشبورد</a>
         <a class="admin-nav__link" href="{{ route('admin.users.index') }}">کاربران</a>
-        <a class="admin-nav__link" href="{{ route('admin.roles.index') }}">نقش‌ها</a>
-        <a class="admin-nav__link" href="{{ route('admin.permissions.index') }}">دسترسی‌ها</a>
+        @if (auth('admin')->user()?->hasRole('super_admin'))
+            <a class="admin-nav__link" href="{{ route('admin.roles.index') }}">دسترسی‌ها</a>
+        @endif
         <a class="admin-nav__link" href="{{ route('admin.categories.index') }}">دسته‌بندی‌ها</a>
         <a class="admin-nav__link" href="{{ route('admin.products.index') }}">محصولات</a>
         <a class="admin-nav__link" href="{{ route('admin.videos.index') }}">ویدیوها</a>

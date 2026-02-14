@@ -18,6 +18,8 @@
             @php($user = $user ?? null)
             @php($isEdit = $user && $user->exists)
             @php($isAdmin = (bool) ($isAdmin ?? false))
+            @php($roles = $roles ?? collect())
+            @php($selectedRoleIds = collect(old('role_ids', $selectedRoleIds ?? []))->map(fn ($v) => (string) $v)->all())
 
             <div class="stack">
                 <div class="panel max-w-md">
@@ -76,6 +78,33 @@
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>
+
+                        @php($selectableRoles = $roles->filter(fn ($role) => ! in_array((string) ($role->name ?? ''), ['admin', 'super_admin'], true)))
+                        @if ($selectableRoles->isNotEmpty())
+                            <div class="divider"></div>
+
+                            <div class="stack stack--xs">
+                                <div class="admin-section-title">نقش‌ها</div>
+                                <div class="page-subtitle admin-section-subtitle">نقش‌های این کاربر (برای دسترسی‌های پنل مدیریت)</div>
+
+                                <div class="stack stack--xs">
+                                    @foreach ($selectableRoles as $role)
+                                        <label class="cluster">
+                                            <input type="checkbox" name="role_ids[]"
+                                                value="{{ $role->id }}" @checked(in_array((string) $role->id, $selectedRoleIds, true))>
+                                            <span>{{ $role->name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                                @error('role_ids')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                                @error('role_ids.*')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @endif
                     </form>
 
                     <div class="form-actions">

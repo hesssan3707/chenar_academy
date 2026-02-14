@@ -11,6 +11,7 @@
                     <p class="page-subtitle">مدیریت دسترسی‌ها</p>
                 </div>
                 <div class="admin-page-header__actions">
+                    <a class="btn btn--ghost" href="{{ route('admin.roles.index') }}">نقش‌ها</a>
                     <a class="btn btn--primary" href="{{ route('admin.permissions.create') }}">ایجاد دسترسی</a>
                 </div>
             </div>

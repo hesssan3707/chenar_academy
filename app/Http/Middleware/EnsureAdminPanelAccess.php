@@ -12,7 +12,7 @@ class EnsureAdminPanelAccess
     {
         $user = $request->user();
 
-        if (! $user || ! $user->hasRole('admin')) {
+        if (! $user || (! $user->hasRole('admin') && ! $user->hasRole('super_admin'))) {
             abort(403);
         }
 

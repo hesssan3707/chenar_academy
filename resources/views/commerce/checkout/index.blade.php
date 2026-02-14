@@ -45,22 +45,29 @@
                     </div>
                 </div>
 
-                <div class="panel checkout-panel">
+                <div class="panel checkout-panel panel-main" data-checkout-coupon-panel style="position: relative;">
                     <div class="checkout-panel__head">
                         <div class="h4">کد تخفیف</div>
                     </div>
 
-                    <form method="post" action="{{ route('checkout.coupon.apply') }}" class="stack stack--sm">
+                    <div class="panel-main-loader" aria-hidden="true">
+                        <div class="panel-main-spinner"></div>
+                    </div>
+
+                    <form method="post" action="{{ route('checkout.coupon.apply') }}" class="stack stack--sm" data-checkout-coupon-form>
                         @csrf
                         <label class="field">
                             <span class="field__label">کد تخفیف</span>
-                            <input name="code" value="{{ old('code', $couponCode ?? '') }}" placeholder="مثلاً OFF10">
+                            <input name="code" value="{{ old('code', $couponCode ?? '') }}" placeholder="مثلاً OFF10" data-checkout-coupon-input>
                             <span class="field__hint">برای حذف کد، فیلد را خالی کنید و اعمال را بزنید.</span>
                             @error('code')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>
-                        <button class="btn btn--secondary" type="submit">اعمال</button>
+                        <div class="form-actions">
+                            <button class="btn btn--secondary" type="submit" data-checkout-coupon-submit>اعمال</button>
+                            <div class="field__hint" data-checkout-coupon-message hidden></div>
+                        </div>
                     </form>
                 </div>
 
@@ -81,7 +88,7 @@
                         <div class="checkout-kv checkout-kv--discount">
                             <div>تخفیف</div>
                             <div>
-                                <span class="price" dir="ltr">{{ number_format($discountAmount ?? 0) }}</span>
+                                <span class="price" dir="ltr" data-checkout-discount>{{ number_format($discountAmount ?? 0) }}</span>
                                 <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
                             </div>
                         </div>
@@ -90,7 +97,7 @@
                             <div class="checkout-kv">
                             <div class="text-muted">مالیات (<span dir="ltr">{{ (int) ($taxPercent ?? 0) }}٪</span>)</div>
                                 <div>
-                                    <span class="price" dir="ltr">{{ number_format($taxAmount ?? 0) }}</span>
+                                    <span class="price" dir="ltr" data-checkout-tax>{{ number_format($taxAmount ?? 0) }}</span>
                                     <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
                                 </div>
                             </div>
@@ -101,7 +108,7 @@
                         <div class="checkout-payable">
                             <div class="checkout-payable__label">مبلغ قابل پرداخت</div>
                             <div class="checkout-payable__value">
-                                <span class="price" dir="ltr">{{ number_format($payableAmount ?? 0) }}</span>
+                                <span class="price" dir="ltr" data-checkout-payable>{{ number_format($payableAmount ?? 0) }}</span>
                                 <span class="price__unit">{{ $currencyUnit ?? 'تومان' }}</span>
                             </div>
                         </div>

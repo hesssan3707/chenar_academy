@@ -20,6 +20,202 @@ class CheckoutFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_ajax_coupon_apply_returns_json_and_updates_invoice(): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.tax_percent', 'group' => 'commerce'],
+            ['value' => 0]
+        );
+
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو تست',
+            'slug' => 'checkout-video-ajax-coupon',
+            'status' => 'published',
+            'base_price' => 200000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $cart = Cart::query()->create([
+            'user_id' => $user->id,
+            'session_id' => null,
+            'status' => 'active',
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        CartItem::query()->create([
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 200000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        Coupon::query()->create([
+            'code' => 'OFF10',
+            'discount_type' => 'percent',
+            'discount_value' => 10,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addDay(),
+            'usage_limit' => null,
+            'per_user_limit' => null,
+            'used_count' => 0,
+            'is_active' => true,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->withHeader('X-Requested-With', 'XMLHttpRequest')
+            ->withHeader('Accept', 'application/json')
+            ->post(route('checkout.coupon.apply'), [
+                'code' => 'off10',
+            ])
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('couponCode', 'OFF10')
+            ->assertJsonPath('discountAmount', 20000)
+            ->assertJsonPath('taxAmount', 0)
+            ->assertJsonPath('payableAmount', 180000);
+    }
+
+    public function test_coupon_is_only_usable_once_per_user(): void
+    {
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو تست',
+            'slug' => 'checkout-video-once-per-user',
+            'status' => 'published',
+            'base_price' => 200000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $cart = Cart::query()->create([
+            'user_id' => $user->id,
+            'session_id' => null,
+            'status' => 'active',
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        CartItem::query()->create([
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 200000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        $coupon = Coupon::query()->create([
+            'code' => 'ONCE1',
+            'discount_type' => 'percent',
+            'discount_value' => 10,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addDay(),
+            'usage_limit' => null,
+            'per_user_limit' => 1,
+            'used_count' => 0,
+            'is_active' => true,
+            'meta' => [],
+        ]);
+
+        \App\Models\CouponRedemption::query()->create([
+            'coupon_id' => $coupon->id,
+            'user_id' => $user->id,
+            'order_id' => null,
+            'redeemed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->withHeader('X-Requested-With', 'XMLHttpRequest')
+            ->withHeader('Accept', 'application/json')
+            ->post(route('checkout.coupon.apply'), [
+                'code' => 'ONCE1',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('ok', false);
+    }
+
+    public function test_first_purchase_only_coupon_is_rejected_after_paid_order(): void
+    {
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو تست',
+            'slug' => 'checkout-video-first-purchase',
+            'status' => 'published',
+            'base_price' => 200000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $cart = Cart::query()->create([
+            'user_id' => $user->id,
+            'session_id' => null,
+            'status' => 'active',
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        CartItem::query()->create([
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 200000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        Order::query()->create([
+            'order_number' => 'ORD-FIRST-1',
+            'user_id' => $user->id,
+            'status' => 'paid',
+            'currency' => 'IRR',
+            'subtotal_amount' => 200000,
+            'discount_amount' => 0,
+            'total_amount' => 200000,
+            'payable_amount' => 200000,
+            'placed_at' => now(),
+            'paid_at' => now(),
+            'cancelled_at' => null,
+            'meta' => [],
+        ]);
+
+        Coupon::query()->create([
+            'code' => 'FIRST1',
+            'discount_type' => 'percent',
+            'discount_value' => 10,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addDay(),
+            'usage_limit' => null,
+            'per_user_limit' => 1,
+            'used_count' => 0,
+            'is_active' => true,
+            'meta' => ['first_purchase_only' => true],
+        ]);
+
+        $this->actingAs($user)
+            ->withHeader('X-Requested-With', 'XMLHttpRequest')
+            ->withHeader('Accept', 'application/json')
+            ->post(route('checkout.coupon.apply'), [
+                'code' => 'FIRST1',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('ok', false);
+    }
+
     public function test_checkout_page_shows_coupon_input_and_invoice(): void
     {
         $user = User::factory()->create();
@@ -442,6 +638,141 @@ class CheckoutFlowTest extends TestCase
             ->assertSee(number_format(180000), false);
     }
 
+    public function test_coupon_applies_only_to_selected_products(): void
+    {
+        $user = User::factory()->create();
+
+        $eligible = Product::query()->create([
+            'type' => 'video',
+            'title' => 'محصول واجد شرایط',
+            'slug' => 'eligible-product',
+            'status' => 'published',
+            'base_price' => 100000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $ineligible = Product::query()->create([
+            'type' => 'video',
+            'title' => 'محصول غیر واجد شرایط',
+            'slug' => 'ineligible-product',
+            'status' => 'published',
+            'base_price' => 200000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $cart = Cart::query()->create([
+            'user_id' => $user->id,
+            'session_id' => null,
+            'status' => 'active',
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        CartItem::query()->create([
+            'cart_id' => $cart->id,
+            'product_id' => $eligible->id,
+            'quantity' => 1,
+            'unit_price' => 100000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        CartItem::query()->create([
+            'cart_id' => $cart->id,
+            'product_id' => $ineligible->id,
+            'quantity' => 1,
+            'unit_price' => 200000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        Coupon::query()->create([
+            'code' => 'OFF10A',
+            'discount_type' => 'percent',
+            'discount_value' => 10,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addDay(),
+            'usage_limit' => null,
+            'per_user_limit' => null,
+            'used_count' => 0,
+            'is_active' => true,
+            'meta' => [
+                'product_ids' => [$eligible->id],
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('checkout.coupon.apply'), [
+                'code' => 'off10a',
+            ])
+            ->assertRedirect(route('checkout.index'));
+
+        $this->actingAs($user)
+            ->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee(number_format(10000), false)
+            ->assertSee(number_format(290000), false);
+    }
+
+    public function test_coupon_cannot_be_applied_when_cart_has_no_eligible_products(): void
+    {
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'محصول تست',
+            'slug' => 'test-product',
+            'status' => 'published',
+            'base_price' => 200000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $cart = Cart::query()->create([
+            'user_id' => $user->id,
+            'session_id' => null,
+            'status' => 'active',
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        CartItem::query()->create([
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 200000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        Coupon::query()->create([
+            'code' => 'OFF10B',
+            'discount_type' => 'percent',
+            'discount_value' => 10,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addDay(),
+            'usage_limit' => null,
+            'per_user_limit' => null,
+            'used_count' => 0,
+            'is_active' => true,
+            'meta' => [
+                'product_ids' => [9999999],
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('checkout.coupon.apply'), [
+                'code' => 'OFF10B',
+            ])
+            ->assertRedirect(route('checkout.index'))
+            ->assertSessionHas('toast', fn ($toast) => is_array($toast) && (($toast['type'] ?? null) === 'error'));
+    }
+
     public function test_mock_gateway_success_marks_order_paid_and_grants_access(): void
     {
         $user = User::factory()->create();
@@ -568,6 +899,113 @@ class CheckoutFlowTest extends TestCase
         $this->assertDatabaseCount('cart_items', 1);
         $this->assertDatabaseCount('orders', 1);
         $this->assertDatabaseCount('payments', 1);
+    }
+
+    public function test_checkout_invoice_converts_prices_to_toman_when_commerce_currency_is_irt(): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.currency', 'group' => 'commerce'],
+            ['value' => 'IRT']
+        );
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.tax_percent', 'group' => 'commerce'],
+            ['value' => 0]
+        );
+
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو تست',
+            'slug' => 'checkout-video-toman',
+            'status' => 'published',
+            'base_price' => 200000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $cart = Cart::query()->create([
+            'user_id' => $user->id,
+            'session_id' => null,
+            'status' => 'active',
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        CartItem::query()->create([
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 200000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('20,000', false)
+            ->assertSee('تومان');
+    }
+
+    public function test_mock_gateway_payment_uses_toman_currency_when_configured(): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.currency', 'group' => 'commerce'],
+            ['value' => 'IRT']
+        );
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.tax_percent', 'group' => 'commerce'],
+            ['value' => 0]
+        );
+
+        $user = User::factory()->create();
+
+        $product = Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه پرداختی',
+            'slug' => 'paid-note-toman',
+            'status' => 'published',
+            'base_price' => 120000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $cart = Cart::query()->create([
+            'user_id' => $user->id,
+            'session_id' => null,
+            'status' => 'active',
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        CartItem::query()->create([
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 120000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.pay'))->assertRedirect();
+
+        $payment = Payment::query()->firstOrFail();
+        $order = Order::query()->firstOrFail();
+        $orderItem = $order->items()->firstOrFail();
+
+        $this->assertSame('IRT', (string) $order->currency);
+        $this->assertSame('IRT', (string) $payment->currency);
+        $this->assertSame(12000, (int) $payment->amount);
+
+        $this->assertSame(12000, (int) $order->subtotal_amount);
+        $this->assertSame(12000, (int) $order->payable_amount);
+
+        $this->assertSame('IRT', (string) $orderItem->currency);
+        $this->assertSame(12000, (int) $orderItem->unit_price);
+        $this->assertSame(12000, (int) $orderItem->total_price);
     }
 
     public function test_access_expiration_setting_sets_expires_at_on_purchase(): void

@@ -35,11 +35,13 @@
                         'rejected' => 'رد شده',
                         default => (string) ($payment->status ?? '—'),
                     })
+                    @php($currencyCode = strtoupper((string) ($payment->currency ?? 'IRR')))
+                    @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
                     <div>شناسه: {{ $payment->id }}</div>
                     <div>سفارش: {{ $payment->order_id ?? '—' }}</div>
                     <div>درگاه: {{ $gatewayLabel }}</div>
                     <div>وضعیت: {{ $statusLabel }}</div>
-                    <div>مبلغ: {{ number_format((int) ($payment->amount ?? 0)) }} {{ $payment->currency ?? 'IRR' }}</div>
+                    <div>مبلغ: <span class="text-muted">{{ $currencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span></div>
                     <div>Authority: {{ $payment->authority ?? '—' }}</div>
                     <div>Reference ID: {{ $payment->reference_id ?? '—' }}</div>
                     <div>پرداخت: {{ $payment->paid_at ? jdate($payment->paid_at)->format('Y/m/d H:i') : '—' }}</div>

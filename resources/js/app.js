@@ -29,28 +29,59 @@ window.initApp = function() {
     initAdminSettingsTabsUi();
     initAdminWysiwygUi();
     initAdminBulkDiscountUi();
+    initAdminCouponFormUi();
     initHomeRowsAutoHideUi();
     initCategoryTapPreviewUi();
     initHorizontalWheelScrollUi();
     initProductDetailTabsUi();
+    initCheckoutCouponUi();
 
     const surveyModal = document.querySelector('[data-survey-modal]');
-    if (surveyModal) {
-        surveyModal.hidden = false;
+    if (surveyModal && !window.__surveyModalShown) {
+        const optedOut = (() => {
+            try {
+                return window.localStorage && window.localStorage.getItem('survey_opt_out') === '1';
+            } catch (e) {
+                return false;
+            }
+        })();
+
+        window.__surveyModalShown = true;
+        if (optedOut) {
+            surveyModal.hidden = true;
+        } else {
+            surveyModal.hidden = false;
+        }
 
         const close = () => {
             surveyModal.hidden = true;
         };
 
-        surveyModal.querySelectorAll('[data-survey-close]').forEach((node) => {
-            node.addEventListener('click', close);
-        });
+        if (surveyModal.dataset.surveyBound !== '1') {
+            surveyModal.dataset.surveyBound = '1';
 
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && !surveyModal.hidden) {
-                close();
-            }
-        });
+            surveyModal.querySelectorAll('[data-survey-close]').forEach((node) => {
+                node.addEventListener('click', close);
+            });
+
+            surveyModal.querySelectorAll('[data-survey-optout]').forEach((node) => {
+                node.addEventListener('click', () => {
+                    try {
+                        if (window.localStorage) {
+                            window.localStorage.setItem('survey_opt_out', '1');
+                        }
+                    } catch (e) {}
+                    close();
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !surveyModal.hidden) {
+                    close();
+                }
+            });
+        }
+
     }
 
     if (window.jalaliDatepicker) {
@@ -93,6 +124,192 @@ function initAdminBulkDiscountUi() {
 
         typeSelect.addEventListener('change', sync);
         sync();
+    });
+}
+
+function initAdminCouponFormUi() {
+    if (!isAdminTheme()) {
+        return;
+    }
+
+    const form = document.querySelector('#coupon-form');
+    if (!(form instanceof HTMLFormElement)) {
+        return;
+    }
+
+    const codeInput = form.querySelector('[data-coupon-code-input]');
+    if (codeInput instanceof HTMLInputElement) {
+        const normalize = () => {
+            const raw = String(codeInput.value || '');
+            const upper = raw.toUpperCase();
+            const cleaned = upper.replace(/[^A-Z0-9]/g, '').slice(0, 8);
+            if (cleaned !== raw) {
+                codeInput.value = cleaned;
+            }
+        };
+
+        codeInput.addEventListener('input', normalize);
+        normalize();
+    }
+
+    const generateButton = form.querySelector('[data-generate-coupon-code]');
+    if (generateButton instanceof HTMLButtonElement && codeInput instanceof HTMLInputElement) {
+        const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        const numbers = '23456789';
+        const all = letters + numbers;
+
+        const randInt = (max) => {
+            if (max <= 0) {
+                return 0;
+            }
+
+            if (window.crypto && window.crypto.getRandomValues) {
+                const buf = new Uint32Array(1);
+                window.crypto.getRandomValues(buf);
+                return Number(buf[0] % max);
+            }
+
+            return Math.floor(Math.random() * max);
+        };
+
+        const shuffle = (arr) => {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = randInt(i + 1);
+                const t = arr[i];
+                arr[i] = arr[j];
+                arr[j] = t;
+            }
+            return arr;
+        };
+
+        const generate = () => {
+            const length = 8;
+            const chars = [letters[randInt(letters.length)], numbers[randInt(numbers.length)]];
+
+            while (chars.length < length) {
+                chars.push(all[randInt(all.length)]);
+            }
+
+            return shuffle(chars).join('');
+        };
+
+        generateButton.addEventListener('click', () => {
+            codeInput.value = generate();
+            codeInput.dispatchEvent(new Event('input', { bubbles: true }));
+            codeInput.focus();
+        });
+    }
+
+    const allProducts = form.querySelector('[data-coupon-all-products]');
+    const productsSelect = form.querySelector('[data-coupon-products]');
+    if (allProducts instanceof HTMLInputElement && productsSelect instanceof HTMLSelectElement) {
+        const sync = () => {
+            const isAll = !!allProducts.checked;
+            productsSelect.disabled = isAll;
+        };
+        allProducts.addEventListener('change', sync);
+        sync();
+    }
+}
+
+function initCheckoutCouponUi() {
+    const form = document.querySelector('[data-checkout-coupon-form]');
+    if (!(form instanceof HTMLFormElement)) {
+        return;
+    }
+
+    if (form.dataset.checkoutCouponBound === '1') {
+        return;
+    }
+    form.dataset.checkoutCouponBound = '1';
+
+    const panel = document.querySelector('[data-checkout-coupon-panel]');
+    const submitBtn = form.querySelector('[data-checkout-coupon-submit]');
+    const messageEl = form.querySelector('[data-checkout-coupon-message]');
+    const input = form.querySelector('[data-checkout-coupon-input]');
+
+    const formatNumber = (value) => {
+        const n = Number(value || 0);
+        if (!Number.isFinite(n)) {
+            return '0';
+        }
+        return new Intl.NumberFormat('en-US').format(Math.trunc(n));
+    };
+
+    const setLoading = (isLoading) => {
+        if (panel instanceof HTMLElement) {
+            panel.classList.toggle('panel-main-is-loading', !!isLoading);
+        }
+        if (submitBtn instanceof HTMLButtonElement) {
+            submitBtn.disabled = !!isLoading;
+        }
+    };
+
+    const setMessage = (text, type) => {
+        if (!(messageEl instanceof HTMLElement)) {
+            return;
+        }
+        const t = String(text || '').trim();
+        messageEl.hidden = t === '';
+        messageEl.textContent = t;
+        messageEl.classList.toggle('field__error', type === 'error');
+        messageEl.classList.toggle('field__hint', type !== 'error');
+    };
+
+    const syncInvoice = (data) => {
+        const discountEl = document.querySelector('[data-checkout-discount]');
+        const payableEl = document.querySelector('[data-checkout-payable]');
+        const taxEl = document.querySelector('[data-checkout-tax]');
+
+        if (discountEl instanceof HTMLElement) {
+            discountEl.textContent = formatNumber(data?.discountAmount);
+        }
+        if (payableEl instanceof HTMLElement) {
+            payableEl.textContent = formatNumber(data?.payableAmount);
+        }
+        if (taxEl instanceof HTMLElement) {
+            taxEl.textContent = formatNumber(data?.taxAmount);
+        }
+    };
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        setMessage('', 'info');
+        setLoading(true);
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: new FormData(form),
+            });
+
+            let data = null;
+            try {
+                data = await response.json();
+            } catch (e) {}
+
+            if (!response.ok) {
+                const message = data?.message || 'کد تخفیف نامعتبر است یا شرایط استفاده را ندارد.';
+                syncInvoice(data);
+                setMessage(message, 'error');
+                return;
+            }
+
+            syncInvoice(data);
+            if (input instanceof HTMLInputElement && typeof data?.couponCode === 'string') {
+                input.value = data.couponCode;
+            }
+            setMessage(data?.message || '', data?.type === 'error' ? 'error' : 'success');
+        } catch (e) {
+            setMessage('خطا در ارتباط. دوباره تلاش کنید.', 'error');
+        } finally {
+            setLoading(false);
+        }
     });
 }
 

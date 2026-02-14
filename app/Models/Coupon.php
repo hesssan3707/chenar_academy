@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Coupon extends Model
 {
@@ -28,4 +29,29 @@ class Coupon extends Model
         'is_active' => 'boolean',
         'meta' => 'array',
     ];
+
+    public function redemptions(): HasMany
+    {
+        return $this->hasMany(CouponRedemption::class, 'coupon_id')->orderByDesc('redeemed_at')->orderByDesc('id');
+    }
+
+    public function productIds(): array
+    {
+        $raw = ($this->meta ?? [])['product_ids'] ?? null;
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        return collect($raw)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    public function appliesToAllProducts(): bool
+    {
+        return count($this->productIds()) === 0;
+    }
 }

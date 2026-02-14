@@ -12,6 +12,7 @@
                 </div>
                 <div class="admin-page-header__actions">
                     <a class="btn btn--ghost" href="{{ route('admin.permissions.index') }}">بازگشت</a>
+                    <a class="btn btn--ghost" href="{{ route('admin.roles.index') }}">نقش‌ها</a>
                 </div>
             </div>
 

@@ -112,48 +112,51 @@ Route::prefix('admin')
             ->middleware('admin.users')
             ->name('users.accesses.destroy');
 
-        Route::resource('categories', AdminCategoryController::class);
-        Route::get('discounts/category', [AdminDiscountController::class, 'category'])->name('discounts.category');
-        Route::post('discounts/category', [AdminDiscountController::class, 'applyCategory'])->name('discounts.category.apply');
-        Route::post('discounts/products', [AdminDiscountController::class, 'applyProducts'])->name('discounts.products.apply');
-        Route::resource('products', AdminProductController::class);
-        Route::resource('courses', AdminCourseController::class);
+        Route::resource('categories', AdminCategoryController::class)->middleware('admin.permission:admin.categories');
+        Route::get('discounts/category', [AdminDiscountController::class, 'category'])->middleware('admin.permission:admin.discounts')->name('discounts.category');
+        Route::post('discounts/category', [AdminDiscountController::class, 'applyCategory'])->middleware('admin.permission:admin.discounts')->name('discounts.category.apply');
+        Route::post('discounts/products', [AdminDiscountController::class, 'applyProducts'])->middleware('admin.permission:admin.discounts')->name('discounts.products.apply');
+        Route::resource('products', AdminProductController::class)->middleware('admin.permission:admin.products');
+        Route::resource('courses', AdminCourseController::class)->middleware('admin.permission:admin.courses');
 
         Route::post('orders/{order}/card-to-card/approve', [AdminOrderController::class, 'approveCardToCard'])
+            ->middleware('admin.permission:admin.orders')
             ->name('orders.card-to-card.approve');
         Route::post('orders/{order}/card-to-card/reject', [AdminOrderController::class, 'rejectCardToCard'])
+            ->middleware('admin.permission:admin.orders')
             ->name('orders.card-to-card.reject');
         Route::get('orders/{order}/card-to-card/receipt', [AdminOrderController::class, 'receiptCardToCard'])
+            ->middleware('admin.permission:admin.orders')
             ->name('orders.card-to-card.receipt');
 
-        Route::resource('orders', AdminOrderController::class);
-        Route::resource('payments', AdminPaymentController::class);
-        Route::resource('coupons', AdminCouponController::class);
+        Route::resource('orders', AdminOrderController::class)->middleware('admin.permission:admin.orders');
+        Route::resource('payments', AdminPaymentController::class)->middleware('admin.permission:admin.payments');
+        Route::resource('coupons', AdminCouponController::class)->middleware('admin.permission:admin.coupons');
 
-        Route::resource('booklets', AdminBookletController::class);
-        Route::resource('videos', AdminVideoController::class);
+        Route::resource('booklets', AdminBookletController::class)->middleware('admin.permission:admin.booklets');
+        Route::resource('videos', AdminVideoController::class)->middleware('admin.permission:admin.videos');
 
-        Route::resource('posts', AdminPostController::class);
+        Route::resource('posts', AdminPostController::class)->middleware('admin.permission:admin.posts');
 
-        Route::resource('banners', AdminBannerController::class);
-        Route::get('settings', [AdminSettingController::class, 'index'])->name('settings.index');
-        Route::put('settings', [AdminSettingController::class, 'update'])->name('settings.update');
+        Route::resource('banners', AdminBannerController::class)->middleware('admin.permission:admin.banners');
+        Route::get('settings', [AdminSettingController::class, 'index'])->middleware('admin.permission:admin.settings')->name('settings.index');
+        Route::put('settings', [AdminSettingController::class, 'update'])->middleware('admin.permission:admin.settings')->name('settings.update');
 
-        Route::post('reviews/{review}/approve', [AdminProductReviewController::class, 'approve'])->name('reviews.approve');
-        Route::post('reviews/{review}/reject', [AdminProductReviewController::class, 'reject'])->name('reviews.reject');
-        Route::resource('reviews', AdminProductReviewController::class)->only(['index', 'edit', 'update', 'destroy']);
+        Route::resource('reviews', AdminProductReviewController::class)->middleware('admin.permission:admin.reviews')->only(['index', 'edit', 'update', 'destroy']);
+        Route::post('reviews/{review}/approve', [AdminProductReviewController::class, 'approve'])->middleware('admin.permission:admin.reviews')->name('reviews.approve');
+        Route::post('reviews/{review}/reject', [AdminProductReviewController::class, 'reject'])->middleware('admin.permission:admin.reviews')->name('reviews.reject');
 
-        Route::resource('social-links', AdminSocialLinkController::class);
-        Route::get('surveys/{survey}/results', [AdminSurveyController::class, 'results'])->name('surveys.results');
-        Route::resource('surveys', AdminSurveyController::class);
+        Route::resource('social-links', AdminSocialLinkController::class)->middleware('admin.permission:admin.social_links');
+        Route::get('surveys/{survey}/results', [AdminSurveyController::class, 'results'])->middleware('admin.permission:admin.surveys')->name('surveys.results');
+        Route::resource('surveys', AdminSurveyController::class)->middleware('admin.permission:admin.surveys');
 
-        Route::resource('tickets', AdminTicketController::class);
-        Route::post('media/wysiwyg', [AdminMediaController::class, 'wysiwyg'])->name('media.wysiwyg');
-        Route::get('media/{media}/stream', [AdminMediaController::class, 'stream'])->name('media.stream');
-        Route::resource('media', AdminMediaController::class)->except(['edit', 'update']);
+        Route::resource('tickets', AdminTicketController::class)->middleware('admin.permission:admin.tickets');
+        Route::post('media/wysiwyg', [AdminMediaController::class, 'wysiwyg'])->middleware('admin.permission:admin.media')->name('media.wysiwyg');
+        Route::get('media/{media}/stream', [AdminMediaController::class, 'stream'])->middleware('admin.permission:admin.media')->name('media.stream');
+        Route::resource('media', AdminMediaController::class)->middleware('admin.permission:admin.media')->except(['edit', 'update']);
 
-        Route::resource('roles', AdminRoleController::class);
-        Route::resource('permissions', AdminPermissionController::class);
+        Route::resource('roles', AdminRoleController::class)->middleware('admin.permission:admin.roles');
+        Route::resource('permissions', AdminPermissionController::class)->middleware('admin.permission:admin.roles');
     });
 
 Route::prefix('panel')

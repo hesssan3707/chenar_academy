@@ -22,11 +22,19 @@
                     <p class="page-subtitle">هنوز دسته‌بندی ثبت نشده است.</p>
                 </div>
             @else
+                @php($typeLabels = [
+                    'institution' => 'دانشگاه',
+                    'note' => 'جزوه',
+                    'video' => 'ویدیو',
+                    'course' => 'دوره',
+                    'post' => 'مقاله',
+                    'ticket' => 'تیکت',
+                ])
                 @foreach ($categoryGroups as $type => $nodes)
                     @if (! empty($nodes))
                         <div class="panel" style="margin-top: 18px;">
                             <div class="stack stack--xs">
-                                <div class="field__label">نوع: {{ $type }}</div>
+                                <div class="field__label">نوع: {{ $typeLabels[$type] ?? $type }}</div>
                             </div>
 
                             <div class="divider"></div>

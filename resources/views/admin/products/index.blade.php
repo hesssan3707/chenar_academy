@@ -10,9 +10,6 @@
                     <h1 class="page-title">{{ $title ?? 'محصولات' }}</h1>
                     <p class="page-subtitle">مدیریت محصولات</p>
                 </div>
-                <div class="admin-page-header__actions">
-                    <a class="btn btn--primary" href="{{ route('admin.products.create') }}">ایجاد محصول</a>
-                </div>
             </div>
 
             @php($products = $products ?? null)

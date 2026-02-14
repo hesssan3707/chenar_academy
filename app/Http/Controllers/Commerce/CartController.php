@@ -17,17 +17,20 @@ class CartController extends Controller
     {
         $cart = $this->findCart($request);
         $items = collect();
+        $currency = $this->commerceCurrency();
 
         if ($cart) {
+            $currency = $this->ensureCartCurrency($cart);
             $items = CartItem::query()
                 ->where('cart_id', $cart->id)
                 ->with(['product', 'product.thumbnailMedia'])
                 ->orderBy('id')
                 ->get();
+
+            $this->normalizeCartItemsCurrencyAndPrice($items, $currency);
         }
 
         $subtotal = (int) $items->sum(fn (CartItem $item) => (int) $item->unit_price * (int) $item->quantity);
-        $currency = strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()));
         $currencyUnit = $currency === 'IRT' ? 'تومان' : 'ریال';
 
         if ($request->wantsJson()) {
@@ -81,14 +84,15 @@ class CartController extends Controller
         $request->session()->put('cart_token', $guestToken);
         $cart = $this->getOrCreateCart($request, $guestToken);
 
-        $unitPrice = (int) $product->finalPrice();
+        $currency = $this->ensureCartCurrency($cart);
+        $unitPrice = (int) $product->displayFinalPrice($currency);
 
         $item = CartItem::query()->where('cart_id', $cart->id)->where('product_id', $product->id)->first();
         if ($item) {
             $item->forceFill([
                 'quantity' => 1,
                 'unit_price' => $unitPrice,
-                'currency' => $product->currency ?? $this->commerceCurrency(),
+                'currency' => $currency,
             ])->save();
         } else {
             CartItem::query()->create([
@@ -96,7 +100,7 @@ class CartController extends Controller
                 'product_id' => $product->id,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
-                'currency' => $product->currency ?? $this->commerceCurrency(),
+                'currency' => $currency,
                 'meta' => [],
             ]);
         }
@@ -253,5 +257,39 @@ class CartController extends Controller
             ->withSecure((bool) $secure)
             ->withHttpOnly(true)
             ->withSameSite('lax');
+    }
+
+    private function ensureCartCurrency(Cart $cart): string
+    {
+        $currency = $this->commerceCurrency();
+        $current = strtoupper((string) ($cart->currency ?? ''));
+
+        if ($current !== $currency) {
+            $cart->forceFill([
+                'currency' => $currency,
+            ])->save();
+        }
+
+        return $currency;
+    }
+
+    private function normalizeCartItemsCurrencyAndPrice($items, string $currency): void
+    {
+        foreach (($items ?? collect()) as $item) {
+            if (! $item instanceof CartItem) {
+                continue;
+            }
+
+            $product = $item->product;
+            $desiredCurrency = $currency;
+            $desiredUnitPrice = $product ? (int) $product->displayFinalPrice($currency) : (int) ($item->unit_price ?? 0);
+
+            if ((int) ($item->unit_price ?? 0) !== $desiredUnitPrice || strtoupper((string) ($item->currency ?? '')) !== $desiredCurrency) {
+                $item->forceFill([
+                    'unit_price' => $desiredUnitPrice,
+                    'currency' => $desiredCurrency,
+                ])->save();
+            }
+        }
     }
 }

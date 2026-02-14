@@ -13,6 +13,7 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\ProductAccess;
 use App\Models\Setting;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -27,7 +28,8 @@ class CheckoutController extends Controller
         $cart = $this->findActiveUserCart($request);
         $items = $this->getCartItems($cart);
 
-        $invoice = $this->invoiceData($request, $items);
+        $currency = strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()));
+        $invoice = $this->invoiceData($request, $items, $currency);
 
         return view('commerce.checkout.index', [
             'cart' => $cart,
@@ -36,8 +38,10 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function applyCoupon(Request $request): RedirectResponse
+    public function applyCoupon(Request $request): RedirectResponse|JsonResponse
     {
+        $isAjax = $request->expectsJson() || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest';
+
         $validated = $request->validate([
             'code' => ['nullable', 'string', 'max:50'],
         ]);
@@ -48,6 +52,20 @@ class CheckoutController extends Controller
         if ($code === '') {
             $request->session()->forget('checkout_coupon_code');
 
+            if ($isAjax) {
+                $cart = $this->findActiveUserCart($request);
+                $items = $this->getCartItems($cart);
+                $currency = strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()));
+                $invoice = $this->invoiceData($request, $items, $currency);
+
+                return response()->json([
+                    'ok' => true,
+                    'type' => 'success',
+                    'message' => 'کد تخفیف حذف شد.',
+                    ...$this->invoicePayload($invoice),
+                ]);
+            }
+
             return redirect()->route('checkout.index')->with('toast', [
                 'type' => 'success',
                 'title' => 'حذف شد',
@@ -55,8 +73,66 @@ class CheckoutController extends Controller
             ]);
         }
 
+        if (preg_match('/^[A-Z0-9]{5,8}$/', $code) !== 1) {
+            if ($isAjax) {
+                $cart = $this->findActiveUserCart($request);
+                $items = $this->getCartItems($cart);
+                $currency = strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()));
+                $invoice = $this->invoiceData($request, $items, $currency);
+
+                return response()->json([
+                    'ok' => false,
+                    'type' => 'error',
+                    'message' => 'کد تخفیف نامعتبر است یا شرایط استفاده را ندارد.',
+                    ...$this->invoicePayload($invoice),
+                ], 422);
+            }
+
+            return redirect()->route('checkout.index')->with('toast', [
+                'type' => 'error',
+                'title' => 'نامعتبر',
+                'message' => 'کد تخفیف نامعتبر است یا شرایط استفاده را ندارد.',
+            ]);
+        }
+
         $coupon = $this->findValidCouponForUser($request, $code);
         if (! $coupon) {
+            if ($isAjax) {
+                $cart = $this->findActiveUserCart($request);
+                $items = $this->getCartItems($cart);
+                $currency = strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()));
+                $invoice = $this->invoiceData($request, $items, $currency);
+
+                return response()->json([
+                    'ok' => false,
+                    'type' => 'error',
+                    'message' => 'کد تخفیف نامعتبر است یا شرایط استفاده را ندارد.',
+                    ...$this->invoicePayload($invoice),
+                ], 422);
+            }
+
+            return redirect()->route('checkout.index')->with('toast', [
+                'type' => 'error',
+                'title' => 'نامعتبر',
+                'message' => 'کد تخفیف نامعتبر است یا شرایط استفاده را ندارد.',
+            ]);
+        }
+
+        $cart = $this->findActiveUserCart($request);
+        $items = $this->getCartItems($cart);
+        if (! $this->couponAppliesToItems($items, $coupon)) {
+            if ($isAjax) {
+                $currency = strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()));
+                $invoice = $this->invoiceData($request, $items, $currency);
+
+                return response()->json([
+                    'ok' => false,
+                    'type' => 'error',
+                    'message' => 'کد تخفیف نامعتبر است یا شرایط استفاده را ندارد.',
+                    ...$this->invoicePayload($invoice),
+                ], 422);
+            }
+
             return redirect()->route('checkout.index')->with('toast', [
                 'type' => 'error',
                 'title' => 'نامعتبر',
@@ -65,6 +141,18 @@ class CheckoutController extends Controller
         }
 
         $request->session()->put('checkout_coupon_code', $code);
+
+        if ($isAjax) {
+            $currency = strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()));
+            $invoice = $this->invoiceData($request, $items, $currency);
+
+            return response()->json([
+                'ok' => true,
+                'type' => 'success',
+                'message' => 'کد تخفیف اعمال شد.',
+                ...$this->invoicePayload($invoice),
+            ]);
+        }
 
         return redirect()->route('checkout.index')->with('toast', [
             'type' => 'success',
@@ -86,7 +174,8 @@ class CheckoutController extends Controller
             ]);
         }
 
-        $invoice = $this->invoiceData($request, $items);
+        $currency = strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()));
+        $invoice = $this->invoiceData($request, $items, $currency);
         $subtotal = (int) $invoice['subtotal'];
         $discountAmount = (int) $invoice['discountAmount'];
         $taxPercent = (int) $invoice['taxPercent'];
@@ -95,12 +184,12 @@ class CheckoutController extends Controller
         $coupon = $invoice['coupon'] ?? null;
         $couponCode = (string) ($invoice['couponCode'] ?? '');
 
-        $payment = DB::transaction(function () use ($request, $cart, $items, $subtotal, $discountAmount, $total, $coupon, $couponCode, $taxPercent, $taxAmount) {
+        $payment = DB::transaction(function () use ($request, $cart, $items, $subtotal, $discountAmount, $total, $coupon, $couponCode, $taxPercent, $taxAmount, $currency) {
             $order = Order::query()->create([
                 'order_number' => $this->generateOrderNumber(),
                 'user_id' => $request->user()->id,
                 'status' => 'pending',
-                'currency' => $this->commerceCurrency(),
+                'currency' => $currency,
                 'subtotal_amount' => $subtotal,
                 'discount_amount' => $discountAmount,
                 'total_amount' => $total,
@@ -134,7 +223,7 @@ class CheckoutController extends Controller
                     'quantity' => $qty,
                     'unit_price' => $unit,
                     'total_price' => $unit * $qty,
-                    'currency' => $product->currency ?? $this->commerceCurrency(),
+                    'currency' => $currency,
                     'meta' => [],
                 ]);
             }
@@ -144,7 +233,7 @@ class CheckoutController extends Controller
                 'gateway' => app()->environment('production') ? 'gateway' : 'mock',
                 'status' => 'initiated',
                 'amount' => $total,
-                'currency' => $this->commerceCurrency(),
+                'currency' => $currency,
                 'authority' => null,
                 'reference_id' => null,
                 'paid_at' => null,
@@ -187,7 +276,7 @@ class CheckoutController extends Controller
                 'cart' => $cart,
                 'items' => $items,
                 'cardToCardCards' => $cards,
-                ...$this->invoiceData($request, $items),
+                ...$this->invoiceData($request, $items, strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()))),
             ]);
         }
 
@@ -195,7 +284,7 @@ class CheckoutController extends Controller
             'cart' => $cart,
             'items' => $items,
             'cardToCardCards' => $cards,
-            ...$this->invoiceData($request, $items),
+            ...$this->invoiceData($request, $items, strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()))),
         ]);
     }
 
@@ -221,7 +310,8 @@ class CheckoutController extends Controller
             return redirect()->back()->withInput()->withErrors(['receipt' => 'رسید پرداخت معتبر نیست.']);
         }
 
-        $invoice = $this->invoiceData($request, $items);
+        $currency = strtoupper((string) ($cart?->currency ?: $this->commerceCurrency()));
+        $invoice = $this->invoiceData($request, $items, $currency);
         $subtotal = (int) $invoice['subtotal'];
         $discountAmount = (int) $invoice['discountAmount'];
         $taxPercent = (int) $invoice['taxPercent'];
@@ -232,12 +322,12 @@ class CheckoutController extends Controller
 
         $media = $this->storeUploadedMedia($receiptFile, 'local', 'receipts');
 
-        $order = DB::transaction(function () use ($request, $cart, $items, $subtotal, $discountAmount, $total, $coupon, $couponCode, $taxPercent, $taxAmount, $media) {
+        $order = DB::transaction(function () use ($request, $cart, $items, $subtotal, $discountAmount, $total, $coupon, $couponCode, $taxPercent, $taxAmount, $media, $currency) {
             $order = Order::query()->create([
                 'order_number' => $this->generateOrderNumber(),
                 'user_id' => $request->user()->id,
                 'status' => 'pending_review',
-                'currency' => $this->commerceCurrency(),
+                'currency' => $currency,
                 'subtotal_amount' => $subtotal,
                 'discount_amount' => $discountAmount,
                 'total_amount' => $total,
@@ -273,7 +363,7 @@ class CheckoutController extends Controller
                     'quantity' => $qty,
                     'unit_price' => $unit,
                     'total_price' => $unit * $qty,
-                    'currency' => $product->currency ?? $this->commerceCurrency(),
+                    'currency' => $currency,
                     'meta' => [],
                 ]);
             }
@@ -283,7 +373,7 @@ class CheckoutController extends Controller
                 'gateway' => 'card_to_card',
                 'status' => 'pending_review',
                 'amount' => $total,
-                'currency' => $this->commerceCurrency(),
+                'currency' => $currency,
                 'authority' => null,
                 'reference_id' => null,
                 'paid_at' => null,
@@ -415,22 +505,32 @@ class CheckoutController extends Controller
         ]);
     }
 
-    private function invoiceData(Request $request, $items): array
+    private function invoiceData(Request $request, $items, ?string $currency = null): array
     {
         $subtotal = (int) ($items ?? collect())->sum(fn (CartItem $item) => (int) $item->unit_price * (int) $item->quantity);
 
         $couponCode = (string) $request->session()->get('checkout_coupon_code', '');
         $coupon = $couponCode !== '' ? $this->findValidCouponForUser($request, $couponCode) : null;
 
-        $discountAmount = $coupon ? $this->calculateDiscountAmount($subtotal, $coupon) : 0;
-        $discountAmount = min($discountAmount, $subtotal);
+        $eligibleSubtotal = 0;
+        if ($coupon) {
+            $eligibleSubtotal = $this->couponEligibleSubtotal($items, $coupon);
+            if ($eligibleSubtotal <= 0 && ! $coupon->appliesToAllProducts()) {
+                $request->session()->forget('checkout_coupon_code');
+                $couponCode = '';
+                $coupon = null;
+            }
+        }
+
+        $discountAmount = $coupon ? $this->calculateDiscountAmount($eligibleSubtotal, $coupon) : 0;
+        $discountAmount = min($discountAmount, max(0, $eligibleSubtotal));
 
         $netTotal = max(0, $subtotal - $discountAmount);
         $taxPercent = $this->commerceTaxPercent();
         $taxAmount = (int) floor($netTotal * $taxPercent / 100);
         $total = $netTotal + $taxAmount;
 
-        $currency = $this->commerceCurrency();
+        $currency = strtoupper((string) ($currency ?: $this->commerceCurrency()));
 
         return [
             'couponCode' => $couponCode,
@@ -441,6 +541,19 @@ class CheckoutController extends Controller
             'taxAmount' => $taxAmount,
             'payableAmount' => $total,
             'currencyUnit' => $currency === 'IRT' ? 'تومان' : 'ریال',
+        ];
+    }
+
+    private function invoicePayload(array $invoice): array
+    {
+        return [
+            'couponCode' => (string) ($invoice['couponCode'] ?? ''),
+            'subtotal' => (int) ($invoice['subtotal'] ?? 0),
+            'discountAmount' => (int) ($invoice['discountAmount'] ?? 0),
+            'taxPercent' => (int) ($invoice['taxPercent'] ?? 0),
+            'taxAmount' => (int) ($invoice['taxAmount'] ?? 0),
+            'payableAmount' => (int) ($invoice['payableAmount'] ?? 0),
+            'currencyUnit' => (string) ($invoice['currencyUnit'] ?? ''),
         ];
     }
 
@@ -507,11 +620,17 @@ class CheckoutController extends Controller
 
     private function findActiveUserCart(Request $request): ?Cart
     {
-        return Cart::query()
+        $cart = Cart::query()
             ->where('user_id', $request->user()->id)
             ->where('status', 'active')
             ->latest('id')
             ->first();
+
+        if ($cart) {
+            $this->ensureCartCurrency($cart);
+        }
+
+        return $cart;
     }
 
     private function getCartItems(?Cart $cart)
@@ -520,11 +639,50 @@ class CheckoutController extends Controller
             return collect();
         }
 
-        return CartItem::query()
+        $items = CartItem::query()
             ->where('cart_id', $cart->id)
             ->with('product')
             ->orderBy('id')
             ->get();
+
+        $currency = strtoupper((string) ($cart->currency ?: $this->commerceCurrency()));
+        $this->normalizeCartItemsCurrencyAndPrice($items, $currency);
+
+        return $items;
+    }
+
+    private function ensureCartCurrency(Cart $cart): string
+    {
+        $currency = $this->commerceCurrency();
+        $current = strtoupper((string) ($cart->currency ?? ''));
+
+        if ($current !== $currency) {
+            $cart->forceFill([
+                'currency' => $currency,
+            ])->save();
+        }
+
+        return $currency;
+    }
+
+    private function normalizeCartItemsCurrencyAndPrice($items, string $currency): void
+    {
+        foreach (($items ?? collect()) as $item) {
+            if (! $item instanceof CartItem) {
+                continue;
+            }
+
+            $product = $item->product;
+            $desiredCurrency = $currency;
+            $desiredUnitPrice = $product ? (int) $product->displayFinalPrice($currency) : (int) ($item->unit_price ?? 0);
+
+            if ((int) ($item->unit_price ?? 0) !== $desiredUnitPrice || strtoupper((string) ($item->currency ?? '')) !== $desiredCurrency) {
+                $item->forceFill([
+                    'unit_price' => $desiredUnitPrice,
+                    'currency' => $desiredCurrency,
+                ])->save();
+            }
+        }
     }
 
     private function findValidCouponForUser(Request $request, string $code): ?Coupon
@@ -550,13 +708,33 @@ class CheckoutController extends Controller
             return null;
         }
 
-        if ($coupon->per_user_limit !== null) {
-            $usedByUser = CouponRedemption::query()
-                ->where('coupon_id', $coupon->id)
-                ->where('user_id', $request->user()->id)
-                ->count();
+        $userId = (int) ($request->user()?->id ?? 0);
+        if ($userId <= 0) {
+            return null;
+        }
 
-            if ($usedByUser >= (int) $coupon->per_user_limit) {
+        if (Order::query()
+            ->where('user_id', $userId)
+            ->whereIn('status', ['pending', 'pending_review', 'paid'])
+            ->where('meta->coupon_id', $coupon->id)
+            ->exists()) {
+            return null;
+        }
+
+        if (CouponRedemption::query()
+            ->where('coupon_id', $coupon->id)
+            ->where('user_id', $userId)
+            ->exists()) {
+            return null;
+        }
+
+        if ((bool) (($coupon->meta ?? [])['first_purchase_only'] ?? false)) {
+            $hasPaidOrder = Order::query()
+                ->where('user_id', $userId)
+                ->where('status', 'paid')
+                ->exists();
+
+            if ($hasPaidOrder) {
                 return null;
             }
         }
@@ -576,6 +754,41 @@ class CheckoutController extends Controller
         }
 
         return max(0, $value);
+    }
+
+    private function couponEligibleSubtotal($items, Coupon $coupon): int
+    {
+        $collection = $items ?? collect();
+        if ($coupon->appliesToAllProducts()) {
+            return (int) $collection->sum(fn (CartItem $item) => (int) $item->unit_price * (int) $item->quantity);
+        }
+
+        $productIds = $coupon->productIds();
+        if (count($productIds) === 0) {
+            return (int) $collection->sum(fn (CartItem $item) => (int) $item->unit_price * (int) $item->quantity);
+        }
+
+        return (int) $collection
+            ->filter(fn (CartItem $item) => $item->product_id && in_array((int) $item->product_id, $productIds, true))
+            ->sum(fn (CartItem $item) => (int) $item->unit_price * (int) $item->quantity);
+    }
+
+    private function couponAppliesToItems($items, Coupon $coupon): bool
+    {
+        if ($coupon->appliesToAllProducts()) {
+            return true;
+        }
+
+        $productIds = $coupon->productIds();
+        if (count($productIds) === 0) {
+            return true;
+        }
+
+        $collection = $items ?? collect();
+
+        return $collection->contains(function (CartItem $item) use ($productIds) {
+            return $item->product_id && in_array((int) $item->product_id, $productIds, true);
+        });
     }
 
     private function generateOrderNumber(): string

@@ -23,11 +23,10 @@
                 </div>
             @else
                 <div class="table-wrap">
-                    <table class="table">
+                    <table class="table table--sm table--compact table--fixed">
                         <thead>
                             <tr>
-                                <th>شناسه</th>
-                                <th>سفارش</th>
+                                <th>کاربر</th>
                                 <th>درگاه</th>
                                 <th>وضعیت</th>
                                 <th>مبلغ</th>
@@ -52,13 +51,22 @@
                                     'rejected' => 'رد شده',
                                     default => (string) ($payment->status ?? '—'),
                                 })
+                                @php($currencyCode = strtoupper((string) ($payment->currency ?? 'IRR')))
+                                @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                @php($user = $payment->order?->user)
+                                @php($displayName = trim((string) ($user?->first_name ?? '').' '.(string) ($user?->last_name ?? '')))
+                                @php($displayName = $displayName !== '' ? $displayName : (string) ($user?->name ?? ''))
                                 <tr>
-                                    <td>{{ $payment->id }}</td>
-                                    <td class="admin-nowrap">{{ $payment->order_id ?? '—' }}</td>
+                                    <td class="admin-nowrap">
+                                        <div class="stack stack--xs">
+                                            <div class="admin-nowrap">{{ $displayName !== '' ? $displayName : '—' }}</div>
+                                            <div class="text-muted" dir="ltr">{{ $user?->phone ?: '—' }}</div>
+                                        </div>
+                                    </td>
                                     <td class="admin-nowrap">{{ $gatewayLabel }}</td>
                                     <td class="admin-nowrap">{{ $statusLabel }}</td>
-                                    <td class="admin-nowrap">{{ number_format((int) ($payment->amount ?? 0)) }} {{ $payment->currency ?? 'IRR' }}</td>
-                                    <td class="admin-nowrap">{{ $payment->reference_id ?? '—' }}</td>
+                                    <td class="admin-nowrap"><span class="text-muted">{{ $currencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span></td>
+                                    <td dir="ltr">{{ $payment->reference_id ?? '—' }}</td>
                                     <td class="admin-nowrap">{{ $payment->paid_at ? jdate($payment->paid_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.payments.show', $payment->id) }}">نمایش</a>

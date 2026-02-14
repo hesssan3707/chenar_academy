@@ -79,6 +79,8 @@ class UserController extends Controller
                 'is_active' => true,
             ]),
             'isAdmin' => false,
+            'roles' => Role::query()->orderBy('name')->orderBy('id')->get(),
+            'selectedRoleIds' => [],
         ]);
     }
 
@@ -90,6 +92,8 @@ class UserController extends Controller
             'password' => ['required', 'string', 'min:6', 'max:120'],
             'is_active' => ['nullable'],
             'is_admin' => ['nullable'],
+            'role_ids' => ['nullable', 'array'],
+            'role_ids.*' => ['integer', 'min:1', Rule::exists('roles', 'id')],
         ]);
 
         $user = User::query()->create([
@@ -107,6 +111,8 @@ class UserController extends Controller
                 $user->roles()->syncWithoutDetaching([$adminRoleId]);
             }
         }
+
+        $this->syncUserRoles($request, $user, $validated);
 
         return redirect()->route('admin.users.edit', $user->id);
     }
@@ -158,6 +164,8 @@ class UserController extends Controller
             'accesses' => $accesses,
             'products' => $products,
             'productQ' => $productQ,
+            'roles' => Role::query()->orderBy('name')->orderBy('id')->get(),
+            'selectedRoleIds' => $userModel->roles()->pluck('roles.id')->map(fn ($id) => (int) $id)->all(),
         ]);
     }
 
@@ -176,6 +184,8 @@ class UserController extends Controller
             'password' => ['nullable', 'string', 'min:6', 'max:120'],
             'is_active' => ['nullable'],
             'is_admin' => ['nullable'],
+            'role_ids' => ['nullable', 'array'],
+            'role_ids.*' => ['integer', 'min:1', Rule::exists('roles', 'id')],
         ]);
 
         $payload = [
@@ -198,6 +208,8 @@ class UserController extends Controller
                 $userModel->roles()->detach($adminRoleId);
             }
         }
+
+        $this->syncUserRoles($request, $userModel, $validated);
 
         return redirect()->route('admin.users.edit', $userModel->id);
     }
@@ -287,5 +299,35 @@ class UserController extends Controller
         ]);
 
         return $role?->id ? (int) $role->id : null;
+    }
+
+    private function syncUserRoles(Request $request, User $user, array $validated): void
+    {
+        $roleIds = $validated['role_ids'] ?? [];
+        $roleIds = is_array($roleIds) ? $roleIds : [];
+        $roleIds = array_values(array_unique(array_map(fn ($id) => (int) $id, $roleIds)));
+        $roleIds = array_values(array_filter($roleIds, fn ($id) => $id > 0));
+
+        $adminRoleId = $this->getAdminRoleId();
+        if ($adminRoleId !== null) {
+            if ($request->boolean('is_admin')) {
+                $roleIds[] = (int) $adminRoleId;
+            } else {
+                $roleIds = array_values(array_filter($roleIds, fn ($id) => (int) $id !== (int) $adminRoleId));
+            }
+        }
+
+        $superAdminRoleId = Role::query()->where('name', 'super_admin')->value('id');
+        $superAdminRoleId = is_numeric($superAdminRoleId) ? (int) $superAdminRoleId : null;
+        if (is_int($superAdminRoleId) && $superAdminRoleId > 0) {
+            if ($user->hasRole('super_admin')) {
+                $roleIds[] = (int) $superAdminRoleId;
+            } else {
+                $roleIds = array_values(array_filter($roleIds, fn ($id) => (int) $id !== (int) $superAdminRoleId));
+            }
+        }
+
+        $roleIds = array_values(array_unique($roleIds));
+        $user->roles()->sync($roleIds);
     }
 }

@@ -1,17 +1,18 @@
 @extends('layouts.admin')
 
-@section('title', $title ?? 'نقش‌ها')
+@section('title', $title ?? 'دسترسی‌ها')
 
 @section('content')
     <section class="section">
         <div class="container">
             <div class="admin-page-header">
                 <div class="admin-page-header__titles">
-                    <h1 class="page-title">{{ $title ?? 'نقش‌ها' }}</h1>
-                    <p class="page-subtitle">مدیریت نقش‌ها</p>
+                    <h1 class="page-title">{{ $title ?? 'دسترسی‌ها' }}</h1>
+                    <p class="page-subtitle">مدیریت نقش‌ها و دسترسی‌ها</p>
                 </div>
                 <div class="admin-page-header__actions">
                     <a class="btn btn--primary" href="{{ route('admin.roles.create') }}">ایجاد نقش</a>
+                    <a class="btn btn--ghost" href="{{ route('admin.permissions.index') }}">لیست دسترسی‌ها</a>
                 </div>
             </div>
 

@@ -242,7 +242,7 @@ class LoginController extends Controller
 
     private function ensureAdminOrFail(Request $request, ?User $user, string $guard): void
     {
-        if ($user && $user->hasRole('admin')) {
+        if ($user && ($user->hasRole('admin') || $user->hasRole('super_admin'))) {
             return;
         }
 

@@ -13,7 +13,7 @@ class PaymentController extends Controller
 {
     public function index(): View
     {
-        $payments = Payment::query()->orderByDesc('id')->paginate(40);
+        $payments = Payment::query()->with(['order.user'])->orderByDesc('id')->paginate(40);
 
         return view('admin.payments.index', [
             'title' => 'پرداخت‌ها',
@@ -44,7 +44,7 @@ class PaymentController extends Controller
 
     public function show(int $payment): View
     {
-        $paymentModel = Payment::query()->with('order')->findOrFail($payment);
+        $paymentModel = Payment::query()->with(['order.user'])->findOrFail($payment);
 
         return view('admin.payments.show', [
             'title' => 'نمایش پرداخت',

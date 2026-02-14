@@ -44,43 +44,95 @@
                         ->count();
                 @endphp
 
+                @php
+                    $adminUser = auth('admin')->user();
+                    $permissionsEnabled = \Illuminate\Support\Facades\Schema::hasTable('permissions')
+                        && \Illuminate\Support\Facades\Schema::hasTable('role_permissions')
+                        && \Illuminate\Support\Facades\DB::table('role_permissions')->exists();
+                    $canAdmin = function (string $permission) use ($adminUser, $permissionsEnabled) {
+                        if (! $adminUser) {
+                            return false;
+                        }
+
+                        if (! $permissionsEnabled) {
+                            return true;
+                        }
+
+                        return $adminUser->hasPermission($permission);
+                    };
+                @endphp
+
                 <nav class="admin-menu">
                     <a class="admin-menu__link @if (request()->routeIs('admin.dashboard')) is-active @endif" href="{{ route('admin.dashboard') }}">داشبورد</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.users.*')) is-active @endif" href="{{ route('admin.users.index') }}">کاربران</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.booklets.*')) is-active @endif" href="{{ route('admin.booklets.index') }}">جزوه‌ها</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.videos.*')) is-active @endif" href="{{ route('admin.videos.index') }}">ویدیوها</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.courses.*')) is-active @endif" href="{{ route('admin.courses.index') }}">دوره‌ها</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.tickets.*')) is-active @endif" href="{{ route('admin.tickets.index') }}">
-                        تیکت‌ها
-                        @if (($unreadTicketsCount ?? 0) > 0)
-                            <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $unreadTicketsCount }}</span>
-                        @endif
-                    </a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.surveys.*')) is-active @endif" href="{{ route('admin.surveys.index') }}">نظرسنجی‌ها</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.posts.*')) is-active @endif" href="{{ route('admin.posts.index') }}">مقالات</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.settings.*')) is-active @endif" href="{{ route('admin.settings.index') }}">تنظیمات</a>
+                    @if ($canAdmin('admin.users'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.users.*')) is-active @endif" href="{{ route('admin.users.index') }}">کاربران</a>
+                    @endif
+                    @if ($canAdmin('admin.booklets'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.booklets.*')) is-active @endif" href="{{ route('admin.booklets.index') }}">جزوه‌ها</a>
+                    @endif
+                    @if ($canAdmin('admin.videos'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.videos.*')) is-active @endif" href="{{ route('admin.videos.index') }}">ویدیوها</a>
+                    @endif
+                    @if ($canAdmin('admin.courses'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.courses.*')) is-active @endif" href="{{ route('admin.courses.index') }}">دوره‌ها</a>
+                    @endif
+                    @if ($canAdmin('admin.tickets'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.tickets.*')) is-active @endif" href="{{ route('admin.tickets.index') }}">
+                            تیکت‌ها
+                            @if (($unreadTicketsCount ?? 0) > 0)
+                                <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $unreadTicketsCount }}</span>
+                            @endif
+                        </a>
+                    @endif
+                    @if ($canAdmin('admin.surveys'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.surveys.*')) is-active @endif" href="{{ route('admin.surveys.index') }}">نظرسنجی‌ها</a>
+                    @endif
+                    @if ($canAdmin('admin.posts'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.posts.*')) is-active @endif" href="{{ route('admin.posts.index') }}">مقالات</a>
+                    @endif
+                    @if ($canAdmin('admin.settings'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.settings.*')) is-active @endif" href="{{ route('admin.settings.index') }}">تنظیمات</a>
+                    @endif
 
                     <div class="admin-menu__divider"></div>
 
-                    <a class="admin-menu__link @if (request()->routeIs('admin.categories.*')) is-active @endif" href="{{ route('admin.categories.index') }}">دسته‌بندی‌ها</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.discounts.*')) is-active @endif" href="{{ route('admin.discounts.category') }}">تخفیف گروهی</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.products.*')) is-active @endif" href="{{ route('admin.products.index') }}">محصولات</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.orders.*')) is-active @endif" href="{{ route('admin.orders.index') }}">
-                        سفارش‌ها
-                        @if (($pendingOrdersCount ?? 0) > 0)
-                            <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $pendingOrdersCount }}</span>
-                        @endif
-                    </a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.reviews.*')) is-active @endif" href="{{ route('admin.reviews.index') }}">
-                        نظرات
-                        @if (($pendingReviewsCount ?? 0) > 0)
-                            <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $pendingReviewsCount }}</span>
-                        @endif
-                    </a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.payments.*')) is-active @endif" href="{{ route('admin.payments.index') }}">پرداخت‌ها</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.media.*')) is-active @endif" href="{{ route('admin.media.index') }}">رسانه‌ها</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.roles.*')) is-active @endif" href="{{ route('admin.roles.index') }}">نقش‌ها</a>
-                    <a class="admin-menu__link @if (request()->routeIs('admin.permissions.*')) is-active @endif" href="{{ route('admin.permissions.index') }}">دسترسی‌ها</a>
+                    @if ($canAdmin('admin.categories'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.categories.*')) is-active @endif" href="{{ route('admin.categories.index') }}">دسته‌بندی‌ها</a>
+                    @endif
+                    @if ($canAdmin('admin.discounts'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.discounts.*')) is-active @endif" href="{{ route('admin.discounts.category') }}">تخفیف گروهی</a>
+                    @endif
+                    @if ($canAdmin('admin.coupons'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.coupons.*')) is-active @endif" href="{{ route('admin.coupons.index') }}">کدهای تخفیف</a>
+                    @endif
+                    @if ($canAdmin('admin.products'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.products.*')) is-active @endif" href="{{ route('admin.products.index') }}">محصولات</a>
+                    @endif
+                    @if ($canAdmin('admin.orders'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.orders.*')) is-active @endif" href="{{ route('admin.orders.index') }}">
+                            سفارش‌ها
+                            @if (($pendingOrdersCount ?? 0) > 0)
+                                <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $pendingOrdersCount }}</span>
+                            @endif
+                        </a>
+                    @endif
+                    @if ($canAdmin('admin.reviews'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.reviews.*')) is-active @endif" href="{{ route('admin.reviews.index') }}">
+                            نظرات
+                            @if (($pendingReviewsCount ?? 0) > 0)
+                                <span class="badge badge--brand" style="margin-right: 8px;">{{ (int) $pendingReviewsCount }}</span>
+                            @endif
+                        </a>
+                    @endif
+                    @if ($canAdmin('admin.payments'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.payments.*')) is-active @endif" href="{{ route('admin.payments.index') }}">پرداخت‌ها</a>
+                    @endif
+                    @if ($canAdmin('admin.media'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.media.*')) is-active @endif" href="{{ route('admin.media.index') }}">رسانه‌ها</a>
+                    @endif
+                    @if ($adminUser && $adminUser->hasRole('super_admin'))
+                        <a class="admin-menu__link @if (request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*')) is-active @endif" href="{{ route('admin.roles.index') }}">دسترسی‌ها</a>
+                    @endif
                 </nav>
             </aside>
 
@@ -99,7 +151,7 @@
                             </form>
                         @endif
                         <a class="btn btn--ghost btn--sm" href="{{ route('home') }}">سایت</a>
-                        <span class="admin-topbar__user">{{ auth()->user()?->name ?: auth()->user()?->phone }}</span>
+                        <span class="admin-topbar__user">{{ auth('admin')->user()?->name ?: auth('admin')->user()?->phone }}</span>
                         <form method="post" action="{{ route('admin.logout') }}">
                             @csrf
                             <button class="btn btn--ghost btn--sm" type="submit">خروج</button>

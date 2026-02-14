@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -149,5 +150,50 @@ class CartTest extends TestCase
             ->assertOk()
             ->assertSee('action="'.route('cart.items.store').'"', false)
             ->assertSee('name="product_id" value="'.$note->id.'"', false);
+    }
+
+    public function test_guest_cart_converts_prices_to_toman_when_commerce_currency_is_irt(): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.currency', 'group' => 'commerce'],
+            ['value' => 'IRT']
+        );
+
+        $product = Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه تست',
+            'slug' => 'test-note-toman',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'status' => 'published',
+            'base_price' => 100000,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $this->post(route('cart.items.store'), [
+            'product_id' => $product->id,
+        ])->assertRedirect(route('cart.index'));
+
+        $cart = Cart::query()->firstOrFail();
+
+        $this->assertSame('IRT', (string) $cart->currency);
+
+        $this->assertDatabaseHas('cart_items', [
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 10000,
+            'currency' => 'IRT',
+        ]);
+
+        $this->withSession(['cart_token' => $cart->session_id])
+            ->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('10,000', false)
+            ->assertSee('تومان');
     }
 }
