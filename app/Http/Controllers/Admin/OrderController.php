@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
 use App\Models\Media;
 use App\Models\Order;
 use App\Models\ProductAccess;
+use App\Models\User;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,9 +30,43 @@ class OrderController extends Controller
             ->orderByDesc('id')
             ->paginate(40);
 
+        $activeCarts = collect();
+        $activeCartUsers = collect();
+        $activeCartStats = collect();
+
+        if (Schema::hasTable('carts') && Schema::hasTable('cart_items')) {
+            $activeCarts = Cart::query()
+                ->where('status', 'active')
+                ->orderByDesc('updated_at')
+                ->limit(20)
+                ->get();
+
+            $userIds = $activeCarts->pluck('user_id')->filter()->unique()->values();
+            $activeCartUsers = $userIds->isEmpty()
+                ? collect()
+                : User::query()->whereIn('id', $userIds)->get()->keyBy('id');
+
+            $cartIds = $activeCarts->pluck('id')->values();
+            $activeCartStats = $cartIds->isEmpty()
+                ? collect()
+                : CartItem::query()
+                    ->select([
+                        'cart_id',
+                        DB::raw('SUM(quantity) as items_count'),
+                        DB::raw('SUM(quantity * unit_price) as total_amount'),
+                    ])
+                    ->whereIn('cart_id', $cartIds)
+                    ->groupBy('cart_id')
+                    ->get()
+                    ->keyBy('cart_id');
+        }
+
         return view('admin.orders.index', [
             'title' => 'سفارش‌ها',
             'orders' => $orders,
+            'activeCarts' => $activeCarts,
+            'activeCartUsers' => $activeCartUsers,
+            'activeCartStats' => $activeCartStats,
         ]);
     }
 
@@ -119,7 +157,10 @@ class OrderController extends Controller
 
         $media = Media::query()->findOrFail($receiptMediaId);
 
-        return Storage::disk($media->disk)->response($media->path, null, [
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk($media->disk);
+
+        return $disk->response($media->path, null, [
             'Content-Type' => $media->mime_type ?: 'application/octet-stream',
             'Content-Disposition' => 'inline',
             'Cache-Control' => 'private, no-store, max-age=0',

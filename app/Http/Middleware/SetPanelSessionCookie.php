@@ -19,6 +19,19 @@ class SetPanelSessionCookie
             config(['auth.defaults.guard' => 'web']);
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        if (! $request->is('admin*') && $request->hasSession()) {
+            $countryCode = strtoupper(trim((string) $request->header('CF-IPCountry', '')));
+            if (preg_match('/^[A-Z]{2}$/', $countryCode)) {
+                $request->session()->put('analytics.country', $countryCode);
+            }
+
+            $userAgent = (string) $request->userAgent();
+            $device = preg_match('/android|iphone|ipad|ipod|mobile|iemobile|opera mini|blackberry|webos/i', $userAgent) ? 'mobile' : 'web';
+            $request->session()->put('analytics.device', $device);
+        }
+
+        return $response;
     }
 }

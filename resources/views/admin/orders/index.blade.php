@@ -12,7 +12,62 @@
                 </div>
             </div>
 
+            @php($activeCarts = collect($activeCarts ?? []))
+            @php($activeCartUsers = collect($activeCartUsers ?? []))
+            @php($activeCartStats = collect($activeCartStats ?? []))
             @php($orders = $orders ?? null)
+
+            @if ($activeCarts->isNotEmpty())
+                <div class="panel" style="margin-bottom: 18px;">
+                    <div class="stack stack--sm">
+                        <div class="field__label">سبدهای فعال</div>
+                        <div class="card__meta">آخرین ۲۰ سبدی که هنوز به سفارش تبدیل نشده‌اند.</div>
+
+                        <div class="table-wrap">
+                            <table class="table table--sm table--compact table--fixed">
+                                <thead>
+                                    <tr>
+                                        <th>کاربر</th>
+                                        <th>وضعیت</th>
+                                        <th>آیتم‌ها</th>
+                                        <th>مبلغ</th>
+                                        <th>به‌روزرسانی</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($activeCarts as $cart)
+                                        @php($user = $cart->user_id ? ($activeCartUsers->get((int) $cart->user_id) ?? null) : null)
+                                        @php($displayName = trim((string) ($user?->first_name ?? '').' '.(string) ($user?->last_name ?? '')))
+                                        @php($displayName = $displayName !== '' ? $displayName : (string) ($user?->name ?? ''))
+                                        @php($stats = $activeCartStats->get((int) $cart->id) ?? null)
+                                        @php($itemsCount = (int) ($stats?->items_count ?? 0))
+                                        @php($totalAmount = (int) ($stats?->total_amount ?? 0))
+                                        @php($currencyCode = strtoupper((string) ($cart->currency ?? 'IRR')))
+                                        @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                        <tr>
+                                            <td class="admin-nowrap">
+                                                <div class="stack stack--xs">
+                                                    <div class="admin-nowrap">{{ $displayName !== '' ? $displayName : '—' }}</div>
+                                                    <div class="text-muted" dir="ltr">{{ $user?->phone ?: '—' }}</div>
+                                                </div>
+                                            </td>
+                                            <td class="admin-nowrap">{{ (string) ($cart->status ?? 'active') }}</td>
+                                            <td class="admin-nowrap" dir="ltr">{{ number_format($itemsCount) }}</td>
+                                            <td class="admin-nowrap">
+                                                <span class="money">
+                                                    <span class="money__amount" dir="ltr">{{ number_format($totalAmount) }}</span>
+                                                    <span class="money__unit">{{ $currencyUnit }}</span>
+                                                </span>
+                                            </td>
+                                            <td class="admin-nowrap">{{ $cart->updated_at ? jdate($cart->updated_at)->format('Y/m/d H:i') : '—' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             @if (! $orders || $orders->isEmpty())
                 <div class="panel max-w-md">

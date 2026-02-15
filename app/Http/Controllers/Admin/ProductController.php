@@ -18,7 +18,23 @@ class ProductController extends Controller
     {
         $categoryId = (int) $request->query('category', 0);
 
+        $salesSubquery = DB::table('order_items')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->whereNotNull('order_items.product_id')
+            ->where('orders.status', 'paid')
+            ->groupBy('order_items.product_id')
+            ->select([
+                'order_items.product_id',
+                DB::raw('SUM(order_items.quantity) as sales_count'),
+            ]);
+
         $productsQuery = Product::query()
+            ->leftJoinSub($salesSubquery, 'sales', function ($join) {
+                $join->on('sales.product_id', '=', 'products.id');
+            })
+            ->select('products.*')
+            ->selectRaw('COALESCE(sales.sales_count, 0) as sales_count')
+            ->orderByDesc('sales_count')
             ->orderByDesc('published_at')
             ->orderByDesc('id');
 

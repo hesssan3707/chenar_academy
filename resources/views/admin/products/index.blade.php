@@ -36,6 +36,7 @@
                                 <th>عنوان</th>
                                 <th>وضعیت</th>
                                 <th>قیمت</th>
+                                <th>تعداد فروش</th>
                                 <th>انتشار</th>
                                 <th></th>
                             </tr>
@@ -78,6 +79,7 @@
                                             @endif
                                         @endif
                                     </td>
+                                    <td class="admin-nowrap" dir="ltr">{{ number_format((int) ($product->sales_count ?? 0)) }}</td>
                                     <td class="admin-nowrap">{{ $product->published_at ? jdate($product->published_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td>
                                         <div class="admin-row-actions">

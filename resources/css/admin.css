@@ -270,6 +270,10 @@ html[data-theme='admin'] .admin-categories-grid td.admin-nowrap {
         grid-template-columns: 1fr;
     }
 
+    html[data-theme='admin'] .grid--4 {
+        grid-template-columns: 1fr;
+    }
+
     html[data-theme='admin'] .admin-search {
         flex-wrap: wrap;
         align-items: stretch;

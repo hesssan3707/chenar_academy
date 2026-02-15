@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\Category;
 use App\Models\Coupon;
 use App\Models\Order;
@@ -1077,6 +1079,85 @@ class AdminCrudSmokeTest extends TestCase
             ->assertSee('<span class="badge badge--brand" style="margin-right: 8px;">3</span>', false);
     }
 
+    public function test_admin_dashboard_shows_products_count_and_session_analytics(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        Product::query()->create([
+            'type' => 'video',
+            'title' => 'Video 1',
+            'slug' => 'video-1',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'status' => 'draft',
+            'base_price' => 0,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => null,
+            'meta' => [],
+        ]);
+
+        Product::query()->create([
+            'type' => 'video',
+            'title' => 'Video 2',
+            'slug' => 'video-2',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'status' => 'draft',
+            'base_price' => 0,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => null,
+            'meta' => [],
+        ]);
+
+        $payloadA = base64_encode(serialize([
+            'analytics' => [
+                'country' => 'IR',
+                'device' => 'mobile',
+            ],
+        ]));
+
+        $payloadB = base64_encode(serialize([
+            'analytics' => [
+                'country' => 'US',
+                'device' => 'web',
+            ],
+        ]));
+
+        DB::table('sessions')->insert([
+            [
+                'id' => 'sess-a',
+                'user_id' => null,
+                'ip_address' => '1.1.1.1',
+                'user_agent' => 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)',
+                'payload' => $payloadA,
+                'last_activity' => now()->timestamp,
+            ],
+            [
+                'id' => 'sess-b',
+                'user_id' => null,
+                'ip_address' => '2.2.2.2',
+                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                'payload' => $payloadB,
+                'last_activity' => now()->timestamp,
+            ],
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('محصولات')
+            ->assertSee('2')
+            ->assertSee('آنالیتیکس نشست‌ها')
+            ->assertSee('IR')
+            ->assertSee('US')
+            ->assertSee('50% / 50%');
+    }
+
     public function test_admin_order_edit_page_localizes_status_options(): void
     {
         $admin = User::factory()->create();
@@ -1155,6 +1236,120 @@ class AdminCrudSmokeTest extends TestCase
             ->assertOk()
             ->assertSee('علی احمدی')
             ->assertSee('09120000001');
+
+        $product = Product::query()->create([
+            'type' => 'video',
+            'title' => 'Cart Product',
+            'slug' => 'cart-product',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'status' => 'draft',
+            'base_price' => 1000,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => null,
+            'meta' => [],
+        ]);
+
+        $cart = Cart::query()->create([
+            'user_id' => $customer->id,
+            'session_id' => null,
+            'status' => 'active',
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        CartItem::query()->create([
+            'cart_id' => $cart->id,
+            'product_id' => $product->id,
+            'quantity' => 2,
+            'unit_price' => 5000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.orders.index'))
+            ->assertOk()
+            ->assertSee('سبدهای فعال')
+            ->assertSee('09120000001')
+            ->assertSee('10,000', false);
+    }
+
+    public function test_admin_products_index_shows_sales_count_and_sorts_by_it_desc(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $customer = User::factory()->create();
+
+        $productLow = Product::query()->create([
+            'type' => 'video',
+            'title' => 'Product Low',
+            'slug' => 'product-low',
+            'status' => 'published',
+            'base_price' => 1000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $productHigh = Product::query()->create([
+            'type' => 'video',
+            'title' => 'Product High',
+            'slug' => 'product-high',
+            'status' => 'published',
+            'base_price' => 1000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $paidOrder = Order::query()->create([
+            'order_number' => 'ORD-SALES-1',
+            'user_id' => $customer->id,
+            'status' => 'paid',
+            'currency' => 'IRR',
+            'subtotal_amount' => 0,
+            'discount_amount' => 0,
+            'total_amount' => 0,
+            'payable_amount' => 0,
+            'placed_at' => now(),
+            'paid_at' => now(),
+            'cancelled_at' => null,
+            'meta' => [],
+        ]);
+
+        OrderItem::query()->create([
+            'order_id' => $paidOrder->id,
+            'product_id' => $productLow->id,
+            'product_type' => (string) $productLow->type,
+            'product_title' => (string) $productLow->title,
+            'quantity' => 2,
+            'unit_price' => 1000,
+            'total_price' => 2000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        OrderItem::query()->create([
+            'order_id' => $paidOrder->id,
+            'product_id' => $productHigh->id,
+            'product_type' => (string) $productHigh->type,
+            'product_title' => (string) $productHigh->title,
+            'quantity' => 5,
+            'unit_price' => 1000,
+            'total_price' => 5000,
+            'currency' => 'IRR',
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.products.index'))
+            ->assertOk()
+            ->assertSee('تعداد فروش')
+            ->assertSeeInOrder(['Product High', 'Product Low']);
     }
 
     public function test_admin_order_show_hides_id_and_renders_items_with_product_title_and_price(): void
