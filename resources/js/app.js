@@ -31,9 +31,11 @@ window.initApp = function() {
     initAdminWysiwygUi();
     initAdminBulkDiscountUi();
     initAdminCouponFormUi();
+    initAdminProductInitialSelectsUi();
     initHomeRowsAutoHideUi();
     initCategoryTapPreviewUi();
     initHorizontalWheelScrollUi();
+    initCatalogInstitutionWheelUi();
     initProductDetailTabsUi();
     initCheckoutCouponUi();
 
@@ -511,6 +513,184 @@ function initHorizontalWheelScrollUi() {
     });
 }
 
+function initCatalogInstitutionWheelUi() {
+    const widgets = Array.from(document.querySelectorAll('[data-uni-wheel]')).filter((node) => node instanceof HTMLElement);
+    if (widgets.length === 0) {
+        return;
+    }
+
+    widgets.forEach((widget) => {
+        if (widget.dataset.uniWheelBound === '1') {
+            return;
+        }
+        widget.dataset.uniWheelBound = '1';
+
+        const viewport = widget.querySelector('[data-uni-wheel-viewport]');
+        const track = widget.querySelector('[data-uni-wheel-track]');
+        const slides = Array.from(widget.querySelectorAll('[data-uni-wheel-slide]')).filter((node) => node instanceof HTMLElement);
+        if (!(viewport instanceof HTMLElement) || !(track instanceof HTMLElement) || slides.length === 0) {
+            return;
+        }
+
+        const prevButton = widget.querySelector('[data-uni-wheel-prev]');
+        const nextButton = widget.querySelector('[data-uni-wheel-next]');
+        const prevLabel = widget.querySelector('[data-uni-wheel-prev-label]');
+        const nextLabel = widget.querySelector('[data-uni-wheel-next-label]');
+
+        if (slides.length <= 1) {
+            if (prevButton instanceof HTMLElement) {
+                prevButton.style.display = 'none';
+            }
+            if (nextButton instanceof HTMLElement) {
+                nextButton.style.display = 'none';
+            }
+            return;
+        }
+
+        widget.style.position = widget.style.position || 'relative';
+        viewport.style.overflow = 'hidden';
+        viewport.style.position = 'relative';
+        track.style.willChange = 'transform';
+        track.style.transition = 'transform 480ms cubic-bezier(0.22, 1, 0.36, 1)';
+
+        let slideHeight = 0;
+        let activeIndex = 0;
+        let wheelLockUntil = 0;
+        const viewportPadding = 12;
+
+        const clampIndex = (index) => {
+            const count = slides.length;
+            if (count <= 0) {
+                return 0;
+            }
+            let i = Number(index || 0);
+            if (!Number.isFinite(i)) {
+                i = 0;
+            }
+            return Math.max(0, Math.min(count - 1, i));
+        };
+
+        const measure = () => {
+            const heights = slides.map((s) => Math.ceil(s.getBoundingClientRect().height));
+            slideHeight = Math.max(1, ...heights, 1);
+            viewport.style.paddingTop = `${viewportPadding}px`;
+            viewport.style.paddingBottom = `${viewportPadding}px`;
+            viewport.style.height = `${slideHeight + viewportPadding * 2}px`;
+
+            slides.forEach((slide) => {
+                slide.style.height = `${slideHeight}px`;
+                slide.style.boxSizing = 'border-box';
+                slide.style.display = 'flex';
+                slide.style.flexDirection = 'column';
+                slide.style.justifyContent = 'flex-start';
+                slide.style.transition = 'opacity 480ms cubic-bezier(0.22, 1, 0.36, 1), transform 480ms cubic-bezier(0.22, 1, 0.36, 1)';
+            });
+        };
+
+        const render = () => {
+            activeIndex = clampIndex(activeIndex);
+            const offset = viewportPadding - activeIndex * slideHeight;
+            track.style.transform = `translate3d(0, ${offset}px, 0)`;
+
+            slides.forEach((slide, index) => {
+                const distance = Math.min(2, Math.abs(index - activeIndex));
+                const isActive = index === activeIndex;
+                slide.style.opacity = isActive ? '1' : distance === 1 ? '0.65' : '0.45';
+                slide.style.transform = isActive ? 'scale(1)' : distance === 1 ? 'scale(0.985)' : 'scale(0.97)';
+                slide.style.pointerEvents = isActive ? 'auto' : 'none';
+            });
+
+            const hasPrev = activeIndex > 0;
+            const hasNext = activeIndex < slides.length - 1;
+            const prevIndex = activeIndex - 1;
+            const nextIndex = activeIndex + 1;
+            const prevTitle = hasPrev ? String(slides[prevIndex]?.dataset?.uniWheelTitle || '').trim() : '';
+            const nextTitle = hasNext ? String(slides[nextIndex]?.dataset?.uniWheelTitle || '').trim() : '';
+
+            if (prevButton instanceof HTMLElement) {
+                prevButton.hidden = !hasPrev;
+            }
+            if (nextButton instanceof HTMLElement) {
+                nextButton.hidden = !hasNext;
+            }
+
+            if (prevLabel instanceof HTMLElement) {
+                prevLabel.textContent = prevTitle !== '' ? prevTitle : '';
+            }
+            if (nextLabel instanceof HTMLElement) {
+                nextLabel.textContent = nextTitle !== '' ? nextTitle : '';
+            }
+        };
+
+        const go = (direction) => {
+            const nextIndex = clampIndex(activeIndex + direction);
+            if (nextIndex === activeIndex) {
+                return;
+            }
+            activeIndex = nextIndex;
+            render();
+        };
+
+        const onWheel = (event) => {
+            const now = Date.now();
+            if (now < wheelLockUntil) {
+                return;
+            }
+
+            const target = event.target;
+            if (target instanceof Element && target.closest('.h-scroll-container')) {
+                return;
+            }
+
+            const absX = Math.abs(event.deltaX);
+            const absY = Math.abs(event.deltaY);
+            if (absY === 0 || absY <= absX) {
+                return;
+            }
+
+            const direction = event.deltaY > 0 ? 1 : -1;
+            if ((direction < 0 && activeIndex <= 0) || (direction > 0 && activeIndex >= slides.length - 1)) {
+                return;
+            }
+
+            event.preventDefault();
+            wheelLockUntil = now + 480;
+            go(direction);
+        };
+
+        viewport.addEventListener('wheel', onWheel, { passive: false });
+
+        if (prevButton instanceof HTMLButtonElement) {
+            prevButton.addEventListener('click', () => go(-1));
+        }
+        if (nextButton instanceof HTMLButtonElement) {
+            nextButton.addEventListener('click', () => go(1));
+        }
+
+        const onResize = () => {
+            const prevHeight = slideHeight;
+            measure();
+            if (slideHeight !== prevHeight) {
+                render();
+            }
+        };
+
+        window.addEventListener('resize', onResize, { passive: true });
+        measure();
+        render();
+
+        if (typeof ResizeObserver === 'function') {
+            const observer = new ResizeObserver(() => onResize());
+            observer.observe(viewport);
+            slides.forEach((slide) => observer.observe(slide));
+        } else {
+            setTimeout(onResize, 0);
+            setTimeout(onResize, 350);
+            window.addEventListener('load', onResize, { once: true, passive: true });
+        }
+    });
+}
+
 function initProductDetailTabsUi() {
     const containers = Array.from(document.querySelectorAll('[data-detail-tabs]')).filter((node) => node instanceof HTMLElement);
     if (containers.length === 0) {
@@ -605,6 +785,60 @@ function initProductDetailTabsUi() {
 
         setActive(firstValue);
     });
+}
+
+function initAdminProductInitialSelectsUi() {
+    if (!isAdminTheme()) {
+        return;
+    }
+
+    document.querySelectorAll('form[data-product-initial-selects]').forEach((form) => {
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        if (form.dataset.productInitialSelectsBound === '1') {
+            return;
+        }
+        form.dataset.productInitialSelectsBound = '1';
+
+        form.setAttribute('autocomplete', 'off');
+
+        const selects = Array.from(form.querySelectorAll('select[data-initial-value]')).filter((node) => node instanceof HTMLSelectElement);
+        const sync = () => {
+            selects.forEach((select) => {
+                const initialValue = String(select.dataset.initialValue || '');
+                if (String(select.value || '') !== initialValue) {
+                    select.value = initialValue;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        };
+
+        sync();
+        setTimeout(sync, 0);
+        setTimeout(sync, 180);
+    });
+
+    if (!window.__adminProductInitialSelectsPageshowBound) {
+        window.__adminProductInitialSelectsPageshowBound = true;
+        window.addEventListener('pageshow', () => {
+            document.querySelectorAll('form[data-product-initial-selects]').forEach((form) => {
+                if (!(form instanceof HTMLFormElement)) {
+                    return;
+                }
+
+                const selects = Array.from(form.querySelectorAll('select[data-initial-value]')).filter((node) => node instanceof HTMLSelectElement);
+                selects.forEach((select) => {
+                    const initialValue = String(select.dataset.initialValue || '');
+                    if (String(select.value || '') !== initialValue) {
+                        select.value = initialValue;
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            });
+        });
+    }
 }
 
 function isAdminTheme() {

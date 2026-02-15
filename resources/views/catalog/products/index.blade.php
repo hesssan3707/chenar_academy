@@ -64,72 +64,87 @@
                 @php($institutionGroups = $products->groupBy(fn ($p) => (int) ($p->institution_category_id ?? 0)))
                 @php($institutionGroups = $institutionGroups->sortBy(fn ($group) => (string) ($group->first()?->institutionCategory?->title ?? '')))
 
-                @foreach ($institutionGroups as $institutionId => $institutionProducts)
-                    @php($institutionTitle = trim((string) ($institutionProducts->first()?->institutionCategory?->title ?? '')))
-                    <div class="mb-8">
-                        <div class="mb-3">
-                            <div class="h3 text-white">{{ $institutionTitle !== '' ? $institutionTitle : 'سایر' }}</div>
-                        </div>
+                <div data-uni-wheel style="max-width: 100%;">
+                    <div class="cluster" style="justify-content: center; gap: 8px; margin-bottom: 12px;">
+                        <button class="btn btn--ghost btn--sm" type="button" data-uni-wheel-prev aria-label="قبلی">
+                            ↑ <span data-uni-wheel-prev-label></span>
+                        </button>
+                        <button class="btn btn--ghost btn--sm" type="button" data-uni-wheel-next aria-label="بعدی">
+                            ↓ <span data-uni-wheel-next-label></span>
+                        </button>
+                    </div>
 
-                        <div class="h-scroll-container">
-                            @foreach ($institutionProducts as $product)
-                                @php($purchased = in_array($product->id, ($purchasedProductIds ?? []), true))
-                                <div class="card-product">
-                                    <a href="{{ $product->type === 'course' ? route('courses.show', $product->slug) : route('products.show', $product->slug) }}" class="block">
-                                     @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
-                                     <div class="spa-cover" style="margin-bottom: 5px;">
-                                         <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
-                                         <div class="absolute top-0 left-0 right-0 flex gap-2 p-2">
-                                             <span class="badge bg-black/50 backdrop-blur-sm text-white border border-white/10">
-                                                 {{ $product->type === 'course' ? 'دوره' : ($product->type === 'video' ? 'ویدیو' : 'جزوه') }}
-                                             </span>
-                                             @if($purchased)
-                                                <span class="badge bg-green-500/80 text-white">خریداری شده</span>
-                                             @endif
-                                         </div>
-                                     </div>
+                    <div data-uni-wheel-viewport style="max-width: 100%;">
+                        <div data-uni-wheel-track style="max-width: 100%;">
+                            @foreach ($institutionGroups as $institutionId => $institutionProducts)
+                                @php($institutionTitle = trim((string) ($institutionProducts->first()?->institutionCategory?->title ?? '')))
+                                <div data-uni-wheel-slide data-uni-wheel-title="{{ $institutionTitle !== '' ? $institutionTitle : 'سایر' }}" style="padding-bottom: 24px; max-width: 100%;">
+                                    <div style="margin-bottom: 12px;">
+                                        <div class="h3 text-white">{{ $institutionTitle !== '' ? $institutionTitle : 'سایر' }}</div>
+                                    </div>
 
-                                     <h4 class="card-product__title text-white line-clamp-2">{{ $product->title }}</h4>
-                                    </a>
-
-                                     <div class="card-product__cta">
-                                        <div class="card-product__price mb-3">
-                                           <div class="card-price-row">
-                                                @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
-                                                @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
-                                                @php($originalPrice = $product->displayOriginalPrice($currencyCode))
-                                                @php($finalPrice = $product->displayFinalPrice($currencyCode))
-                                                @if($product->hasDiscount())
-                                                    <div class="card-price-stack flex flex-col">
-                                                        <span class="text-xs text-muted line-through">{{ number_format($originalPrice) }}</span>
-                                                        <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                    <div class="h-scroll-container">
+                                        @foreach ($institutionProducts as $product)
+                                            @php($purchased = in_array($product->id, ($purchasedProductIds ?? []), true))
+                                            <div class="card-product">
+                                                <a href="{{ $product->type === 'course' ? route('courses.show', $product->slug) : route('products.show', $product->slug) }}" class="block">
+                                                    @php($thumbUrl = ($product->thumbnailMedia?->disk ?? null) === 'public' && ($product->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($product->thumbnailMedia->path) : $placeholderThumb)
+                                                    <div class="spa-cover" style="margin-bottom: 5px;">
+                                                        <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
+                                                        <div class="absolute top-0 left-0 right-0 flex gap-2 p-2">
+                                                            <span class="badge bg-black/50 backdrop-blur-sm text-white border border-white/10">
+                                                                {{ $product->type === 'course' ? 'دوره' : ($product->type === 'video' ? 'ویدیو' : 'جزوه') }}
+                                                            </span>
+                                                            @if($purchased)
+                                                               <span class="badge bg-green-500/80 text-white">خریداری شده</span>
+                                                            @endif
+                                                        </div>
                                                     </div>
-                                                @else
-                                                    <div class="card-price-stack">
-                                                        <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
-                                                    </div>
-                                                @endif
-                                                @if (! $purchased)
-                                                    <form method="post" action="{{ route('cart.items.store') }}" class="cart-inline-form">
-                                                        @csrf
-                                                        <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                                        <button class="cart-inline-icon" type="submit" aria-label="افزودن به سبد خرید">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                <circle cx="9" cy="21" r="1"></circle>
-                                                                <circle cx="20" cy="21" r="1"></circle>
-                                                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                                                            </svg>
-                                                        </button>
-                                                    </form>
-                                                @endif
+
+                                                    <h4 class="card-product__title text-white line-clamp-2">{{ $product->title }}</h4>
+                                                </a>
+
+                                                <div class="card-product__cta">
+                                                   <div class="card-product__price mb-3">
+                                                      <div class="card-price-row">
+                                                           @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
+                                                           @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                                           @php($originalPrice = $product->displayOriginalPrice($currencyCode))
+                                                           @php($finalPrice = $product->displayFinalPrice($currencyCode))
+                                                           @if($product->hasDiscount())
+                                                               <div class="card-price-stack flex flex-col">
+                                                                   <span class="text-xs text-muted line-through">{{ number_format($originalPrice) }}</span>
+                                                                   <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                               </div>
+                                                           @else
+                                                               <div class="card-price-stack">
+                                                                   <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                               </div>
+                                                           @endif
+                                                           @if (! $purchased)
+                                                               <form method="post" action="{{ route('cart.items.store') }}" class="cart-inline-form">
+                                                                   @csrf
+                                                                   <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                                                   <button class="cart-inline-icon" type="submit" aria-label="افزودن به سبد خرید">
+                                                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                           <circle cx="9" cy="21" r="1"></circle>
+                                                                           <circle cx="20" cy="21" r="1"></circle>
+                                                                           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                                                       </svg>
+                                                                   </button>
+                                                               </form>
+                                                           @endif
+                                                       </div>
+                                                   </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                     </div>
+                                        @endforeach
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
                     </div>
-                @endforeach
+                </div>
             @else
                 @if ($products->isEmpty())
                     <div class="text-muted">محصولی برای نمایش وجود ندارد.</div>

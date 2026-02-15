@@ -19,6 +19,7 @@
             @php($isEdit = $product && $product->exists)
             @php($institutions = $institutions ?? collect())
             @php($categories = $categories ?? collect())
+            @php($useOld = session()->hasOldInput() && $errors->any())
 
             <div class="panel">
                 <form method="post"
@@ -26,6 +27,7 @@
                     class="stack stack--sm"
                     id="product-form"
                     data-discount-unit-form
+                    data-product-initial-selects
                     data-currency-unit="{{ $commerceCurrencyLabel ?? 'ریال' }}">
                     @csrf
                     @if ($isEdit)
@@ -62,8 +64,9 @@
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
                             <span class="field__label">نوع دانشگاه</span>
-                            @php($institutionValue = old('institution_category_id', (string) ($product->institution_category_id ?? '')))
-                            <select name="institution_category_id" required>
+                            @php($institutionValue = $useOld ? (string) old('institution_category_id', '') : (string) ($product->institution_category_id ?? ''))
+                            @php($currentInstitutionTitle = $isEdit ? trim((string) ($institutions->firstWhere('id', (int) ($product->institution_category_id ?? 0))?->title ?? '')) : '')
+                            <select name="institution_category_id" required data-initial-value="{{ $institutionValue }}" autocomplete="off">
                                 <option value="" @selected($institutionValue === '')>—</option>
                                 @foreach ($institutions as $institution)
                                     <option value="{{ $institution->id }}" @selected((string) $institution->id === (string) $institutionValue)>
@@ -74,6 +77,9 @@
                             @error('institution_category_id')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
+                            @if ($isEdit)
+                                <div class="text-muted text-sm" data-current-institution>{{ $currentInstitutionTitle !== '' ? $currentInstitutionTitle : '—' }}</div>
+                            @endif
                         </label>
 
                         <label class="field">
@@ -81,9 +87,10 @@
                             @php($productTypeValue = (string) ($product->type ?? ''))
                             @php($fallbackCategoryId = $isEdit ? ($product?->categories()->whereIn('type', ['note', 'video', 'course'])->value('categories.id') ?? '') : '')
                             @php($currentCategoryId = $isEdit && in_array($productTypeValue, ['note', 'video', 'course'], true) ? ($product?->categories()->where('type', $productTypeValue)->value('categories.id') ?? $fallbackCategoryId) : $fallbackCategoryId)
-                            @php($categoryValue = old('category_id', (string) ($currentCategoryId ?? '')))
+                            @php($categoryValue = $useOld ? (string) old('category_id', '') : (string) ($currentCategoryId ?? ''))
+                            @php($currentCategoryTitle = $isEdit ? trim((string) ($categories->firstWhere('id', (int) ($currentCategoryId ?? 0))?->title ?? '')) : '')
                             @php($typeLabels = ['note' => 'جزوه', 'video' => 'ویدیو', 'course' => 'دوره'])
-                            <select name="category_id" required>
+                            <select name="category_id" required data-initial-value="{{ $categoryValue }}" autocomplete="off">
                                 <option value="" @selected($categoryValue === '')>—</option>
                                 @foreach ($categories as $category)
                                     @php($catType = (string) ($category->type ?? ''))
@@ -95,12 +102,15 @@
                             @error('category_id')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
+                            @if ($isEdit)
+                                <div class="text-muted text-sm" data-current-category>{{ $currentCategoryTitle !== '' ? $currentCategoryTitle : '—' }}</div>
+                            @endif
                         </label>
                     </div>
 
                     <label class="field">
                         <span class="field__label">عنوان</span>
-                        <input name="title" required value="{{ old('title', (string) ($product->title ?? '')) }}">
+                        <input name="title" required value="{{ $useOld ? old('title', '') : (string) ($product->title ?? '') }}" autocomplete="off">
                         @error('title')
                             <div class="field__error">{{ $message }}</div>
                         @enderror

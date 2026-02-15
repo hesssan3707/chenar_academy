@@ -926,6 +926,106 @@ class AdminCrudSmokeTest extends TestCase
         ]);
     }
 
+    public function test_admin_product_edit_uses_product_values_not_old_input_for_institution_and_category(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $institutionA = Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'Institution A',
+            'slug' => 'institution-a',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $institutionB = Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'Institution B',
+            'slug' => 'institution-b',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $categoryA = Category::query()->create([
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'Category A',
+            'slug' => 'category-a',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $categoryB = Category::query()->create([
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'Category B',
+            'slug' => 'category-b',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $productA = Product::query()->create([
+            'type' => 'note',
+            'title' => 'Product A',
+            'slug' => 'product-a',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'institution_category_id' => (int) $institutionA->id,
+            'status' => 'published',
+            'base_price' => 1000,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+        $productA->categories()->attach((int) $categoryA->id);
+
+        $productB = Product::query()->create([
+            'type' => 'note',
+            'title' => 'Product B',
+            'slug' => 'product-b',
+            'excerpt' => null,
+            'description' => null,
+            'thumbnail_media_id' => null,
+            'institution_category_id' => (int) $institutionB->id,
+            'status' => 'published',
+            'base_price' => 2000,
+            'sale_price' => null,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+        $productB->categories()->attach((int) $categoryB->id);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession([
+                '_old_input' => [
+                    'institution_category_id' => (int) $institutionA->id,
+                    'category_id' => (int) $categoryA->id,
+                ],
+            ])
+            ->get(route('admin.products.edit', $productB->id))
+            ->assertOk()
+            ->assertSee('name="institution_category_id"', false)
+            ->assertSee('value="'.$institutionB->id.'" selected', false)
+            ->assertDontSee('value="'.$institutionA->id.'" selected', false)
+            ->assertSee('name="category_id"', false)
+            ->assertSee('value="'.$categoryB->id.'" selected', false)
+            ->assertDontSee('value="'.$categoryA->id.'" selected', false);
+    }
+
     public function test_admin_sidebar_shows_unread_tickets_and_pending_orders_badges(): void
     {
         $admin = User::factory()->create();

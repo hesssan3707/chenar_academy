@@ -34,16 +34,16 @@ class UserController extends Controller
             }
 
             if ($q !== '') {
-            $tokens = preg_split('/\s+/', $q) ?: [];
-            $tokens = array_values(array_filter($tokens, fn ($token) => is_string($token) && trim($token) !== ''));
+                $tokens = preg_split('/\s+/', $q) ?: [];
+                $tokens = array_values(array_filter($tokens, fn ($token) => is_string($token) && trim($token) !== ''));
 
-            foreach ($tokens as $token) {
-                $token = (string) $token;
-                $query->where(function ($sub) use ($token) {
-                    $sub->where('phone', 'like', '%'.$token.'%')
-                        ->orWhere('name', 'like', '%'.$token.'%');
-                });
-            }
+                foreach ($tokens as $token) {
+                    $token = (string) $token;
+                    $query->where(function ($sub) use ($token) {
+                        $sub->where('phone', 'like', '%'.$token.'%')
+                            ->orWhere('name', 'like', '%'.$token.'%');
+                    });
+                }
             }
         }
 
