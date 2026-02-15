@@ -31,10 +31,6 @@ class EnsureAdminUsersAccess
 
         $permission = is_string($permission) && trim($permission) !== '' ? trim($permission) : 'admin.users';
 
-        if ($permission === 'admin.roles') {
-            abort(403);
-        }
-
         if (! $user->hasPermission($permission)) {
             abort(403);
         }

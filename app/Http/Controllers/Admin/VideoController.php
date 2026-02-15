@@ -220,8 +220,8 @@ class VideoController extends Controller
         $rules = [
             'title' => ['required', 'string', 'max:180'],
             'excerpt' => ['nullable', 'string', 'max:500'],
-            'institution_category_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'institution')],
-            'category_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'video')],
+            'institution_category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'institution')],
+            'category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'video')],
             'status' => ['nullable', 'string', Rule::in(['draft', 'published'])],
             'base_price' => [$shouldPublish ? 'required' : 'nullable', 'integer', 'min:0', 'max:2000000000'],
             'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibits:discount_type,discount_value'],
@@ -279,8 +279,8 @@ class VideoController extends Controller
             'thumbnail_media_id' => $thumbnailMedia?->id,
             'preview_media_id' => $previewMedia?->id,
             'media_id' => $fullMedia?->id,
-            'institution_category_id' => ($validated['institution_category_id'] ?? null) !== null ? (int) $validated['institution_category_id'] : null,
-            'category_id' => ($validated['category_id'] ?? null) !== null ? (int) $validated['category_id'] : null,
+            'institution_category_id' => (int) $validated['institution_category_id'],
+            'category_id' => (int) $validated['category_id'],
         ];
     }
 

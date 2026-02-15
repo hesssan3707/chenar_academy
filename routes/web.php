@@ -105,6 +105,9 @@ Route::prefix('admin')
         Route::post('scope/clear', [AdminUserController::class, 'scopeClear'])->name('scope.clear');
 
         Route::resource('users', AdminUserController::class)->middleware('admin.users');
+        Route::get('users/{user}/products', [AdminUserController::class, 'products'])
+            ->middleware('admin.users')
+            ->name('users.products');
         Route::post('users/{user}/accesses', [AdminUserController::class, 'accessStore'])
             ->middleware('admin.users')
             ->name('users.accesses.store');
@@ -117,6 +120,9 @@ Route::prefix('admin')
         Route::post('discounts/category', [AdminDiscountController::class, 'applyCategory'])->middleware('admin.permission:admin.discounts')->name('discounts.category.apply');
         Route::post('discounts/products', [AdminDiscountController::class, 'applyProducts'])->middleware('admin.permission:admin.discounts')->name('discounts.products.apply');
         Route::resource('products', AdminProductController::class)->middleware('admin.permission:admin.products');
+        Route::put('products/{product}/category', [AdminProductController::class, 'updateCategory'])
+            ->middleware('admin.permission:admin.products')
+            ->name('products.category.update');
         Route::resource('courses', AdminCourseController::class)->middleware('admin.permission:admin.courses');
 
         Route::post('orders/{order}/card-to-card/approve', [AdminOrderController::class, 'approveCardToCard'])
@@ -156,6 +162,9 @@ Route::prefix('admin')
         Route::resource('media', AdminMediaController::class)->middleware('admin.permission:admin.media')->except(['edit', 'update']);
 
         Route::resource('roles', AdminRoleController::class)->middleware('admin.permission:admin.roles');
+        Route::post('permissions/bootstrap', [AdminPermissionController::class, 'bootstrap'])
+            ->middleware('admin.permission:admin.roles')
+            ->name('permissions.bootstrap');
         Route::resource('permissions', AdminPermissionController::class)->middleware('admin.permission:admin.roles');
     });
 

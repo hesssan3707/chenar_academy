@@ -16,6 +16,8 @@
             </div>
 
             @php($courses = $courses ?? null)
+            @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
+            @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
 
             @if (! $courses || $courses->isEmpty())
                 <div class="panel max-w-md">
@@ -26,9 +28,7 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>شناسه</th>
                                 <th>عنوان</th>
-                                <th>اسلاگ</th>
                                 <th>وضعیت</th>
                                 <th>قیمت</th>
                                 <th>انتشار</th>
@@ -38,9 +38,7 @@
                         <tbody>
                             @foreach ($courses as $course)
                                 <tr>
-                                    <td>{{ $course->id }}</td>
                                     <td class="admin-min-w-240">{{ $course->title }}</td>
-                                    <td class="admin-nowrap">{{ $course->slug }}</td>
                                     <td class="admin-nowrap">
                                         @php($statusValue = (string) ($course->status ?? ''))
                                         @if ($statusValue === 'published')
@@ -51,7 +49,28 @@
                                             <span class="badge">{{ $statusValue !== '' ? $statusValue : '—' }}</span>
                                         @endif
                                     </td>
-                                    <td class="admin-nowrap">{{ number_format((int) ($course->base_price ?? 0)) }} {{ $commerceCurrencyLabel ?? 'ریال' }}</td>
+                                    <td class="admin-nowrap">
+                                        @php($hasDiscount = (bool) ($course?->hasDiscount() ?? false))
+                                        @php($discountType = (string) ($course->discount_type ?? ''))
+                                        @php($discountValue = (int) ($course->discount_value ?? 0))
+                                        @php($discountAmount = max(0, (int) $course->displayOriginalPrice($currencyCode) - (int) $course->displayFinalPrice($currencyCode)))
+                                        <span class="money">
+                                            <span class="money__amount" dir="ltr">{{ number_format((int) $course->displayOriginalPrice($currencyCode)) }}</span>
+                                            <span class="money__unit">{{ $currencyUnit }}</span>
+                                        </span>
+                                        @if ($hasDiscount)
+                                            @if ($discountType === 'percent' && $discountValue > 0)
+                                                <span class="badge badge--danger" style="margin-inline-start: 8px;">{{ max(0, min(100, $discountValue)) }}%</span>
+                                            @else
+                                                <span class="badge badge--danger" style="margin-inline-start: 8px;">
+                                                    <span class="money">
+                                                        <span class="money__amount" dir="ltr">{{ number_format($discountAmount) }}</span>
+                                                        <span class="money__unit">{{ $currencyUnit }}</span>
+                                                    </span>
+                                                </span>
+                                            @endif
+                                        @endif
+                                    </td>
                                     <td class="admin-nowrap">{{ $course->published_at ? jdate($course->published_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <div style="display: inline-flex; gap: 8px; align-items: center;">

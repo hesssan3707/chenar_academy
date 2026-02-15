@@ -11,7 +11,19 @@
                     <p class="page-subtitle">مدیریت کاربران ثبت‌نام‌شده</p>
                 </div>
                 <div class="admin-page-header__actions">
+                    @if (! ($adminScopedUser ?? null))
+                        @php($activeKind = (string) ($activeKind ?? 'users'))
+                        <div class="cluster">
+                            <a class="btn {{ $activeKind === 'users' ? 'btn--primary' : 'btn--ghost' }} btn--sm"
+                                href="{{ route('admin.users.index', ['kind' => 'users', 'q' => request('q')]) }}">کاربران</a>
+                            <a class="btn {{ $activeKind === 'admins' ? 'btn--primary' : 'btn--ghost' }} btn--sm"
+                                href="{{ route('admin.users.index', ['kind' => 'admins', 'q' => request('q')]) }}">ادمین‌ها</a>
+                        </div>
+                    @endif
                     <form method="get" action="{{ route('admin.users.index') }}" class="admin-search">
+                        @if (! ($adminScopedUser ?? null))
+                            <input type="hidden" name="kind" value="{{ (string) ($activeKind ?? 'users') }}">
+                        @endif
                         <input type="search" name="q" placeholder="جستجوی نام یا موبایل" value="{{ request('q') }}">
                         <button class="btn btn--ghost" type="submit">جستجو</button>
                     </form>
@@ -73,6 +85,7 @@
                                             </form>
                                         @endif
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.users.edit', $user->id) }}">ویرایش</a>
+                                        <a class="btn btn--ghost btn--sm" href="{{ route('admin.users.products', $user->id) }}">محصولات</a>
                                     </td>
                                 </tr>
                             @endforeach

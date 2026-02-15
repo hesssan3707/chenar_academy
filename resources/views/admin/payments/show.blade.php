@@ -41,7 +41,13 @@
                     <div>سفارش: {{ $payment->order_id ?? '—' }}</div>
                     <div>درگاه: {{ $gatewayLabel }}</div>
                     <div>وضعیت: {{ $statusLabel }}</div>
-                    <div>مبلغ: <span class="text-muted">{{ $currencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span></div>
+                    <div>
+                        مبلغ:
+                        <span class="money">
+                            <span class="money__amount" dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span>
+                            <span class="money__unit">{{ $currencyUnit }}</span>
+                        </span>
+                    </div>
                     <div>Authority: {{ $payment->authority ?? '—' }}</div>
                     <div>Reference ID: {{ $payment->reference_id ?? '—' }}</div>
                     <div>پرداخت: {{ $payment->paid_at ? jdate($payment->paid_at)->format('Y/m/d H:i') : '—' }}</div>

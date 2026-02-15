@@ -12,6 +12,15 @@
                 </div>
                 <div class="admin-page-header__actions">
                     <a class="btn btn--ghost" href="{{ route('admin.roles.index') }}">نقش‌ها</a>
+                    @if (($defaultsMissing ?? false))
+                        <form method="post" action="{{ route('admin.permissions.bootstrap') }}" class="inline-form"
+                            data-confirm="1"
+                            data-confirm-title="ساخت دسترسی‌های پیش‌فرض"
+                            data-confirm-message="دسترسی‌های پیش‌فرض برای بخش‌های پنل ساخته شود؟">
+                            @csrf
+                            <button class="btn btn--ghost" type="submit">ساخت پیش‌فرض‌ها</button>
+                        </form>
+                    @endif
                     <a class="btn btn--primary" href="{{ route('admin.permissions.create') }}">ایجاد دسترسی</a>
                 </div>
             </div>

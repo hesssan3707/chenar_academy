@@ -52,7 +52,13 @@
                             @endforeach
                         </div>
 
-                        <div class="card__meta">مجموع: {{ number_format((int) $series->sum('total')) }} ریال</div>
+                        <div class="card__meta">
+                            مجموع:
+                            <span class="money">
+                                <span class="money__amount" dir="ltr">{{ number_format((int) $series->sum('total')) }}</span>
+                                <span class="money__unit">ریال</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
 

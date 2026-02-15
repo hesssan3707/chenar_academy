@@ -127,7 +127,7 @@ class ProductController extends Controller
                     ->where('status', 'published')
                     ->whereIn('type', ['video', 'course'])
                     ->orderByDesc('published_at')
-                    ->with('thumbnailMedia')
+                    ->with(['thumbnailMedia', 'institutionCategory'])
                     ->limit(10)
                     ->get();
             } elseif ($type === 'note') {
@@ -135,7 +135,7 @@ class ProductController extends Controller
                     ->where('status', 'published')
                     ->where('type', 'note')
                     ->orderByDesc('published_at')
-                    ->with('thumbnailMedia')
+                    ->with(['thumbnailMedia', 'institutionCategory'])
                     ->limit(10)
                     ->get();
             }
@@ -182,7 +182,7 @@ class ProductController extends Controller
 
         $productsById = Product::query()
             ->whereIn('id', $productIds)
-            ->with('thumbnailMedia')
+            ->with(['thumbnailMedia', 'institutionCategory'])
             ->get()
             ->keyBy('id');
 

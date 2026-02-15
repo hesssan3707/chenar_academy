@@ -17,6 +17,8 @@
 
             @php($product = $product ?? null)
             @php($isEdit = $product && $product->exists)
+            @php($institutions = $institutions ?? collect())
+            @php($categories = $categories ?? collect())
 
             <div class="panel">
                 <form method="post"
@@ -52,6 +54,45 @@
                                 <option value="published" @selected($statusValue === 'published')>published</option>
                             </select>
                             @error('status')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+                    </div>
+
+                    <div class="grid admin-grid-2 admin-grid-2--flush">
+                        <label class="field">
+                            <span class="field__label">نوع دانشگاه</span>
+                            @php($institutionValue = old('institution_category_id', (string) ($product->institution_category_id ?? '')))
+                            <select name="institution_category_id" required>
+                                <option value="" @selected($institutionValue === '')>—</option>
+                                @foreach ($institutions as $institution)
+                                    <option value="{{ $institution->id }}" @selected((string) $institution->id === (string) $institutionValue)>
+                                        {{ $institution->title }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('institution_category_id')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+
+                        <label class="field">
+                            <span class="field__label">دسته‌بندی</span>
+                            @php($productTypeValue = (string) ($product->type ?? ''))
+                            @php($fallbackCategoryId = $isEdit ? ($product?->categories()->whereIn('type', ['note', 'video', 'course'])->value('categories.id') ?? '') : '')
+                            @php($currentCategoryId = $isEdit && in_array($productTypeValue, ['note', 'video', 'course'], true) ? ($product?->categories()->where('type', $productTypeValue)->value('categories.id') ?? $fallbackCategoryId) : $fallbackCategoryId)
+                            @php($categoryValue = old('category_id', (string) ($currentCategoryId ?? '')))
+                            @php($typeLabels = ['note' => 'جزوه', 'video' => 'ویدیو', 'course' => 'دوره'])
+                            <select name="category_id" required>
+                                <option value="" @selected($categoryValue === '')>—</option>
+                                @foreach ($categories as $category)
+                                    @php($catType = (string) ($category->type ?? ''))
+                                    <option value="{{ $category->id }}" @selected((string) $category->id === (string) $categoryValue)>
+                                        {{ ($typeLabels[$catType] ?? $catType) !== '' ? (($typeLabels[$catType] ?? $catType).' - ') : '' }}{{ $category->title }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('category_id')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>

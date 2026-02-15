@@ -112,6 +112,21 @@ class AccessControlTest extends TestCase
         $this->actingAs($user, 'admin')->get('/admin')->assertOk();
     }
 
+    public function test_admin_sidebar_uses_media_label_and_supports_mobile_menu_toggle(): void
+    {
+        $user = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin']);
+        $user->roles()->attach($adminRole->id);
+
+        $this->actingAs($user, 'admin')
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('id="admin-nav-toggle"', false)
+            ->assertSee('class="admin-topbar__menu-btn"', false)
+            ->assertSee('href="'.route('admin.media.index').'"', false)
+            ->assertSee('>رسانه<', false);
+    }
+
     public function test_admin_can_update_site_theme_to_new_themes(): void
     {
         $user = User::factory()->create();

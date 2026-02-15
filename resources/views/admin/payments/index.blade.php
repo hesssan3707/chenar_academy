@@ -65,7 +65,12 @@
                                     </td>
                                     <td class="admin-nowrap">{{ $gatewayLabel }}</td>
                                     <td class="admin-nowrap">{{ $statusLabel }}</td>
-                                    <td class="admin-nowrap"><span class="text-muted">{{ $currencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span></td>
+                                    <td class="admin-nowrap">
+                                        <span class="money">
+                                            <span class="money__amount" dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span>
+                                            <span class="money__unit">{{ $currencyUnit }}</span>
+                                        </span>
+                                    </td>
                                     <td dir="ltr">{{ $payment->reference_id ?? '—' }}</td>
                                     <td class="admin-nowrap">{{ $payment->paid_at ? jdate($payment->paid_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">

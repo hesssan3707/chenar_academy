@@ -26,7 +26,6 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>شناسه</th>
                                 <th>موضوع</th>
                                 <th>کاربر</th>
                                 <th>اولویت</th>
@@ -49,11 +48,18 @@
                                     default => (string) ($ticket->status ?? '—'),
                                 })
                                 <tr>
-                                    <td>{{ $ticket->id }}</td>
                                     <td class="admin-min-w-260">
                                         <div class="admin-row-title">{{ $ticket->subject }}</div>
                                     </td>
-                                    <td class="admin-nowrap">{{ $ticket->user_id }}</td>
+                                    @php($user = $ticket->user ?? null)
+                                    @php($displayName = trim((string) ($user?->first_name ?? '').' '.(string) ($user?->last_name ?? '')))
+                                    @php($displayName = $displayName !== '' ? $displayName : (string) ($user?->name ?? ''))
+                                    <td class="admin-nowrap">
+                                        {{ $displayName !== '' ? $displayName : '—' }}
+                                        @if ($user?->phone)
+                                            <span class="text-muted" dir="ltr">{{ $user->phone }}</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $priorityLabel }}</td>
                                     <td>{{ $statusLabel }}</td>
                                     <td class="admin-nowrap">{{ $ticket->last_message_at ? jdate($ticket->last_message_at)->format('Y/m/d H:i') : '—' }}</td>

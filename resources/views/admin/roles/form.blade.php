@@ -58,7 +58,7 @@
                                     <label class="cluster">
                                         <input type="checkbox" name="permission_ids[]"
                                             value="{{ $permission->id }}" @checked(in_array((string) $permission->id, $selectedPermissionIds, true))>
-                                        <span>{{ $permission->name }}</span>
+                                        <span>{{ $permission->description ? ($permission->description . ' — ' . $permission->name) : $permission->name }}</span>
                                     </label>
                                 @endforeach
                             </div>

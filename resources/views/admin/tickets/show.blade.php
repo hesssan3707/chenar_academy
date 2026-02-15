@@ -29,13 +29,16 @@
                 'high' => 'بالا',
                 default => (string) ($ticket->priority ?? '—'),
             })
+            @php($ticketUserName = trim((string) ($ticketUser?->first_name ?? '').' '.(string) ($ticketUser?->last_name ?? '')))
+            @php($ticketUserName = $ticketUserName !== '' ? $ticketUserName : (string) ($ticketUser?->name ?? ''))
+            @php($ticketUserName = $ticketUserName !== '' ? $ticketUserName : (string) ($ticketUser?->phone ?? ''))
 
             <div class="grid admin-grid-2">
                 <div class="panel">
                     <div class="stack stack--xs">
                         <div class="card__meta">موضوع</div>
                         <div class="admin-row-title">{{ $ticket->subject }}</div>
-                        <div class="card__meta">کاربر: {{ $ticketUser?->name ?: ($ticketUser?->phone ?: $ticket->user_id) }}</div>
+                        <div class="card__meta">کاربر: {{ $ticketUserName !== '' ? $ticketUserName : ($ticket->user_id ?? '—') }}</div>
                     </div>
                 </div>
                 <div class="panel">
@@ -63,17 +66,19 @@
                     @if (! $messages || $messages->isEmpty())
                         <div class="card__meta">هنوز پیامی ثبت نشده است.</div>
                     @else
-                        <div class="stack stack--sm">
-                            @foreach ($messages as $message)
-                                @php($isUserMessage = (int) ($message->sender_user_id ?? 0) === (int) $ticket->user_id)
-                                <div class="admin-message @if (! $isUserMessage) admin-message--admin @endif">
-                                    <div class="stack stack--xs">
-                                        <div class="admin-kv">
-                                            <div class="card__meta">{{ $isUserMessage ? 'کاربر' : 'ادمین' }}</div>
-                                            <div class="card__meta">{{ $message->created_at ? jdate($message->created_at)->format('Y/m/d H:i') : '—' }}</div>
-                                        </div>
-                                        <div class="admin-pre-wrap">{{ $message->body }}</div>
+                        <div class="ticket-thread">
+                            @foreach ($messages as $ticketMessage)
+                                @php($isUserMessage = (int) ($ticketMessage->sender_user_id ?? 0) === (int) $ticket->user_id)
+                                @php($sender = $ticketMessage->sender ?? null)
+                                @php($senderName = trim((string) ($sender?->first_name ?? '').' '.(string) ($sender?->last_name ?? '')))
+                                @php($senderName = $senderName !== '' ? $senderName : (string) ($sender?->name ?? ''))
+                                @php($authorName = $isUserMessage ? ($ticketUserName !== '' ? $ticketUserName : 'کاربر') : ($senderName !== '' ? $senderName : 'ادمین'))
+                                <div class="ticket-msg @if (! $isUserMessage) ticket-msg--admin @else ticket-msg--user @endif">
+                                    <div class="ticket-msg__meta">
+                                        <div class="ticket-msg__author">{{ $authorName }}</div>
+                                        <div class="ticket-msg__time">{{ $ticketMessage->created_at ? jdate($ticketMessage->created_at)->format('Y/m/d H:i') : '—' }}</div>
                                     </div>
+                                    <div class="ticket-msg__body">{{ $ticketMessage->body }}</div>
                                 </div>
                             @endforeach
                         </div>

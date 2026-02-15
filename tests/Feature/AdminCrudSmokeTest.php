@@ -10,7 +10,9 @@ use App\Models\Payment;
 use App\Models\Post;
 use App\Models\Product;
 use App\Models\Role;
+use App\Models\Setting;
 use App\Models\Ticket;
+use App\Models\TicketMessage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -108,9 +110,139 @@ class AdminCrudSmokeTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_open_user_products_page_from_users_index(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $customer = User::factory()->create([
+            'name' => 'Customer A',
+            'phone' => '09121112233',
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.users.index'))
+            ->assertOk()
+            ->assertSee(route('admin.users.products', $customer->id));
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.users.products', $customer->id))
+            ->assertOk()
+            ->assertSee('09121112233');
+    }
+
+    public function test_admin_can_update_user_roles_and_admin_flag_on_user_edit_page(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $customer = User::factory()->create([
+            'name' => 'Customer',
+            'phone' => '09123334444',
+        ]);
+
+        $editorRoleId = (int) Role::query()->create([
+            'name' => 'editor',
+            'description' => 'Editor',
+        ])->id;
+
+        $this->actingAs($admin, 'admin')
+            ->put(route('admin.users.update', $customer->id), [
+                'name' => 'Customer',
+                'phone' => '09123334444',
+                'password' => '',
+                'is_active' => '1',
+                'is_admin' => '1',
+                'role_ids' => [$editorRoleId],
+            ])
+            ->assertRedirect();
+
+        $adminRoleId = (int) Role::query()->where('name', 'admin')->value('id');
+        $this->assertDatabaseHas('user_roles', [
+            'user_id' => $customer->id,
+            'role_id' => $adminRoleId,
+        ]);
+        $this->assertDatabaseHas('user_roles', [
+            'user_id' => $customer->id,
+            'role_id' => $editorRoleId,
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->put(route('admin.users.update', $customer->id), [
+                'name' => 'Customer',
+                'phone' => '09123334444',
+                'password' => '',
+                'is_active' => '1',
+                'is_admin' => '0',
+                'role_ids' => [],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('user_roles', [
+            'user_id' => $customer->id,
+            'role_id' => $adminRoleId,
+        ]);
+        $this->assertDatabaseMissing('user_roles', [
+            'user_id' => $customer->id,
+            'role_id' => $editorRoleId,
+        ]);
+    }
+
+    public function test_admin_can_filter_users_list_by_admins_and_regular_users(): void
+    {
+        $admin = User::factory()->create([
+            'phone' => '09120000999',
+        ]);
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $regularUser = User::factory()->create([
+            'name' => 'Regular User',
+            'phone' => '09120000011',
+        ]);
+        $adminUser = User::factory()->create([
+            'name' => 'Admin User',
+            'phone' => '09120000022',
+        ]);
+        $adminUser->roles()->attach(Role::query()->where('name', 'admin')->value('id'));
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.users.index'))
+            ->assertOk()
+            ->assertSee('09120000011')
+            ->assertDontSee('09120000022');
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.users.index', ['kind' => 'admins']))
+            ->assertOk()
+            ->assertSee('09120000022')
+            ->assertDontSee('09120000011');
+    }
+
     public function test_admin_can_create_and_update_booklet(): void
     {
         Storage::fake('local');
+
+        $institution = Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'Azad University',
+            'slug' => 'azad',
+            'icon_key' => 'university',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $category = Category::query()->create([
+            'type' => 'note',
+            'parent_id' => $institution->id,
+            'title' => 'Math Notes',
+            'slug' => 'azad-math-notes',
+            'icon_key' => 'math',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
 
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
@@ -118,6 +250,8 @@ class AdminCrudSmokeTest extends TestCase
         $response = $this->actingAs($admin, 'admin')->post(route('admin.booklets.store'), [
             'title' => 'Booklet 1',
             'excerpt' => 'Intro',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
             'status' => 'draft',
             'base_price' => 1000,
             'sale_price' => 800,
@@ -137,6 +271,8 @@ class AdminCrudSmokeTest extends TestCase
         $this->actingAs($admin, 'admin')->put(route('admin.booklets.update', $bookletId), [
             'title' => 'Booklet 1 Updated',
             'excerpt' => 'Updated',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
             'status' => 'published',
             'base_price' => 2000,
             'sale_price' => null,
@@ -156,12 +292,36 @@ class AdminCrudSmokeTest extends TestCase
         Storage::fake('videos');
         Process::fake(fn () => Process::result(output: "120.0\n"));
 
+        $institution = Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'Payame Noor',
+            'slug' => 'pnu',
+            'icon_key' => 'university',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $category = Category::query()->create([
+            'type' => 'video',
+            'parent_id' => $institution->id,
+            'title' => 'Physics',
+            'slug' => 'pnu-physics',
+            'icon_key' => 'video',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
         $response = $this->actingAs($admin, 'admin')->post(route('admin.videos.store'), [
             'title' => 'Video 1',
             'excerpt' => 'Intro',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
             'status' => 'draft',
             'base_price' => 1000,
             'sale_price' => null,
@@ -183,6 +343,8 @@ class AdminCrudSmokeTest extends TestCase
         $this->actingAs($admin, 'admin')->put(route('admin.videos.update', $videoProductId), [
             'title' => 'Video 1 Updated',
             'excerpt' => 'Updated',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
             'status' => 'published',
             'base_price' => 2500,
             'sale_price' => 2000,
@@ -495,10 +657,273 @@ class AdminCrudSmokeTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('نوع: note')
-            ->assertSee('نوع: institution')
-            ->assertSeeInOrder(['Root', 'Child'])
-            ->assertSee('&nbsp;&nbsp;&nbsp;&nbsp;Child', false);
+            ->assertSee('نوع: جزوه')
+            ->assertSee('نوع: دانشگاه')
+            ->assertSeeInOrder(['Root', 'Child']);
+    }
+
+    public function test_admin_categories_disallow_duplicate_titles_per_type_and_block_delete_when_has_products(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $this->actingAs($admin, 'admin')->post(route('admin.categories.store'), [
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'Math',
+            'description' => '',
+            'is_active' => '1',
+            'sort_order' => 0,
+        ])->assertRedirect();
+
+        $this->actingAs($admin, 'admin')->post(route('admin.categories.store'), [
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'Math',
+            'description' => '',
+            'is_active' => '1',
+            'sort_order' => 0,
+        ])->assertSessionHasErrors('title');
+
+        $this->actingAs($admin, 'admin')->post(route('admin.categories.store'), [
+            'type' => 'video',
+            'parent_id' => null,
+            'title' => 'Math',
+            'description' => '',
+            'is_active' => '1',
+            'sort_order' => 0,
+        ])->assertRedirect();
+
+        $categoryId = (int) Category::query()->where('type', 'note')->where('title', 'Math')->value('id');
+
+        $productInCategory = Product::query()->create([
+            'type' => 'note',
+            'title' => 'Product In Category',
+            'slug' => 'product-in-category',
+            'status' => 'published',
+            'base_price' => 1000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+        $productInCategory->categories()->attach($categoryId);
+
+        $otherProduct = Product::query()->create([
+            'type' => 'note',
+            'title' => 'Other Product',
+            'slug' => 'other-product',
+            'status' => 'published',
+            'base_price' => 1000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.categories.index'))
+            ->assertOk()
+            ->assertSee(route('admin.products.index', ['category' => $categoryId]))
+            ->assertSee('>1</a>', false);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.products.index', ['category' => $categoryId]))
+            ->assertOk()
+            ->assertSee('Product In Category')
+            ->assertDontSee('Other Product');
+
+        $this->actingAs($admin, 'admin')
+            ->delete(route('admin.categories.destroy', $categoryId))
+            ->assertRedirect(route('admin.categories.edit', $categoryId));
+
+        $this->assertDatabaseHas('categories', [
+            'id' => $categoryId,
+        ]);
+    }
+
+    public function test_admin_categories_index_orders_types_as_requested(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        Category::query()->create([
+            'type' => 'ticket',
+            'parent_id' => null,
+            'title' => 'Ticket Cat',
+            'slug' => 'ticket-cat',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        Category::query()->create([
+            'type' => 'post',
+            'parent_id' => null,
+            'title' => 'Post Cat',
+            'slug' => 'post-cat',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        Category::query()->create([
+            'type' => 'course',
+            'parent_id' => null,
+            'title' => 'Course Cat',
+            'slug' => 'course-cat',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        Category::query()->create([
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'Note Cat',
+            'slug' => 'note-cat',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        Category::query()->create([
+            'type' => 'video',
+            'parent_id' => null,
+            'title' => 'Video Cat',
+            'slug' => 'video-cat',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.categories.index'))
+            ->assertOk()
+            ->assertSeeInOrder(['نوع: ویدیو', 'نوع: جزوه', 'نوع: دوره', 'نوع: مقاله', 'نوع: تیکت']);
+    }
+
+    public function test_admin_categories_ticket_type_has_no_related_count_column(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        Category::query()->create([
+            'type' => 'ticket',
+            'parent_id' => null,
+            'title' => 'Ticket Cat',
+            'slug' => 'ticket-cat',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.categories.index'))
+            ->assertOk()
+            ->assertDontSee('<th>محصولات</th>', false)
+            ->assertDontSee('<th>مقالات</th>', false);
+    }
+
+    public function test_admin_categories_post_type_shows_posts_count_and_filters_posts_page(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $postCategory = Category::query()->create([
+            'type' => 'post',
+            'parent_id' => null,
+            'title' => 'Articles',
+            'slug' => 'articles',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $this->actingAs($admin, 'admin')->post(route('admin.posts.store'), [
+            'title' => 'My Categorized Post',
+            'excerpt' => 'Intro',
+            'body' => '<p>Body</p>',
+            'status' => 'draft',
+            'published_at' => null,
+        ])->assertRedirect();
+
+        $postId = (int) Post::query()->where('title', 'My Categorized Post')->value('id');
+        DB::table('post_categories')->insert([
+            'post_id' => $postId,
+            'category_id' => (int) $postCategory->id,
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.categories.index'))
+            ->assertOk()
+            ->assertSee(route('admin.posts.index', ['category' => (int) $postCategory->id]))
+            ->assertSee('>1</a>', false);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.posts.index', ['category' => (int) $postCategory->id]))
+            ->assertOk()
+            ->assertViewHas('posts', fn ($posts) => $posts->getCollection()->contains('id', $postId));
+    }
+
+    public function test_admin_can_quickly_change_product_category_from_filtered_products_list(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $catA = Category::query()->create([
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'Cat A',
+            'slug' => 'cat-a',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $catB = Category::query()->create([
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'Cat B',
+            'slug' => 'cat-b',
+            'icon_key' => null,
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $product = Product::query()->create([
+            'type' => 'note',
+            'title' => 'My Product',
+            'slug' => 'my-product',
+            'status' => 'published',
+            'base_price' => 1000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+        $product->categories()->attach((int) $catA->id);
+
+        $this->actingAs($admin, 'admin')
+            ->put(route('admin.products.category.update', $product->id), [
+                'category_id' => (int) $catB->id,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('product_categories', [
+            'product_id' => (int) $product->id,
+            'category_id' => (int) $catA->id,
+        ]);
+        $this->assertDatabaseHas('product_categories', [
+            'product_id' => (int) $product->id,
+            'category_id' => (int) $catB->id,
+        ]);
     }
 
     public function test_admin_sidebar_shows_unread_tickets_and_pending_orders_badges(): void
@@ -683,7 +1108,8 @@ class AdminCrudSmokeTest extends TestCase
             ->assertDontSee('شناسه:')
             ->assertDontSee('<th>تعداد</th>', false)
             ->assertSee('محصول تست')
-            ->assertSee('تومان</span> <span dir="ltr">12,000', false);
+            ->assertSee('<span class="money__amount" dir="ltr">12,000</span>', false)
+            ->assertSee('<span class="money__unit">تومان</span>', false);
     }
 
     public function test_admin_payment_pages_localize_gateway_and_status(): void
@@ -810,6 +1236,197 @@ class AdminCrudSmokeTest extends TestCase
             ->assertOk()
             ->assertSee('باز')
             ->assertSee('معمولی');
+    }
+
+    public function test_admin_tables_hide_slug_and_id_and_show_correct_prices_and_user_names(): void
+    {
+        Setting::query()->updateOrCreate(
+            ['key' => 'commerce.currency', 'group' => 'commerce'],
+            ['value' => 'IRT']
+        );
+
+        $admin = User::factory()->create([
+            'name' => 'ادمین تست',
+        ]);
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $course = Product::query()->create([
+            'type' => 'course',
+            'title' => 'دوره ۱',
+            'slug' => 'course-1',
+            'status' => 'published',
+            'base_price' => 80000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        Product::query()->create([
+            'type' => 'course',
+            'title' => 'دوره تخفیف درصدی',
+            'slug' => 'course-percent-off',
+            'status' => 'published',
+            'base_price' => 100000,
+            'discount_type' => 'percent',
+            'discount_value' => 25,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه تخفیف مبلغی',
+            'slug' => 'note-amount-off',
+            'status' => 'published',
+            'base_price' => 80000,
+            'discount_type' => 'amount',
+            'discount_value' => 10000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $booklet = Product::query()->create([
+            'type' => 'note',
+            'title' => 'جزوه ۱',
+            'slug' => 'note-1',
+            'status' => 'published',
+            'base_price' => 80000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $video = Product::query()->create([
+            'type' => 'video',
+            'title' => 'ویدیو ۱',
+            'slug' => 'video-1',
+            'status' => 'published',
+            'base_price' => 80000,
+            'currency' => 'IRR',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $post = Post::query()->create([
+            'title' => 'مقاله ۱',
+            'slug' => 'post-1',
+            'status' => 'published',
+            'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        $customer = User::factory()->create([
+            'name' => 'نام نمایشی',
+            'phone' => '09120000003',
+        ]);
+        $customer->forceFill([
+            'first_name' => 'علی',
+            'last_name' => 'کاظمی',
+        ])->save();
+
+        $ticket = Ticket::query()->create([
+            'user_id' => $customer->id,
+            'subject' => 'موضوع تیکت',
+            'status' => 'open',
+            'priority' => 'normal',
+            'last_message_at' => now(),
+            'closed_at' => null,
+            'meta' => [],
+        ]);
+
+        TicketMessage::query()->create([
+            'ticket_id' => $ticket->id,
+            'sender_user_id' => $customer->id,
+            'body' => 'پیام کاربر',
+            'meta' => [],
+        ]);
+
+        TicketMessage::query()->create([
+            'ticket_id' => $ticket->id,
+            'sender_user_id' => $admin->id,
+            'body' => 'پاسخ ادمین',
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.courses.index'))
+            ->assertOk()
+            ->assertDontSee('<th>شناسه</th>', false)
+            ->assertDontSee('اسلاگ')
+            ->assertDontSee('course-1')
+            ->assertSee('8,000', false)
+            ->assertSee('تومان')
+            ->assertSee('25%', false);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.booklets.index'))
+            ->assertOk()
+            ->assertDontSee('note-1')
+            ->assertSee('8,000', false)
+            ->assertSee('تومان')
+            ->assertSee('1,000', false);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.videos.index'))
+            ->assertOk()
+            ->assertDontSee('video-1')
+            ->assertSee('8,000', false)
+            ->assertSee('تومان');
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.posts.index'))
+            ->assertOk()
+            ->assertDontSee('post-1');
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.products.index'))
+            ->assertOk()
+            ->assertDontSee('<th>شناسه</th>', false)
+            ->assertDontSee('<th>اسلاگ</th>', false)
+            ->assertSee('دوره')
+            ->assertSee('جزوه')
+            ->assertSee('ویدیو')
+            ->assertSee('8,000', false)
+            ->assertSee('تومان')
+            ->assertSee('25%', false)
+            ->assertSee('1,000', false)
+            ->assertDontSee('ویرایش');
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.tickets.index'))
+            ->assertOk()
+            ->assertDontSee('<th>شناسه</th>', false)
+            ->assertSee('علی کاظمی')
+            ->assertDontSee((string) $customer->id);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.tickets.show', $ticket->id))
+            ->assertOk()
+            ->assertSee('علی کاظمی')
+            ->assertSee('پیام کاربر')
+            ->assertSee('ادمین تست')
+            ->assertSee('پاسخ ادمین');
+
+        $category = Category::query()->create([
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'ریاضی ۱',
+            'slug' => 'math-1',
+            'icon_key' => 'math',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.categories.index'))
+            ->assertOk()
+            ->assertSee('admin-grid-2', false)
+            ->assertDontSee('<th>شناسه</th>', false)
+            ->assertDontSee('<th>ترتیب</th>', false)
+            ->assertDontSee('math-1');
     }
 
     public function test_admin_index_pages_paginate_40_items_per_page(): void

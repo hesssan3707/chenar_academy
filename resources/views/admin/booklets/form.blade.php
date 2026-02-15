@@ -45,7 +45,7 @@
                         <label class="field">
                             <span class="field__label">نوع دانشگاه</span>
                             @php($institutionValue = old('institution_category_id', (string) ($booklet->institution_category_id ?? '')))
-                            <select name="institution_category_id">
+                            <select name="institution_category_id" required>
                                 <option value="" @selected($institutionValue === '')>—</option>
                                 @foreach ($institutions as $institution)
                                     <option value="{{ $institution->id }}" @selected((string) $institution->id === (string) $institutionValue)>
@@ -61,7 +61,7 @@
                         <label class="field">
                             <span class="field__label">دسته‌بندی</span>
                             @php($categoryValue = old('category_id', (string) ($isEdit ? ($booklet?->categories()->where('type', 'note')->value('categories.id') ?? '') : '')))
-                            <select name="category_id">
+                            <select name="category_id" required>
                                 <option value="" @selected($categoryValue === '')>—</option>
                                 @foreach ($categories as $category)
                                     <option value="{{ $category->id }}" @selected((string) $category->id === (string) $categoryValue)>

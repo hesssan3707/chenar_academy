@@ -35,7 +35,13 @@
                         @php($displayName = $displayName !== '' ? $displayName : (string) ($user?->name ?? ''))
                         <div>کاربر: {{ $displayName !== '' ? $displayName : '—' }} <span class="text-muted" dir="ltr">{{ $user?->phone ?: '' }}</span></div>
                         <div>وضعیت: {{ $statusLabel }}</div>
-                        <div>مبلغ: <span class="text-muted">{{ $currencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }}</span></div>
+                        <div>
+                            مبلغ:
+                            <span class="money">
+                                <span class="money__amount" dir="ltr">{{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }}</span>
+                                <span class="money__unit">{{ $currencyUnit }}</span>
+                            </span>
+                        </div>
                         <div>ایجاد: {{ $order->created_at ? jdate($order->created_at)->format('Y/m/d H:i') : '—' }}</div>
                         <div>پرداخت: {{ $order->paid_at ? jdate($order->paid_at)->format('Y/m/d H:i') : '—' }}</div>
                         <div>لغو: {{ $order->cancelled_at ? jdate($order->cancelled_at)->format('Y/m/d H:i') : '—' }}</div>
@@ -62,7 +68,12 @@
                                         @php($itemCurrencyUnit = $itemCurrencyCode === 'IRT' ? 'تومان' : 'ریال')
                                         <tr>
                                             <td>{{ $item->product?->title ?: ($item->product_title ?? '—') }}</td>
-                                            <td class="admin-nowrap"><span class="text-muted">{{ $itemCurrencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($item->total_price ?? 0)) }}</span></td>
+                                            <td class="admin-nowrap">
+                                                <span class="money">
+                                                    <span class="money__amount" dir="ltr">{{ number_format((int) ($item->total_price ?? 0)) }}</span>
+                                                    <span class="money__unit">{{ $itemCurrencyUnit }}</span>
+                                                </span>
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -148,7 +159,12 @@
                                     @php($paymentCurrencyUnit = $paymentCurrencyCode === 'IRT' ? 'تومان' : 'ریال')
                                     <tr>
                                         <td class="admin-nowrap">{{ $paymentStatusLabel }}</td>
-                                        <td class="admin-nowrap"><span class="text-muted">{{ $paymentCurrencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span></td>
+                                        <td class="admin-nowrap">
+                                            <span class="money">
+                                                <span class="money__amount" dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span>
+                                                <span class="money__unit">{{ $paymentCurrencyUnit }}</span>
+                                            </span>
+                                        </td>
                                         <td dir="ltr">{{ $payment->reference_id ?? '—' }}</td>
                                         <td class="admin-nowrap">
                                             <a class="btn btn--ghost btn--sm" href="{{ route('admin.payments.show', $payment->id) }}">نمایش</a>

@@ -17,6 +17,10 @@
 
             @php($category = $category ?? null)
             @php($isEdit = $category && $category->exists)
+            @php($relatedCount = (int) ($category?->related_count ?? 0))
+            @php($typeValue = (string) ($category?->type ?? ''))
+            @php($isProductType = in_array($typeValue, ['note', 'video', 'course'], true))
+            @php($canDelete = $isEdit && (! $isProductType || $relatedCount === 0))
             @php($parents = $parents ?? collect())
             @php($types = $types ?? [])
             @php($typeLabels = [
@@ -112,12 +116,12 @@
 
                 <div class="form-actions">
                     <button class="btn btn--primary" type="submit" form="category-form">ذخیره</button>
-                    @if ($isEdit)
+                    @if ($canDelete)
                         <button class="btn btn--danger" type="submit" form="category-delete-form">حذف دسته‌بندی</button>
                     @endif
                 </div>
 
-                @if ($isEdit)
+                @if ($canDelete)
                     <form method="post"
                         action="{{ route('admin.categories.destroy', $category->id) }}"
                         id="category-delete-form"

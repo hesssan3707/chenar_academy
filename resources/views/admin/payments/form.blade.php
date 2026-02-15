@@ -31,11 +31,19 @@
                         'gateway' => 'درگاه',
                         default => (string) ($payment->gateway ?? '—'),
                     })
+                    @php($currencyCode = strtoupper((string) ($payment->currency ?? 'IRR')))
+                    @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
                     <div class="stack stack--xs">
                         <div>شناسه: {{ $payment->id }}</div>
                         <div>سفارش: {{ $payment->order_id ?? '—' }}</div>
                         <div>درگاه: {{ $gatewayLabel }}</div>
-                        <div>مبلغ: {{ number_format((int) ($payment->amount ?? 0)) }} {{ $payment->currency ?? 'IRR' }}</div>
+                        <div>
+                            مبلغ:
+                            <span class="money">
+                                <span class="money__amount" dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span>
+                                <span class="money__unit">{{ $currencyUnit }}</span>
+                            </span>
+                        </div>
                         <div>Authority: {{ $payment->authority ?? '—' }}</div>
                         <div>پرداخت: {{ $payment->paid_at ? jdate($payment->paid_at)->format('Y/m/d H:i') : '—' }}</div>
                     </div>

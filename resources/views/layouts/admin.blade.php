@@ -14,6 +14,8 @@
         @vite(['resources/css/app.css', 'resources/css/admin.css', 'resources/js/app.js'])
     </head>
     <body>
+        <input class="admin-nav-toggle" type="checkbox" id="admin-nav-toggle">
+        <label class="admin-sidebar-backdrop" for="admin-nav-toggle" aria-hidden="true"></label>
         <div class="admin-shell">
             <aside class="admin-sidebar">
                 <a class="admin-brand" href="{{ route('admin.dashboard') }}">
@@ -128,9 +130,9 @@
                         <a class="admin-menu__link @if (request()->routeIs('admin.payments.*')) is-active @endif" href="{{ route('admin.payments.index') }}">پرداخت‌ها</a>
                     @endif
                     @if ($canAdmin('admin.media'))
-                        <a class="admin-menu__link @if (request()->routeIs('admin.media.*')) is-active @endif" href="{{ route('admin.media.index') }}">رسانه‌ها</a>
+                        <a class="admin-menu__link @if (request()->routeIs('admin.media.*')) is-active @endif" href="{{ route('admin.media.index') }}">رسانه</a>
                     @endif
-                    @if ($adminUser && $adminUser->hasRole('super_admin'))
+                    @if ($canAdmin('admin.roles'))
                         <a class="admin-menu__link @if (request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*')) is-active @endif" href="{{ route('admin.roles.index') }}">دسترسی‌ها</a>
                     @endif
                 </nav>
@@ -138,7 +140,10 @@
 
             <div class="admin-main">
                 <header class="admin-topbar">
-                    <div class="admin-topbar__title">@yield('title', 'مدیریت')</div>
+                    <div class="admin-topbar__title">
+                        <label class="admin-topbar__menu-btn" for="admin-nav-toggle" aria-label="Menu">☰</label>
+                        <span>@yield('title', 'مدیریت')</span>
+                    </div>
                     <div class="admin-topbar__actions">
                         <form class="admin-topbar__search" method="get" action="{{ route('admin.users.index') }}">
                             <input type="search" name="q" placeholder="جستجوی کاربر" value="{{ request('q') }}">

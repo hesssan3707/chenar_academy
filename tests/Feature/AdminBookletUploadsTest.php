@@ -84,6 +84,26 @@ class AdminBookletUploadsTest extends TestCase
         Storage::fake('public');
         Storage::fake('local');
 
+        $institution = Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'Azad University',
+            'slug' => 'azad',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $category = Category::query()->create([
+            'type' => 'note',
+            'parent_id' => $institution->id,
+            'title' => 'Math Notes',
+            'slug' => 'azad-math-notes',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
@@ -91,6 +111,8 @@ class AdminBookletUploadsTest extends TestCase
             'intent' => 'publish',
             'title' => 'Booklet without pdf',
             'excerpt' => 'Intro',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
             'base_price' => 1000,
             'sale_price' => 800,
             'published_at' => null,
@@ -104,12 +126,34 @@ class AdminBookletUploadsTest extends TestCase
         Storage::fake('public');
         Storage::fake('local');
 
+        $institution = Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'Azad University',
+            'slug' => 'azad',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $category = Category::query()->create([
+            'type' => 'note',
+            'parent_id' => $institution->id,
+            'title' => 'Math Notes',
+            'slug' => 'azad-math-notes',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
         $response = $this->actingAs($admin, 'admin')->post(route('admin.booklets.store'), [
             'title' => 'Booklet 1',
             'excerpt' => 'Intro',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
             'status' => 'draft',
             'base_price' => 1000,
             'sale_price' => 800,

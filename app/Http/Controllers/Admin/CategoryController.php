@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -15,7 +16,7 @@ class CategoryController extends Controller
     public function index(): View
     {
         $categories = Category::query()
-            ->orderBy('type')
+            ->orderByRaw("case type when 'video' then 1 when 'note' then 2 when 'course' then 3 when 'post' then 4 when 'ticket' then 5 else 99 end")
             ->orderBy('sort_order')
             ->orderBy('title')
             ->orderBy('id')
@@ -24,6 +25,7 @@ class CategoryController extends Controller
         $categoryGroups = [];
 
         foreach ($categories->groupBy('type') as $type => $typeCategories) {
+            $type = (string) $type;
             $childrenByParent = [];
             foreach ($typeCategories as $category) {
                 $key = $category->parent_id ?: 0;
@@ -47,6 +49,67 @@ class CategoryController extends Controller
                 });
 
                 $childrenByParent[$parentKey] = $children;
+            }
+
+            $categoryIds = $typeCategories->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+            $childrenIdsByParent = [];
+            foreach ($typeCategories as $category) {
+                $parentId = (int) ($category->parent_id ?: 0);
+                $childrenIdsByParent[$parentId] ??= [];
+                $childrenIdsByParent[$parentId][] = (int) $category->id;
+            }
+
+            if (in_array($type, ['note', 'video', 'course', 'post'], true)) {
+                $directIds = [];
+
+                if (in_array($type, ['note', 'video', 'course'], true)) {
+                    $rows = DB::table('product_categories')
+                        ->select(['category_id', 'product_id'])
+                        ->whereIn('category_id', $categoryIds)
+                        ->get();
+
+                    foreach ($rows as $row) {
+                        $categoryId = (int) $row->category_id;
+                        $productId = (int) $row->product_id;
+                        $directIds[$categoryId] ??= [];
+                        $directIds[$categoryId][$productId] = true;
+                    }
+                } elseif ($type === 'post') {
+                    $rows = DB::table('post_categories')
+                        ->select(['category_id', 'post_id'])
+                        ->whereIn('category_id', $categoryIds)
+                        ->get();
+
+                    foreach ($rows as $row) {
+                        $categoryId = (int) $row->category_id;
+                        $postId = (int) $row->post_id;
+                        $directIds[$categoryId] ??= [];
+                        $directIds[$categoryId][$postId] = true;
+                    }
+                }
+
+                $memo = [];
+                $collect = function (int $categoryId) use (&$collect, &$memo, $childrenIdsByParent, $directIds): array {
+                    if (isset($memo[$categoryId])) {
+                        return $memo[$categoryId];
+                    }
+
+                    $set = $directIds[$categoryId] ?? [];
+
+                    foreach (($childrenIdsByParent[$categoryId] ?? []) as $childId) {
+                        $set += $collect((int) $childId);
+                    }
+
+                    $memo[$categoryId] = $set;
+
+                    return $set;
+                };
+
+                foreach ($typeCategories as $category) {
+                    $count = count($collect((int) $category->id));
+                    $category->setAttribute('related_count', $count);
+                }
             }
 
             $flattened = [];
@@ -92,7 +155,7 @@ class CategoryController extends Controller
 
     public function create(): View
     {
-        $defaultTypes = ['video', 'note', 'institution', 'post'];
+        $defaultTypes = ['video', 'note', 'course', 'post', 'ticket', 'institution'];
         $existingTypes = Category::query()->select('type')->distinct()->orderBy('type')->pluck('type')->all();
         $types = array_values(array_unique(array_merge($defaultTypes, $existingTypes)));
 
@@ -125,9 +188,16 @@ class CategoryController extends Controller
     {
         $categoryModel = Category::query()->findOrFail($category);
 
-        $defaultTypes = ['video', 'note', 'institution', 'post'];
+        $defaultTypes = ['video', 'note', 'course', 'post', 'ticket', 'institution'];
         $existingTypes = Category::query()->select('type')->distinct()->orderBy('type')->pluck('type')->all();
         $types = array_values(array_unique(array_merge($defaultTypes, $existingTypes)));
+
+        $type = (string) ($categoryModel->type ?? '');
+        if (in_array($type, ['note', 'video', 'course'], true)) {
+            $descendantIds = $this->descendantCategoryIds($categoryModel->id, $type);
+            $hasProducts = DB::table('product_categories')->whereIn('category_id', $descendantIds)->exists();
+            $categoryModel->setAttribute('related_count', $hasProducts ? 1 : 0);
+        }
 
         return view('admin.categories.form', [
             'title' => 'ویرایش دسته‌بندی',
@@ -164,22 +234,77 @@ class CategoryController extends Controller
     public function destroy(int $category): RedirectResponse
     {
         $categoryModel = Category::query()->findOrFail($category);
+        $type = (string) ($categoryModel->type ?? '');
+        if (in_array($type, ['note', 'video', 'course'], true)) {
+            $descendantIds = $this->descendantCategoryIds($categoryModel->id, $type);
+            if (DB::table('product_categories')->whereIn('category_id', $descendantIds)->exists()) {
+                return redirect()
+                    ->route('admin.categories.edit', $categoryModel->id)
+                    ->withErrors(['title' => 'این دسته‌بندی دارای محصول است و قابل حذف نیست. ابتدا محصولات را به دسته‌بندی دیگری منتقل کنید.']);
+            }
+        }
         $categoryModel->delete();
 
         return redirect()->route('admin.categories.index');
     }
 
+    private function descendantCategoryIds(int $rootCategoryId, string $type): array
+    {
+        $categories = Category::query()
+            ->select(['id', 'parent_id'])
+            ->where('type', $type)
+            ->get();
+
+        $childrenByParent = [];
+        foreach ($categories as $category) {
+            $parentId = (int) ($category->parent_id ?: 0);
+            $childrenByParent[$parentId] ??= [];
+            $childrenByParent[$parentId][] = (int) $category->id;
+        }
+
+        $result = [];
+        $stack = [(int) $rootCategoryId];
+        $seen = [];
+
+        while ($stack !== []) {
+            $current = array_pop($stack);
+            if ($current <= 0 || isset($seen[$current])) {
+                continue;
+            }
+            $seen[$current] = true;
+            $result[] = $current;
+
+            foreach (($childrenByParent[$current] ?? []) as $childId) {
+                $stack[] = (int) $childId;
+            }
+        }
+
+        return $result;
+    }
+
     private function validatePayload(Request $request, ?Category $category = null): array
     {
         $type = trim((string) $request->input('type', ''));
+        $uniqueTitleRule = Rule::unique('categories', 'title')->where('type', $type);
+        if ($category?->id) {
+            $uniqueTitleRule->ignore($category->id);
+        }
 
         $validated = $request->validate([
             'type' => ['required', 'string', 'max:20'],
             'parent_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', $type)],
-            'title' => ['required', 'string', 'max:190'],
+            'title' => [
+                'required',
+                'string',
+                'max:190',
+                $uniqueTitleRule,
+            ],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+        ], [
+            'title.unique' => 'عنوان دسته‌بندی تکراری است.',
+            'parent_id.exists' => 'دسته‌بندی والد انتخاب‌شده معتبر نیست.',
         ]);
 
         $baseSlug = Str::slug((string) $validated['title'], '-');
@@ -191,7 +316,7 @@ class CategoryController extends Controller
         return [
             'type' => (string) $validated['type'],
             'parent_id' => ($validated['parent_id'] ?? null) !== null ? (int) $validated['parent_id'] : null,
-            'title' => (string) $validated['title'],
+            'title' => trim((string) $validated['title']),
             'slug' => $slug,
             'icon_key' => $category?->icon_key,
             'description' => isset($validated['description']) && $validated['description'] !== '' ? (string) $validated['description'] : null,

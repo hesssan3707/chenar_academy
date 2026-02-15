@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Permission;
+use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,9 +16,17 @@ class PermissionController extends Controller
     {
         $permissions = Permission::query()->orderBy('name')->orderBy('id')->paginate(40);
 
+        $defaultPermissionNames = array_keys($this->defaultPermissions());
+        $existingDefaultNames = Permission::query()
+            ->whereIn('name', $defaultPermissionNames)
+            ->pluck('name')
+            ->all();
+        $defaultsMissing = count($existingDefaultNames) !== count($defaultPermissionNames);
+
         return view('admin.permissions.index', [
             'title' => 'دسترسی‌ها',
             'permissions' => $permissions,
+            'defaultsMissing' => $defaultsMissing,
         ]);
     }
 
@@ -72,6 +81,38 @@ class PermissionController extends Controller
         return redirect()->route('admin.permissions.index');
     }
 
+    public function bootstrap(Request $request): RedirectResponse
+    {
+        foreach ($this->defaultPermissions() as $name => $description) {
+            Permission::query()->firstOrCreate(['name' => $name], [
+                'description' => $description,
+            ]);
+        }
+
+        $ownerRole = Role::query()->firstOrCreate(['name' => 'owner'], [
+            'description' => 'مدیر اصلی',
+        ]);
+
+        $defaultPermissionIds = Permission::query()
+            ->whereIn('name', array_keys($this->defaultPermissions()))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $ownerRole->permissions()->syncWithoutDetaching($defaultPermissionIds);
+
+        $adminUser = $request->user();
+        if ($adminUser) {
+            $adminUser->roles()->syncWithoutDetaching([(int) $ownerRole->id]);
+        }
+
+        return back()->with('toast', [
+            'type' => 'success',
+            'title' => 'انجام شد',
+            'message' => 'دسترسی‌های پیش‌فرض پنل ساخته شد.',
+        ]);
+    }
+
     private function validatePayload(Request $request, ?Permission $permission = null): array
     {
         $validated = $request->validate([
@@ -87,6 +128,31 @@ class PermissionController extends Controller
         return [
             'name' => trim((string) $validated['name']),
             'description' => isset($validated['description']) && $validated['description'] !== '' ? (string) $validated['description'] : null,
+        ];
+    }
+
+    private function defaultPermissions(): array
+    {
+        return [
+            'admin.users' => 'کاربران',
+            'admin.categories' => 'دسته‌بندی‌ها',
+            'admin.products' => 'محصولات',
+            'admin.booklets' => 'جزوه‌ها',
+            'admin.videos' => 'ویدیوها',
+            'admin.courses' => 'دوره‌ها',
+            'admin.posts' => 'مقالات',
+            'admin.tickets' => 'تیکت‌ها',
+            'admin.orders' => 'سفارش‌ها',
+            'admin.payments' => 'پرداخت‌ها',
+            'admin.coupons' => 'کدهای تخفیف',
+            'admin.discounts' => 'تخفیف گروهی',
+            'admin.banners' => 'بنرها',
+            'admin.media' => 'رسانه',
+            'admin.reviews' => 'نظرات',
+            'admin.surveys' => 'نظرسنجی‌ها',
+            'admin.social_links' => 'شبکه‌های اجتماعی',
+            'admin.settings' => 'تنظیمات',
+            'admin.roles' => 'مدیریت نقش‌ها و دسترسی‌ها',
         ];
     }
 }

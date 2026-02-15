@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -23,6 +22,7 @@ class TicketController extends Controller
         }
 
         $tickets = $query
+            ->with('user')
             ->orderByDesc('last_message_at')
             ->orderByDesc('id')
             ->paginate(40);
@@ -78,7 +78,7 @@ class TicketController extends Controller
 
     public function show(int $ticket): View
     {
-        $ticketModel = Ticket::query()->findOrFail($ticket);
+        $ticketModel = Ticket::query()->with('user')->findOrFail($ticket);
         $scopedUserId = request()->attributes->get('adminScopedUserId');
         if (is_int($scopedUserId) && $scopedUserId > 0 && (int) $ticketModel->user_id !== $scopedUserId) {
             abort(404);
@@ -88,12 +88,8 @@ class TicketController extends Controller
         $meta['admin_last_read_at'] = now()->toDateTimeString();
         $ticketModel->forceFill(['meta' => $meta])->save();
 
-        $user = User::query()->find($ticketModel->user_id);
-
-        $messages = TicketMessage::query()
-            ->where('ticket_id', $ticketModel->id)
-            ->orderBy('id')
-            ->get();
+        $user = $ticketModel->user;
+        $messages = $ticketModel->messages()->with('sender')->get();
 
         return view('admin.tickets.show', [
             'title' => 'نمایش تیکت',

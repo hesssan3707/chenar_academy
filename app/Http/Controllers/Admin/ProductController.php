@@ -3,26 +3,94 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProductController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $products = Product::query()
+        $categoryId = (int) $request->query('category', 0);
+
+        $productsQuery = Product::query()
             ->orderByDesc('published_at')
-            ->orderByDesc('id')
-            ->paginate(40);
+            ->orderByDesc('id');
+
+        $activeCategory = null;
+        $categoryOptions = collect();
+        $activeCategoryType = null;
+
+        if ($categoryId > 0) {
+            $activeCategory = Category::query()->find($categoryId);
+
+            if ($activeCategory) {
+                $activeCategoryType = (string) ($activeCategory->type ?? '');
+                $descendantIds = $this->descendantCategoryIds($activeCategory->id, $activeCategoryType);
+
+                $productsQuery->whereHas('categories', function ($q) use ($descendantIds) {
+                    $q->whereIn('categories.id', $descendantIds);
+                });
+
+                if (in_array($activeCategoryType, ['note', 'video', 'course'], true)) {
+                    $categoryOptions = Category::query()
+                        ->where('type', $activeCategoryType)
+                        ->where('is_active', true)
+                        ->orderBy('sort_order')
+                        ->orderBy('title')
+                        ->orderBy('id')
+                        ->get();
+
+                    $productsQuery->with('categories');
+                }
+            }
+        }
+
+        $products = $productsQuery->paginate(40)->withQueryString();
 
         return view('admin.products.index', [
             'title' => 'محصولات',
             'products' => $products,
+            'activeCategory' => $activeCategory,
+            'activeCategoryType' => $activeCategoryType,
+            'categoryOptions' => $categoryOptions,
         ]);
+    }
+
+    public function updateCategory(Request $request, int $product): RedirectResponse
+    {
+        $validated = $request->validate([
+            'category_id' => ['required', 'integer', 'min:1', 'exists:categories,id'],
+        ]);
+
+        $categoryId = (int) $validated['category_id'];
+        $category = Category::query()->findOrFail($categoryId);
+        $type = (string) ($category->type ?? '');
+
+        abort_unless(in_array($type, ['note', 'video', 'course'], true), 403);
+
+        $productModel = Product::query()->findOrFail($product);
+
+        DB::transaction(function () use ($productModel, $categoryId, $type) {
+            $existingIds = $productModel->categories()
+                ->where('categories.type', $type)
+                ->pluck('categories.id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            if ($existingIds !== []) {
+                $productModel->categories()->detach($existingIds);
+            }
+
+            $productModel->categories()->syncWithoutDetaching([$categoryId]);
+        });
+
+        return redirect()->back();
     }
 
     public function create(): View
@@ -35,6 +103,21 @@ class ProductController extends Controller
                 'currency' => $this->commerceCurrency(),
                 'base_price' => 0,
             ]),
+            'institutions' => Category::query()
+                ->where('type', 'institution')
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('title')
+                ->orderBy('id')
+                ->get(),
+            'categories' => Category::query()
+                ->whereIn('type', ['note', 'video', 'course'])
+                ->where('is_active', true)
+                ->orderBy('type')
+                ->orderBy('sort_order')
+                ->orderBy('title')
+                ->orderBy('id')
+                ->get(),
         ]);
     }
 
@@ -42,7 +125,15 @@ class ProductController extends Controller
     {
         $validated = $this->validatePayload($request);
 
-        $product = Product::query()->create($validated);
+        $categoryId = (int) $validated['category_id'];
+        unset($validated['category_id']);
+
+        $product = DB::transaction(function () use ($validated, $categoryId) {
+            $model = Product::query()->create($validated);
+            $this->syncProductCategory($model, $categoryId);
+
+            return $model;
+        });
 
         return redirect()->route('admin.products.edit', $product->id);
     }
@@ -59,6 +150,21 @@ class ProductController extends Controller
         return view('admin.products.form', [
             'title' => 'ویرایش محصول',
             'product' => $productModel,
+            'institutions' => Category::query()
+                ->where('type', 'institution')
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('title')
+                ->orderBy('id')
+                ->get(),
+            'categories' => Category::query()
+                ->whereIn('type', ['note', 'video', 'course'])
+                ->where('is_active', true)
+                ->orderBy('type')
+                ->orderBy('sort_order')
+                ->orderBy('title')
+                ->orderBy('id')
+                ->get(),
         ]);
     }
 
@@ -68,7 +174,13 @@ class ProductController extends Controller
 
         $validated = $this->validatePayload($request, $productModel);
 
-        $productModel->forceFill($validated)->save();
+        $categoryId = (int) $validated['category_id'];
+        unset($validated['category_id']);
+
+        DB::transaction(function () use ($productModel, $validated, $categoryId) {
+            $productModel->forceFill($validated)->save();
+            $this->syncProductCategory($productModel, $categoryId);
+        });
 
         return redirect()->route('admin.products.edit', $productModel->id);
     }
@@ -83,11 +195,28 @@ class ProductController extends Controller
 
     private function validatePayload(Request $request, ?Product $product = null): array
     {
+        $inputType = trim((string) $request->input('type', ''));
+
         $validated = $request->validate([
             'type' => ['required', 'string', 'max:20'],
             'title' => ['required', 'string', 'max:180'],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
+            'institution_category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'institution')],
+            'category_id' => [
+                'required',
+                'integer',
+                'min:1',
+                Rule::exists('categories', 'id')->where(function ($query) use ($inputType) {
+                    if (in_array($inputType, ['note', 'video', 'course'], true)) {
+                        $query->where('type', $inputType);
+
+                        return;
+                    }
+
+                    $query->whereIn('type', ['note', 'video', 'course']);
+                }),
+            ],
             'status' => ['required', 'string', Rule::in(['draft', 'published'])],
             'base_price' => ['required', 'integer', 'min:0', 'max:2000000000'],
             'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibits:discount_type,discount_value'],
@@ -116,6 +245,7 @@ class ProductController extends Controller
             'slug' => $slug,
             'excerpt' => isset($validated['excerpt']) && $validated['excerpt'] !== '' ? (string) $validated['excerpt'] : null,
             'description' => isset($validated['description']) && $validated['description'] !== '' ? (string) $validated['description'] : null,
+            'institution_category_id' => (int) $validated['institution_category_id'],
             'status' => (string) $validated['status'],
             'base_price' => (int) $validated['base_price'],
             'sale_price' => ($validated['sale_price'] ?? null) !== null && (string) $validated['sale_price'] !== '' ? (int) $validated['sale_price'] : null,
@@ -124,7 +254,31 @@ class ProductController extends Controller
             'currency' => $this->commerceCurrency(),
             'published_at' => $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null),
             'meta' => $product?->meta ?? [],
+            'category_id' => (int) $validated['category_id'],
         ];
+    }
+
+    private function syncProductCategory(Product $product, int $categoryId): void
+    {
+        if ($categoryId <= 0) {
+            return;
+        }
+
+        $category = Category::query()->findOrFail($categoryId);
+        $categoryType = (string) ($category->type ?? '');
+        abort_unless(in_array($categoryType, ['note', 'video', 'course'], true), 403);
+
+        $existingIds = $product->categories()
+            ->whereIn('categories.type', ['note', 'video', 'course'])
+            ->pluck('categories.id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($existingIds !== []) {
+            $product->categories()->detach($existingIds);
+        }
+
+        $product->categories()->syncWithoutDetaching([$categoryId]);
     }
 
     private function uniqueProductSlug(string $baseSlug, ?int $ignoreProductId = null): string
@@ -143,5 +297,43 @@ class ProductController extends Controller
         }
 
         return $slug;
+    }
+
+    private function descendantCategoryIds(int $rootCategoryId, string $type): array
+    {
+        if ($rootCategoryId <= 0 || $type === '') {
+            return [];
+        }
+
+        $categories = Category::query()
+            ->select(['id', 'parent_id'])
+            ->where('type', $type)
+            ->get();
+
+        $childrenByParent = [];
+        foreach ($categories as $category) {
+            $parentId = (int) ($category->parent_id ?: 0);
+            $childrenByParent[$parentId] ??= [];
+            $childrenByParent[$parentId][] = (int) $category->id;
+        }
+
+        $result = [];
+        $stack = [(int) $rootCategoryId];
+        $seen = [];
+
+        while ($stack !== []) {
+            $current = array_pop($stack);
+            if ($current <= 0 || isset($seen[$current])) {
+                continue;
+            }
+            $seen[$current] = true;
+            $result[] = $current;
+
+            foreach (($childrenByParent[$current] ?? []) as $childId) {
+                $stack[] = (int) $childId;
+            }
+        }
+
+        return $result;
     }
 }

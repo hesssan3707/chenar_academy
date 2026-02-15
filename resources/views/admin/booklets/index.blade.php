@@ -16,6 +16,8 @@
             </div>
 
             @php($booklets = $booklets ?? null)
+            @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
+            @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
 
             @if (! $booklets || $booklets->isEmpty())
                 <div class="panel max-w-md">
@@ -38,7 +40,6 @@
                                 <tr>
                                     <td class="admin-min-w-220">
                                         <div class="admin-row-title--sm">{{ $booklet->title }}</div>
-                                        <div class="card__meta">{{ $booklet->slug }}</div>
                                     </td>
                                     <td class="admin-nowrap">
                                         @php($statusValue = (string) ($booklet->status ?? ''))
@@ -51,8 +52,26 @@
                                         @endif
                                     </td>
                                     <td class="admin-nowrap">
-                                        @php($price = (int) ($booklet->sale_price ?? $booklet->base_price ?? 0))
-                                        {{ number_format($price) }} {{ $commerceCurrencyLabel ?? 'ریال' }}
+                                        @php($hasDiscount = (bool) ($booklet?->hasDiscount() ?? false))
+                                        @php($discountType = (string) ($booklet->discount_type ?? ''))
+                                        @php($discountValue = (int) ($booklet->discount_value ?? 0))
+                                        @php($discountAmount = max(0, (int) $booklet->displayOriginalPrice($currencyCode) - (int) $booklet->displayFinalPrice($currencyCode)))
+                                        <span class="money">
+                                            <span class="money__amount" dir="ltr">{{ number_format((int) $booklet->displayOriginalPrice($currencyCode)) }}</span>
+                                            <span class="money__unit">{{ $currencyUnit }}</span>
+                                        </span>
+                                        @if ($hasDiscount)
+                                            @if ($discountType === 'percent' && $discountValue > 0)
+                                                <span class="badge badge--danger" style="margin-inline-start: 8px;">{{ max(0, min(100, $discountValue)) }}%</span>
+                                            @else
+                                                <span class="badge badge--danger" style="margin-inline-start: 8px;">
+                                                    <span class="money">
+                                                        <span class="money__amount" dir="ltr">{{ number_format($discountAmount) }}</span>
+                                                        <span class="money__unit">{{ $currencyUnit }}</span>
+                                                    </span>
+                                                </span>
+                                            @endif
+                                        @endif
                                     </td>
                                     <td class="admin-nowrap">
                                         {{ $booklet->published_at ? jdate($booklet->published_at)->format('Y/m/d H:i') : '—' }}

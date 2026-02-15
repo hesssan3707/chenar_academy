@@ -57,7 +57,7 @@ class CourseController extends Controller
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->where('type', 'video')
+                ->where('type', 'course')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
@@ -133,7 +133,7 @@ class CourseController extends Controller
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->where('type', 'video')
+                ->where('type', 'course')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
@@ -213,8 +213,8 @@ class CourseController extends Controller
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:180'],
-            'institution_category_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'institution')],
-            'category_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'video')],
+            'institution_category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'institution')],
+            'category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'course')],
             'description' => ['nullable', 'string'],
             'status' => ['nullable', 'string', Rule::in(['draft', 'published'])],
             'base_price' => [$shouldPublish ? 'required' : 'nullable', 'integer', 'min:0', 'max:2000000000'],
@@ -263,8 +263,8 @@ class CourseController extends Controller
             'discount_value' => ($validated['discount_value'] ?? null) !== null && (string) $validated['discount_value'] !== '' ? (int) $validated['discount_value'] : null,
             'published_at' => $status === 'published' ? $publishedAt : null,
             'thumbnail_media_id' => $thumbnailMedia?->id,
-            'institution_category_id' => ($validated['institution_category_id'] ?? null) !== null ? (int) $validated['institution_category_id'] : null,
-            'category_id' => ($validated['category_id'] ?? null) !== null ? (int) $validated['category_id'] : null,
+            'institution_category_id' => (int) $validated['institution_category_id'],
+            'category_id' => (int) $validated['category_id'],
         ];
     }
 

@@ -22,6 +22,7 @@ window.initApp = function() {
     initPasswordToggles();
     initOtpSenders();
     initAjaxAuthForms();
+    initAdminMobileSidebarUi();
     initAdminUploadUi();
     initAdminCourseLessonUi();
     initAdminConfirmModalUi();
@@ -210,6 +211,40 @@ function initAdminCouponFormUi() {
         allProducts.addEventListener('change', sync);
         sync();
     }
+}
+
+function initAdminMobileSidebarUi() {
+    if (!isAdminTheme()) {
+        return;
+    }
+
+    if (window.__adminMobileSidebarBound) {
+        return;
+    }
+    window.__adminMobileSidebarBound = true;
+
+    const toggle = document.querySelector('#admin-nav-toggle');
+    if (!(toggle instanceof HTMLInputElement)) {
+        return;
+    }
+
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) {
+            return;
+        }
+
+        const link = target.closest('.admin-sidebar .admin-menu__link');
+        if (!(link instanceof HTMLAnchorElement)) {
+            return;
+        }
+
+        if (!toggle.checked) {
+            return;
+        }
+
+        toggle.checked = false;
+    });
 }
 
 function initCheckoutCouponUi() {

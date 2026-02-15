@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Media;
 use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
@@ -14,9 +15,21 @@ use Illuminate\View\View;
 
 class PostController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $posts = Post::query()->orderByDesc('published_at')->orderByDesc('id')->paginate(40);
+        $categoryId = (int) $request->query('category', 0);
+
+        $query = Post::query()->orderByDesc('published_at')->orderByDesc('id');
+
+        if ($categoryId > 0) {
+            $category = Category::query()->where('type', 'post')->find($categoryId);
+            if ($category) {
+                $descendantIds = $this->descendantCategoryIds($category->id, 'post');
+                $query->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $descendantIds));
+            }
+        }
+
+        $posts = $query->paginate(40)->withQueryString();
 
         return view('admin.posts.index', [
             'title' => 'مقالات',
@@ -146,6 +159,40 @@ class PostController extends Controller
         }
 
         return $slug;
+    }
+
+    private function descendantCategoryIds(int $rootCategoryId, string $type): array
+    {
+        $categories = Category::query()
+            ->select(['id', 'parent_id'])
+            ->where('type', $type)
+            ->get();
+
+        $childrenByParent = [];
+        foreach ($categories as $category) {
+            $parentId = (int) ($category->parent_id ?: 0);
+            $childrenByParent[$parentId] ??= [];
+            $childrenByParent[$parentId][] = (int) $category->id;
+        }
+
+        $result = [];
+        $stack = [(int) $rootCategoryId];
+        $seen = [];
+
+        while ($stack !== []) {
+            $current = array_pop($stack);
+            if ($current <= 0 || isset($seen[$current])) {
+                continue;
+            }
+            $seen[$current] = true;
+            $result[] = $current;
+
+            foreach (($childrenByParent[$current] ?? []) as $childId) {
+                $stack[] = (int) $childId;
+            }
+        }
+
+        return $result;
     }
 
     private function storeUploadedMedia(?UploadedFile $file, string $disk, string $directory): Media

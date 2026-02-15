@@ -20,11 +20,20 @@ class UserController extends Controller
     {
         $scopedUserId = $request->attributes->get('adminScopedUserId');
         $q = trim((string) $request->query('q', ''));
+        $kind = trim((string) $request->query('kind', 'users'));
+        $kind = in_array($kind, ['users', 'admins'], true) ? $kind : 'users';
 
         $query = User::query()->orderByDesc('id');
         if (is_int($scopedUserId) && $scopedUserId > 0) {
             $query->where('id', $scopedUserId);
-        } elseif ($q !== '') {
+        } else {
+            if ($kind === 'admins') {
+                $query->whereHas('roles', fn ($roleQuery) => $roleQuery->whereIn('name', ['admin', 'super_admin']));
+            } else {
+                $query->whereDoesntHave('roles', fn ($roleQuery) => $roleQuery->whereIn('name', ['admin', 'super_admin']));
+            }
+
+            if ($q !== '') {
             $tokens = preg_split('/\s+/', $q) ?: [];
             $tokens = array_values(array_filter($tokens, fn ($token) => is_string($token) && trim($token) !== ''));
 
@@ -35,6 +44,7 @@ class UserController extends Controller
                         ->orWhere('name', 'like', '%'.$token.'%');
                 });
             }
+            }
         }
 
         $users = $query->paginate(40)->withQueryString();
@@ -42,6 +52,7 @@ class UserController extends Controller
         return view('admin.users.index', [
             'title' => 'کاربران',
             'users' => $users,
+            'activeKind' => $kind,
         ]);
     }
 
@@ -131,7 +142,25 @@ class UserController extends Controller
 
         $userModel = User::query()->findOrFail($user);
 
-        $productQ = trim((string) request()->query('product_q', ''));
+        return view('admin.users.form', [
+            'title' => 'ویرایش کاربر',
+            'user' => $userModel,
+            'isAdmin' => $userModel->hasRole('admin'),
+            'roles' => Role::query()->orderBy('name')->orderBy('id')->get(),
+            'selectedRoleIds' => $userModel->roles()->pluck('roles.id')->map(fn ($id) => (int) $id)->all(),
+        ]);
+    }
+
+    public function products(Request $request, int $user): View
+    {
+        $scopedUserId = $request->attributes->get('adminScopedUserId');
+        if (is_int($scopedUserId) && $scopedUserId > 0 && $user !== $scopedUserId) {
+            abort(404);
+        }
+
+        $userModel = User::query()->findOrFail($user);
+
+        $productQ = trim((string) $request->query('product_q', ''));
         $productQuery = Product::query()
             ->whereIn('type', ['course', 'video', 'note'])
             ->orderByDesc('id');
@@ -155,17 +184,12 @@ class UserController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        $products = $productQuery->limit(50)->get(['id', 'type', 'title', 'slug']);
-
-        return view('admin.users.form', [
-            'title' => 'ویرایش کاربر',
+        return view('admin.users.products', [
+            'title' => 'محصولات کاربر',
             'user' => $userModel,
-            'isAdmin' => $userModel->hasRole('admin'),
             'accesses' => $accesses,
-            'products' => $products,
+            'products' => $productQuery->limit(50)->get(['id', 'type', 'title', 'slug']),
             'productQ' => $productQ,
-            'roles' => Role::query()->orderBy('name')->orderBy('id')->get(),
-            'selectedRoleIds' => $userModel->roles()->pluck('roles.id')->map(fn ($id) => (int) $id)->all(),
         ]);
     }
 

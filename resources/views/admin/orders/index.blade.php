@@ -57,7 +57,12 @@
                                     </td>
                                     <td class="admin-nowrap">{{ $methodLabel }}</td>
                                     <td class="admin-nowrap">{{ $statusLabel }}</td>
-                                    <td class="admin-nowrap"><span class="text-muted">{{ $currencyUnit }}</span> <span dir="ltr">{{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }}</span></td>
+                                    <td class="admin-nowrap">
+                                        <span class="money">
+                                            <span class="money__amount" dir="ltr">{{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }}</span>
+                                            <span class="money__unit">{{ $currencyUnit }}</span>
+                                        </span>
+                                    </td>
                                     <td class="admin-nowrap">{{ $order->created_at ? jdate($order->created_at)->format('Y/m/d H:i') : '—' }}</td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.orders.show', $order->id) }}">نمایش</a>

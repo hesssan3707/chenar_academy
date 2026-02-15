@@ -37,7 +37,6 @@
                                 <tr>
                                     <td class="admin-min-w-260">
                                         <div class="admin-row-title">{{ $post->title }}</div>
-                                        <div class="card__meta">{{ $post->slug }}</div>
                                     </td>
                                     <td class="admin-nowrap">
                                         @php($statusValue = (string) ($post->status ?? ''))
