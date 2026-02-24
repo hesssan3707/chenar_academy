@@ -47,7 +47,6 @@ class ProductController extends Controller
         $categories = collect();
         $activeInstitution = null;
         $activeCategory = null;
-        $latestProducts = collect();
 
         if ($type && in_array($type, ['note', 'video'], true)) {
             $typesForCategory = $type === 'note' ? ['note'] : ['video', 'course'];
@@ -121,13 +120,6 @@ class ProductController extends Controller
             }
         }
 
-        if ($type && in_array($type, ['note', 'video'], true) && ! $activeCategory) {
-            $latestProducts = (clone $query)
-                ->with(['thumbnailMedia', 'institutionCategory'])
-                ->limit(14)
-                ->get();
-        }
-
         $products = collect();
         if (! $type || $activeCategory) {
             $products = $query
@@ -140,7 +132,6 @@ class ProductController extends Controller
         if ($user) {
             $visibleProductIds = collect()
                 ->merge($products->pluck('id'))
-                ->merge($latestProducts->pluck('id'))
                 ->unique()
                 ->values()
                 ->all();
@@ -163,7 +154,6 @@ class ProductController extends Controller
             'categories' => $categories,
             'activeInstitution' => $activeInstitution,
             'activeCategory' => $activeCategory,
-            'latestProducts' => $latestProducts,
             'purchasedProductIds' => $purchasedProductIds,
             'spaPageBackgroundGroup' => $type === 'video' ? 'videos' : ($type === 'note' ? 'booklets' : 'other'),
         ]);

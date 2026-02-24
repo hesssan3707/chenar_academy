@@ -66,10 +66,18 @@
         </div>
     </div>
 
-    @if (method_exists($products, 'hasMorePages') && $products->hasMorePages())
-        <div class="products-all-next">
-            <a class="btn btn--primary" href="{{ $products->nextPageUrl() }}" data-products-all-next>صفحه بعد</a>
-        </div>
+    @if (method_exists($products, 'onFirstPage') && method_exists($products, 'hasMorePages'))
+        @php($showPrev = ! $products->onFirstPage())
+        @php($showNext = $products->hasMorePages())
+        @if ($showPrev || $showNext)
+            <div class="products-all-pager">
+                @if ($showPrev)
+                    <a class="btn btn--ghost" href="{{ $products->previousPageUrl() }}" data-products-all-page>صفحه قبل</a>
+                @endif
+                @if ($showNext)
+                    <a class="btn btn--primary" href="{{ $products->nextPageUrl() }}" data-products-all-page>صفحه بعد</a>
+                @endif
+            </div>
+        @endif
     @endif
 @endif
-

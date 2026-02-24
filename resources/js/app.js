@@ -894,11 +894,11 @@ function initProductsAllUi() {
                 return;
             }
 
-            const nextLink = target.closest('[data-products-all-next]');
-            if (nextLink instanceof HTMLAnchorElement) {
+            const pageLink = target.closest('[data-products-all-page]');
+            if (pageLink instanceof HTMLAnchorElement) {
                 event.preventDefault();
                 event.stopPropagation();
-                const url = buildUrlFromForm(nextLink.href);
+                const url = buildUrlFromForm(pageLink.href);
                 await swapResults(url, { pushState: true });
             }
         },
