@@ -51,25 +51,25 @@ class LoginController extends Controller
             $user = User::query()->where('phone', $validated['phone'])->first();
             if (! $user) {
                 throw ValidationException::withMessages([
-                    'phone' => 'Phone number not found.',
+                    'phone' => 'شماره موبایل یافت نشد.',
                 ]);
             }
 
             if (! $user->is_active) {
                 throw ValidationException::withMessages([
-                    'phone' => 'Account is inactive.',
+                    'phone' => 'حساب کاربری غیرفعال است.',
                 ]);
             }
 
             if (! is_string($user->password) || $user->password === '') {
                 throw ValidationException::withMessages([
-                    'password' => 'Password login is not available for this account. Please login using OTP.',
+                    'password' => 'ورود با رمز عبور برای این حساب فعال نیست. لطفاً با کد یکبار مصرف وارد شوید.',
                 ]);
             }
 
             if (! Hash::check((string) $validated['password'], (string) $user->password)) {
                 throw ValidationException::withMessages([
-                    'password' => 'Incorrect password.',
+                    'password' => 'رمز عبور اشتباه است.',
                 ]);
             }
 
@@ -77,7 +77,7 @@ class LoginController extends Controller
 
             $request->session()->regenerate();
 
-            $redirect = redirect()->intended(route('panel.library.index'));
+            $redirect = redirect()->route('home');
             if ($request->expectsJson()) {
                 return response()->json([
                     'ok' => true,
@@ -105,7 +105,7 @@ class LoginController extends Controller
         $guard->login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        $redirect = redirect()->intended(route('panel.library.index'));
+        $redirect = redirect()->route('home');
         if ($request->expectsJson()) {
             return response()->json([
                 'ok' => true,
@@ -133,16 +133,39 @@ class LoginController extends Controller
                 'password' => ['required', 'string', 'min:6', 'max:120', 'regex:'.$this->passwordPolicyRegex()],
             ]);
 
-            if (! $guard->attempt(['phone' => $validated['phone'], 'password' => $validated['password']], $request->boolean('remember'))) {
+            $user = User::query()->where('phone', $validated['phone'])->first();
+            if (! $user) {
                 throw ValidationException::withMessages([
-                    'phone' => 'اطلاعات ورود صحیح نیست.',
+                    'phone' => 'شماره موبایل یافت نشد.',
                 ]);
             }
 
-            $request->session()->regenerate();
+            if (! $user->is_active) {
+                throw ValidationException::withMessages([
+                    'phone' => 'حساب کاربری غیرفعال است.',
+                ]);
+            }
 
-            $user = $guard->user();
-            $this->ensureAdminOrFail($request, $user, 'admin');
+            if (! is_string($user->password) || $user->password === '') {
+                throw ValidationException::withMessages([
+                    'password' => 'ورود با رمز عبور برای این حساب فعال نیست. لطفاً با کد یکبار مصرف وارد شوید.',
+                ]);
+            }
+
+            if (! Hash::check((string) $validated['password'], (string) $user->password)) {
+                throw ValidationException::withMessages([
+                    'password' => 'رمز عبور اشتباه است.',
+                ]);
+            }
+
+            if (! ($user->hasRole('admin') || $user->hasRole('super_admin'))) {
+                throw ValidationException::withMessages([
+                    'phone' => 'اجازه ورود به پنل مدیریت را ندارید.',
+                ]);
+            }
+
+            $guard->login($user, $request->boolean('remember'));
+            $request->session()->regenerate();
 
             $redirect = redirect()->intended(route('admin.dashboard'));
             if ($request->expectsJson()) {
@@ -163,7 +186,19 @@ class LoginController extends Controller
 
         if (! $user) {
             throw ValidationException::withMessages([
-                'phone' => 'کاربری با این شماره تلفن پیدا نشد.',
+                'phone' => 'شماره موبایل یافت نشد.',
+            ]);
+        }
+
+        if (! $user->is_active) {
+            throw ValidationException::withMessages([
+                'phone' => 'حساب کاربری غیرفعال است.',
+            ]);
+        }
+
+        if (! ($user->hasRole('admin') || $user->hasRole('super_admin'))) {
+            throw ValidationException::withMessages([
+                'phone' => 'اجازه ورود به پنل مدیریت را ندارید.',
             ]);
         }
 
@@ -171,8 +206,6 @@ class LoginController extends Controller
 
         $guard->login($user, $request->boolean('remember'));
         $request->session()->regenerate();
-
-        $this->ensureAdminOrFail($request, $user, 'admin');
 
         $redirect = redirect()->intended(route('admin.dashboard'));
         if ($request->expectsJson()) {
@@ -198,7 +231,7 @@ class LoginController extends Controller
 
         if (! $user) {
             throw ValidationException::withMessages([
-                'phone' => 'Phone number not found.',
+                'phone' => 'شماره موبایل یافت نشد.',
             ]);
         }
 
@@ -211,7 +244,7 @@ class LoginController extends Controller
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('panel.library.index'));
+        return redirect()->route('home');
     }
 
     public function logout(Request $request): RedirectResponse
@@ -273,7 +306,7 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         throw ValidationException::withMessages([
-            'phone' => 'دسترسی ورود ادمین ندارید.',
+            'phone' => 'اجازه ورود به پنل مدیریت را ندارید.',
         ]);
     }
 }

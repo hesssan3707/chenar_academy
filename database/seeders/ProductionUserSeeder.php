@@ -75,6 +75,7 @@ class ProductionUserSeeder extends Seeder
 
             if (! $headerSkipped) {
                 $headerSkipped = true;
+
                 continue;
             }
 
@@ -157,4 +158,3 @@ class ProductionUserSeeder extends Seeder
         return $digits;
     }
 }
-

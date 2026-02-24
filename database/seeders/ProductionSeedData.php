@@ -21,7 +21,7 @@ final class ProductionSeedData
 
     private static function chunks(string $key): array
     {
-        $payloadPath = __DIR__ . DIRECTORY_SEPARATOR . 'ProductionSeedDataPayload.php';
+        $payloadPath = __DIR__.DIRECTORY_SEPARATOR.'ProductionSeedDataPayload.php';
         if (! is_file($payloadPath)) {
             throw new \RuntimeException('Production seed payload file is missing.');
         }

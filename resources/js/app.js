@@ -1734,7 +1734,7 @@ function setLoginMode(form, mode) {
         }
 
         if (toggleBtn) {
-            toggleBtn.textContent = 'رمز';
+            toggleBtn.textContent = 'ورود با رمز';
         }
 
         return;
@@ -1755,7 +1755,7 @@ function setLoginMode(form, mode) {
     }
 
     if (toggleBtn) {
-        toggleBtn.textContent = 'کد';
+        toggleBtn.textContent = 'ورود با کد';
     }
 }
 
@@ -1853,9 +1853,19 @@ function initPasswordPolicyUi() {
                 ? validatePasswordConfirmation(passwordInput.value, confirmationInput.value)
                 : { valid: true, message: '' };
 
-            renderPasswordFeedback(passwordInput, passwordVisible ? passwordState : { valid: true, message: '' }, 'password');
+            const passwordTouched = passwordInput.dataset.passwordTouched === '1';
+            const confirmationTouched = confirmationInput ? confirmationInput.dataset.passwordTouched === '1' : false;
+
+            const passwordShouldRender = passwordTouched && passwordVisible && (passwordInput.value || '').trim() !== '';
+            const confirmationShouldRender = confirmationInput && confirmationTouched && confirmationVisible && (confirmationInput.value || '').trim() !== '';
+
+            renderPasswordFeedback(passwordInput, passwordShouldRender ? passwordState : { valid: true, message: '' }, 'password');
             if (confirmationInput) {
-                renderPasswordFeedback(confirmationInput, confirmationVisible ? confirmState : { valid: true, message: '' }, 'password_confirmation');
+                renderPasswordFeedback(
+                    confirmationInput,
+                    confirmationShouldRender ? confirmState : { valid: true, message: '' },
+                    'password_confirmation'
+                );
             }
 
             const currentPasswordOk =
@@ -1873,8 +1883,26 @@ function initPasswordPolicyUi() {
         };
 
         passwordInput.addEventListener('input', update);
-        if (confirmationInput) confirmationInput.addEventListener('input', update);
-        if (currentPasswordInput) currentPasswordInput.addEventListener('input', update);
+        passwordInput.addEventListener('blur', () => {
+            if ((passwordInput.value || '').trim() !== '') {
+                passwordInput.dataset.passwordTouched = '1';
+            }
+            update();
+        });
+
+        if (confirmationInput) {
+            confirmationInput.addEventListener('input', update);
+            confirmationInput.addEventListener('blur', () => {
+                if ((confirmationInput.value || '').trim() !== '') {
+                    confirmationInput.dataset.passwordTouched = '1';
+                }
+                update();
+            });
+        }
+
+        if (currentPasswordInput) {
+            currentPasswordInput.addEventListener('input', update);
+        }
 
         form.querySelectorAll('[data-login-mode], [data-login-mode-toggle]').forEach((btn) => {
             if (btn.dataset.passwordPolicyBound === '1') {
@@ -1901,37 +1929,37 @@ function validatePasswordPolicy(rawValue) {
     if (value.length < 6) {
         return {
             valid: false,
-            message: 'Password must be at least 6 characters.',
+            message: 'رمز عبور باید حداقل ۶ کاراکتر باشد.',
         };
     }
 
     if (!/^[A-Za-z0-9]+$/.test(value)) {
         return {
             valid: false,
-            message: 'Password must contain only English letters and numbers.',
+            message: 'رمز عبور فقط باید شامل حروف انگلیسی و اعداد باشد.',
         };
     }
 
     if (!/[A-Za-z]/.test(value) || !/\d/.test(value)) {
         return {
             valid: false,
-            message: 'Password must include both letters and numbers.',
+            message: 'رمز عبور باید ترکیبی از حروف انگلیسی و اعداد باشد.',
         };
     }
 
-    return { valid: true, message: 'Password is valid.' };
+    return { valid: true, message: '' };
 }
 
 function validatePasswordConfirmation(passwordRaw, confirmationRaw) {
     const password = String(passwordRaw || '');
     const confirmation = String(confirmationRaw || '');
     if (confirmation === '') {
-        return { valid: false, message: 'Please confirm your password.' };
+        return { valid: false, message: 'تکرار رمز عبور را وارد کنید.' };
     }
     if (password !== confirmation) {
-        return { valid: false, message: 'Passwords do not match.' };
+        return { valid: false, message: 'رمز عبور و تکرار آن یکسان نیست.' };
     }
-    return { valid: true, message: 'Passwords match.' };
+    return { valid: true, message: '' };
 }
 
 function renderPasswordFeedback(input, state, key) {
@@ -1951,12 +1979,14 @@ function renderPasswordFeedback(input, state, key) {
     if (!state.message) {
         node.textContent = '';
         node.hidden = true;
+        input.classList.remove('is-invalid');
         return;
     }
 
     node.hidden = false;
     node.textContent = state.message;
-    node.className = state.valid ? 'field__hint' : 'field__error';
+    node.className = 'field__error';
+    input.classList.toggle('is-invalid', !state.valid);
 }
 
 function initOtpSenders() {

@@ -37,13 +37,14 @@ class ProductionDatabaseSeeder extends Seeder
             $tables = collect(DB::select('SHOW TABLES'))
                 ->map(function ($row) {
                     $values = array_values((array) $row);
+
                     return (string) ($values[0] ?? '');
                 })
                 ->filter()
                 ->values()
                 ->all();
         } else {
-            $tables = collect(DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()"))
+            $tables = collect(DB::select('SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()'))
                 ->map(fn ($row) => (string) $row->table_name)
                 ->filter()
                 ->values()

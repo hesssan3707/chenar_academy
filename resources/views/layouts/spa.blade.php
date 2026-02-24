@@ -112,7 +112,7 @@
                 </div>
 
                 <div class="text-muted text-sm mb-4" style="line-height: 1.8;">
-                    For account security and to enable login using a password, please set a password for your account.
+                    برای امنیت حساب کاربری و فعال‌سازی امکان ورود با رمز عبور، لطفاً برای حساب خود یک رمز عبور تعیین کنید.
                 </div>
 
                 <form method="post" action="{{ route('panel.profile.password.update') }}" class="stack stack--sm">
@@ -206,7 +206,7 @@
                         </div>
                         <div class="cluster" style="gap: var(--ds-space-3);">
                             <button type="submit" class="btn btn--primary" style="flex: 1;">ورود</button>
-                            <button type="button" class="btn btn--ghost" style="width: 76px;" data-login-mode-toggle>کد</button>
+                            <button type="button" class="btn btn--ghost" style="width: 120px;" data-login-mode-toggle>ورود با کد</button>
                         </div>
                     </div>
                     

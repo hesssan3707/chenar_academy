@@ -694,7 +694,7 @@ function updatePanelNav(url) {
 
     const currentPath = new URL(url).pathname.replace(/\/$/, '');
 
-    panelNav.querySelectorAll('a.panel-nav-link').forEach(link => {
+    panelNav.querySelectorAll('a.panel-nav-link').forEach((link) => {
         if (!link.href || link.href.includes('#')) return;
 
         const itemPath = new URL(link.href).pathname.replace(/\/$/, '');
@@ -709,11 +709,10 @@ function updatePanelNav(url) {
             }
         }
 
+        link.classList.toggle('is-active', isActive);
         if (isActive) {
-            link.classList.add('bg-white/10');
             link.setAttribute('aria-current', 'page');
         } else {
-            link.classList.remove('bg-white/10');
             link.removeAttribute('aria-current');
         }
     });

@@ -10,7 +10,6 @@ use App\Models\ProductReview;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -31,7 +30,8 @@ class ProductController extends Controller
             }
         }
 
-        $categorySlug = $request->query('category');
+        $categorySlug = trim((string) $request->query('category', ''));
+        $q = trim((string) $request->query('q', ''));
 
         $query = Product::query()
             ->where('status', 'published')
@@ -41,9 +41,13 @@ class ProductController extends Controller
         if ($type && in_array($type, ['note', 'video'], true)) {
             if ($type === 'note') {
                 $query->where('type', 'note');
-            } elseif ($type === 'video') {
+            } else {
                 $query->whereIn('type', ['video', 'course']);
             }
+        }
+
+        if ($q !== '') {
+            $query->where('title', 'like', '%'.$q.'%');
         }
 
         $categories = collect();
@@ -51,20 +55,20 @@ class ProductController extends Controller
         $activeCategory = null;
 
         if ($type && in_array($type, ['note', 'video'], true)) {
-            $typesForCategory = $type === 'note' ? ['note'] : ['video', 'course'];
+            $typesForCategoryCount = $type === 'note' ? ['note'] : ['video', 'course'];
             $categoryTypes = $type === 'video' ? ['video', 'course'] : [$type];
 
             $rawCategories = Category::query()
                 ->whereIn('type', $categoryTypes)
                 ->where('is_active', true)
                 ->with('coverMedia')
-                ->withCount(['products' => function ($q) use ($typesForCategory) {
+                ->withCount(['products' => function ($q) use ($typesForCategoryCount) {
                     $q->where('products.status', 'published')
-                        ->whereIn('products.type', $typesForCategory);
+                        ->whereIn('products.type', $typesForCategoryCount);
                 }])
-                ->whereHas('products', function ($q) use ($typesForCategory) {
+                ->whereHas('products', function ($q) use ($typesForCategoryCount) {
                     $q->where('products.status', 'published')
-                        ->whereIn('products.type', $typesForCategory);
+                        ->whereIn('products.type', $typesForCategoryCount);
                 })
                 ->orderBy('sort_order')
                 ->orderBy('id')
@@ -89,7 +93,7 @@ class ProductController extends Controller
                 $categories = $rawCategories;
             }
 
-            if ($categorySlug) {
+            if ($categorySlug !== '') {
                 $activeCategories = Category::query()
                     ->whereIn('type', $categoryTypes)
                     ->where('slug', $categorySlug)
@@ -122,91 +126,30 @@ class ProductController extends Controller
             }
         }
 
-        if ($type && in_array($type, ['note', 'video'], true) && ! $activeCategory) {
-            $latestProducts = collect();
-            if ($type === 'video') {
-                $latestProducts = Product::query()
-                    ->where('status', 'published')
-                    ->whereIn('type', ['video', 'course'])
-                    ->orderByDesc('published_at')
-                    ->with(['thumbnailMedia', 'institutionCategory'])
-                    ->limit(10)
-                    ->get();
-            } elseif ($type === 'note') {
-                $latestProducts = Product::query()
-                    ->where('status', 'published')
-                    ->where('type', 'note')
-                    ->orderByDesc('published_at')
-                    ->with(['thumbnailMedia', 'institutionCategory'])
-                    ->limit(10)
-                    ->get();
-            }
-
-            $purchasedProductIds = [];
-            if (auth()->check()) {
-                $user = auth()->user();
-                if ($user instanceof \App\Models\User) {
-                    $purchasedProductIds = $user
-                        ->productAccesses()
-                        ->where(function ($query) {
-                            $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                        })
-                        ->pluck('product_id')
-                        ->all();
-                }
-            }
-
-            return view('catalog.products.index', [
-                'products' => $latestProducts,
-                'activeType' => $type,
-                'categories' => $categories,
-                'activeInstitution' => $activeInstitution,
-                'activeCategory' => $activeCategory,
-                'purchasedProductIds' => $purchasedProductIds,
-                'spaPageBackgroundGroup' => $type === 'video' ? 'videos' : ($type === 'note' ? 'booklets' : 'other'),
-            ]);
-        }
-
-        $cacheKey = 'content_cache.products.index.v3.'.sha1(json_encode([
-            'type' => $type,
-            'category' => $categorySlug,
-        ], JSON_THROW_ON_ERROR));
-
-        $productIds = Cache::rememberForever($cacheKey, function () use ($query) {
-            return (clone $query)->pluck('id')->all();
-        });
-
-        $trackedKeys = Cache::get('content_cache_keys.products', []);
-        if (! in_array($cacheKey, $trackedKeys, true)) {
-            $trackedKeys[] = $cacheKey;
-            Cache::forever('content_cache_keys.products', $trackedKeys);
-        }
-
-        $productsById = Product::query()
-            ->whereIn('id', $productIds)
+        $products = $query
             ->with(['thumbnailMedia', 'institutionCategory'])
-            ->get()
-            ->keyBy('id');
-
-        $products = collect($productIds)
-            ->map(fn (int $id) => $productsById->get($id))
-            ->filter();
+            ->paginate(24)
+            ->withQueryString();
 
         $purchasedProductIds = [];
         if ($request->user()) {
-            $purchasedProductIds = $request->user()
-                ->productAccesses()
-                ->whereIn('product_id', $products->pluck('id')->all())
-                ->where(function ($query) {
-                    $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                })
-                ->pluck('product_id')
-                ->all();
+            $pageProductIds = $products->getCollection()->pluck('id')->all();
+            if ($pageProductIds !== []) {
+                $purchasedProductIds = $request->user()
+                    ->productAccesses()
+                    ->whereIn('product_id', $pageProductIds)
+                    ->where(function ($query) {
+                        $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                    })
+                    ->pluck('product_id')
+                    ->all();
+            }
         }
 
         return view('catalog.products.index', [
             'products' => $products,
             'activeType' => $type,
+            'q' => $q,
             'categories' => $categories,
             'activeInstitution' => $activeInstitution,
             'activeCategory' => $activeCategory,

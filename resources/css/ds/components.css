@@ -130,6 +130,14 @@ textarea:focus {
     border-color: rgba(45, 212, 191, 0.35);
 }
 
+input.is-invalid,
+select.is-invalid,
+textarea.is-invalid {
+    border-color: var(--ds-color-danger);
+    outline: 2px solid rgba(225, 29, 72, 0.22);
+    outline-offset: 2px;
+}
+
 html[data-theme='admin'] input:focus,
 html[data-theme='admin'] select:focus,
 html[data-theme='admin'] textarea:focus {

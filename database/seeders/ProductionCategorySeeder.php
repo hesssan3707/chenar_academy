@@ -118,6 +118,7 @@ class ProductionCategorySeeder extends Seeder
 
             if (! $headerSkipped) {
                 $headerSkipped = true;
+
                 continue;
             }
 
@@ -259,4 +260,3 @@ class ProductionCategorySeeder extends Seeder
         return null;
     }
 }
-

@@ -56,7 +56,7 @@ class RegisterController extends Controller
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('panel.library.index'));
+        return redirect()->route('home');
     }
 
     private function consumeOtpOrFail(string $phone, string $purpose, string $code): void

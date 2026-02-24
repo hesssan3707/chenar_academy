@@ -619,6 +619,24 @@ body.spa-body {
     box-shadow: var(--ds-shadow);
 }
 
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    align-items: stretch;
+    padding: 10px 0;
+}
+
+.products-grid .card-product {
+    width: auto;
+    height: auto;
+    flex-shrink: 1;
+}
+
+.products-grid .card-product:hover {
+    transform: translateY(-2px);
+}
+
 .spa-cover {
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -1551,6 +1569,13 @@ body.spa-body {
 
 .spa-modal.active .spa-modal-content {
     transform: scale(1);
+}
+
+[data-login-mode],
+[data-login-mode-toggle] {
+    white-space: nowrap;
+    font-size: 12px;
+    min-width: 120px;
 }
 
 .cart-remove-btn {

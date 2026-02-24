@@ -28,6 +28,7 @@ class ProductionProductSeeder extends Seeder
 
             if (! $headerSkipped) {
                 $headerSkipped = true;
+
                 continue;
             }
 
@@ -207,7 +208,7 @@ class ProductionProductSeeder extends Seeder
     private function truthy(string $value): bool
     {
         $v = mb_strtolower(trim($value));
+
         return in_array($v, ['1', 'true', 'yes', 'y', 'on', 't'], true);
     }
 }
-

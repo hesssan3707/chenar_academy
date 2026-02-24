@@ -28,6 +28,7 @@ class ProductionOrderSeeder extends Seeder
 
             if (! $headerSkipped) {
                 $headerSkipped = true;
+
                 continue;
             }
 
@@ -173,4 +174,3 @@ class ProductionOrderSeeder extends Seeder
         }
     }
 }
-
