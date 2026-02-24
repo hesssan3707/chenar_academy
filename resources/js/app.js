@@ -38,6 +38,7 @@ window.initApp = function() {
     initHorizontalWheelScrollUi();
     initCatalogInstitutionWheelUi();
     initProductDetailTabsUi();
+    initProductsAllUi();
     initCheckoutCouponUi();
 
     const surveyModal = document.querySelector('[data-survey-modal]');
@@ -786,6 +787,133 @@ function initProductDetailTabsUi() {
 
         setActive(firstValue);
     });
+}
+
+function initProductsAllUi() {
+    const shell = document.querySelector('[data-products-all]');
+    if (!(shell instanceof HTMLElement)) {
+        return;
+    }
+
+    if (shell.dataset.productsAllBound === '1') {
+        return;
+    }
+    shell.dataset.productsAllBound = '1';
+
+    const form = shell.querySelector('form[data-products-all-form]');
+    const results = shell.querySelector('[data-products-all-results]');
+    if (!(form instanceof HTMLFormElement) || !(results instanceof HTMLElement)) {
+        return;
+    }
+
+    const typeInput = form.querySelector('input[name="type"]');
+    const qInput = form.querySelector('input[name="q"]');
+
+    const buildUrlFromForm = (pageUrl) => {
+        if (typeof pageUrl === 'string' && pageUrl.trim() !== '') {
+            return pageUrl;
+        }
+
+        const url = new URL(form.action, window.location.origin);
+        const params = new URLSearchParams();
+        const type = typeInput instanceof HTMLInputElement ? String(typeInput.value || '') : '';
+        const q = qInput instanceof HTMLInputElement ? String(qInput.value || '') : '';
+
+        if (type !== '') {
+            params.set('type', type);
+        }
+        if (q.trim() !== '') {
+            params.set('q', q.trim());
+        }
+
+        url.search = params.toString();
+        return url.toString();
+    };
+
+    const setTypeUi = (type) => {
+        shell.querySelectorAll('[data-products-all-type]').forEach((btn) => {
+            if (!(btn instanceof HTMLButtonElement)) {
+                return;
+            }
+            const value = String(btn.dataset.productsAllType || '');
+            const isActive = value === String(type);
+            btn.classList.toggle('btn--primary', isActive);
+            btn.classList.toggle('btn--ghost', !isActive);
+        });
+    };
+
+    const swapResults = async (url, { pushState = true } = {}) => {
+        results.classList.add('is-fading');
+        await new Promise((resolve) => setTimeout(resolve, 170));
+
+        const response = await fetch(url, {
+            cache: 'no-store',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Products-All-Partial': '1',
+            },
+        });
+
+        if (!response.ok) {
+            results.classList.remove('is-fading');
+            window.location.href = url;
+            return;
+        }
+
+        const html = await response.text();
+        results.innerHTML = html;
+        results.classList.remove('is-fading');
+
+        if (pushState) {
+            history.pushState({}, '', url);
+        } else {
+            history.replaceState({}, '', url);
+        }
+    };
+
+    shell.addEventListener(
+        'click',
+        async (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) {
+                return;
+            }
+
+            const typeBtn = target.closest('[data-products-all-type]');
+            if (typeBtn instanceof HTMLButtonElement) {
+                event.preventDefault();
+                event.stopPropagation();
+                const type = String(typeBtn.dataset.productsAllType || 'all');
+                if (typeInput instanceof HTMLInputElement) {
+                    typeInput.value = type;
+                }
+                setTypeUi(type);
+                const url = buildUrlFromForm();
+                await swapResults(url, { pushState: true });
+                return;
+            }
+
+            const nextLink = target.closest('[data-products-all-next]');
+            if (nextLink instanceof HTMLAnchorElement) {
+                event.preventDefault();
+                event.stopPropagation();
+                const url = buildUrlFromForm(nextLink.href);
+                await swapResults(url, { pushState: true });
+            }
+        },
+        true
+    );
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const url = buildUrlFromForm();
+        await swapResults(url, { pushState: true });
+    });
+
+    const initialType = typeInput instanceof HTMLInputElement ? String(typeInput.value || 'all') : 'all';
+    setTypeUi(initialType);
 }
 
 function initAdminProductInitialSelectsUi() {

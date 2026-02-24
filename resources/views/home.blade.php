@@ -38,7 +38,7 @@
                                 </a>
                             @endforeach
                         @else
-                            <a href="{{ route('products.index') }}" class="card-product card-product--home">
+                            <a href="{{ route('products.all') }}" class="card-product card-product--home">
                                 <div class="spa-cover">
                                     <img src="{{ $placeholderThumb }}" alt="ادامه یادگیری" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                                 </div>
@@ -87,7 +87,7 @@
                                 </a>
                             @endforeach
                         @else
-                            <a href="{{ route('products.index') }}" class="card-product card-product--home">
+                            <a href="{{ route('products.all') }}" class="card-product card-product--home">
                                 <div class="spa-cover">
                                     <img src="{{ $placeholderThumb }}" alt="پرفروش‌ها" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                                 </div>
@@ -102,7 +102,10 @@
             </div>
 
             <div class="home-row">
-                <h2 class="home-row__title">جدیدترین‌ها</h2>
+                <div class="home-row__head">
+                    <h2 class="home-row__title">جدیدترین‌ها</h2>
+                    <a class="link home-row__more" href="{{ route('products.all') }}">مشاهده همه</a>
+                </div>
                 <div class="h-scroll-container">
                     @foreach ($latestProducts as $item)
                         <a href="{{ $item->type === 'course' ? route('courses.show', $item->slug) : route('products.show', $item->slug) }}" class="card-product card-product--home">
@@ -142,26 +145,6 @@
                     @endforeach
                 </div>
             </div>
-
-            @php($latestPosts = $latestPosts ?? collect())
-            @if ($latestPosts->isNotEmpty())
-                <div class="home-row">
-                    <h2 class="home-row__title">آخرین مقالات</h2>
-                    <div class="h-scroll-container">
-                        @foreach ($latestPosts as $post)
-                            <a href="{{ route('blog.show', $post->slug) }}" class="card-product card-product--home">
-                                <div class="spa-cover">
-                                    <img src="{{ $placeholderThumb }}" alt="{{ $post->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
-                                </div>
-                                <h3 class="card-product__title">{{ $post->title }}</h3>
-                                <div class="card-product__cta">
-                                    <span class="btn btn--secondary btn--sm w-full">مشاهده</span>
-                                </div>
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
         </div>
     </div>
 @endsection

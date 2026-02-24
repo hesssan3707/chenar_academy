@@ -21,7 +21,6 @@ class ProductController extends Controller
     {
         $type = $request->query('type');
 
-        // Auto-detect type based on route name if not provided in query
         if (! $type) {
             if ($request->routeIs('videos.index')) {
                 $type = 'video';
@@ -30,8 +29,7 @@ class ProductController extends Controller
             }
         }
 
-        $categorySlug = trim((string) $request->query('category', ''));
-        $q = trim((string) $request->query('q', ''));
+        $categorySlug = $request->query('category');
 
         $query = Product::query()
             ->where('status', 'published')
@@ -46,29 +44,26 @@ class ProductController extends Controller
             }
         }
 
-        if ($q !== '') {
-            $query->where('title', 'like', '%'.$q.'%');
-        }
-
         $categories = collect();
         $activeInstitution = null;
         $activeCategory = null;
+        $latestProducts = collect();
 
         if ($type && in_array($type, ['note', 'video'], true)) {
-            $typesForCategoryCount = $type === 'note' ? ['note'] : ['video', 'course'];
+            $typesForCategory = $type === 'note' ? ['note'] : ['video', 'course'];
             $categoryTypes = $type === 'video' ? ['video', 'course'] : [$type];
 
             $rawCategories = Category::query()
                 ->whereIn('type', $categoryTypes)
                 ->where('is_active', true)
                 ->with('coverMedia')
-                ->withCount(['products' => function ($q) use ($typesForCategoryCount) {
+                ->withCount(['products' => function ($q) use ($typesForCategory) {
                     $q->where('products.status', 'published')
-                        ->whereIn('products.type', $typesForCategoryCount);
+                        ->whereIn('products.type', $typesForCategory);
                 }])
-                ->whereHas('products', function ($q) use ($typesForCategoryCount) {
+                ->whereHas('products', function ($q) use ($typesForCategory) {
                     $q->where('products.status', 'published')
-                        ->whereIn('products.type', $typesForCategoryCount);
+                        ->whereIn('products.type', $typesForCategory);
                 })
                 ->orderBy('sort_order')
                 ->orderBy('id')
@@ -93,7 +88,7 @@ class ProductController extends Controller
                 $categories = $rawCategories;
             }
 
-            if ($categorySlug !== '') {
+            if (is_string($categorySlug) && trim($categorySlug) !== '') {
                 $activeCategories = Category::query()
                     ->whereIn('type', $categoryTypes)
                     ->where('slug', $categorySlug)
@@ -126,18 +121,34 @@ class ProductController extends Controller
             }
         }
 
-        $products = $query
-            ->with(['thumbnailMedia', 'institutionCategory'])
-            ->paginate(24)
-            ->withQueryString();
+        if ($type && in_array($type, ['note', 'video'], true) && ! $activeCategory) {
+            $latestProducts = (clone $query)
+                ->with(['thumbnailMedia', 'institutionCategory'])
+                ->limit(14)
+                ->get();
+        }
+
+        $products = collect();
+        if (! $type || $activeCategory) {
+            $products = $query
+                ->with(['thumbnailMedia', 'institutionCategory'])
+                ->get();
+        }
 
         $purchasedProductIds = [];
-        if ($request->user()) {
-            $pageProductIds = $products->getCollection()->pluck('id')->all();
-            if ($pageProductIds !== []) {
-                $purchasedProductIds = $request->user()
+        $user = $request->user();
+        if ($user) {
+            $visibleProductIds = collect()
+                ->merge($products->pluck('id'))
+                ->merge($latestProducts->pluck('id'))
+                ->unique()
+                ->values()
+                ->all();
+
+            if ($visibleProductIds !== []) {
+                $purchasedProductIds = $user
                     ->productAccesses()
-                    ->whereIn('product_id', $pageProductIds)
+                    ->whereIn('product_id', $visibleProductIds)
                     ->where(function ($query) {
                         $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
                     })
@@ -149,12 +160,132 @@ class ProductController extends Controller
         return view('catalog.products.index', [
             'products' => $products,
             'activeType' => $type,
-            'q' => $q,
             'categories' => $categories,
             'activeInstitution' => $activeInstitution,
             'activeCategory' => $activeCategory,
+            'latestProducts' => $latestProducts,
             'purchasedProductIds' => $purchasedProductIds,
             'spaPageBackgroundGroup' => $type === 'video' ? 'videos' : ($type === 'note' ? 'booklets' : 'other'),
+        ]);
+    }
+
+    public function all(Request $request): View
+    {
+        $activeType = $request->query('type');
+        if (! $activeType || ! in_array($activeType, ['note', 'video'], true)) {
+            $activeType = 'all';
+        }
+
+        $q = trim((string) $request->query('q', ''));
+        $categorySlug = trim((string) $request->query('category', ''));
+
+        $query = Product::query()
+            ->where('status', 'published')
+            ->whereIn('type', ['note', 'video', 'course'])
+            ->orderByDesc('published_at');
+
+        if ($activeType === 'note') {
+            $query->where('type', 'note');
+        } elseif ($activeType === 'video') {
+            $query->whereIn('type', ['video', 'course']);
+        }
+
+        if ($q !== '') {
+            $query->where('title', 'like', '%'.$q.'%');
+        }
+
+        $categories = collect();
+        if (in_array($activeType, ['note', 'video'], true)) {
+            $categoryTypes = $activeType === 'video' ? ['video', 'course'] : [$activeType];
+
+            $rawCategories = Category::query()
+                ->whereIn('type', $categoryTypes)
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get();
+
+            if ($activeType === 'video') {
+                $categories = $rawCategories
+                    ->groupBy(function (Category $category) {
+                        return ((int) ($category->parent_id ?? 0)).'|'.trim((string) ($category->title ?? ''));
+                    })
+                    ->map(fn ($group) => $group->firstWhere('type', 'video') ?: $group->first())
+                    ->filter()
+                    ->values();
+            } else {
+                $categories = $rawCategories;
+            }
+
+            if ($categorySlug !== '') {
+                $activeCategories = Category::query()
+                    ->whereIn('type', $categoryTypes)
+                    ->where('slug', $categorySlug)
+                    ->where('is_active', true)
+                    ->get();
+
+                if ($activeType === 'video') {
+                    $activeCategory = $activeCategories->firstWhere('type', 'video') ?: $activeCategories->first();
+                    if ($activeCategory) {
+                        $activeCategoryIds = Category::query()
+                            ->whereIn('type', $categoryTypes)
+                            ->where('is_active', true)
+                            ->where('parent_id', $activeCategory->parent_id)
+                            ->where('title', $activeCategory->title)
+                            ->pluck('id')
+                            ->map(fn ($id) => (int) $id)
+                            ->all();
+
+                        $query->whereHas('categories', function ($q) use ($activeCategoryIds) {
+                            $q->whereIn('categories.id', $activeCategoryIds);
+                        });
+                    }
+                } else {
+                    $activeCategoryIds = $activeCategories->pluck('id')->map(fn ($id) => (int) $id)->all();
+                    if ($activeCategoryIds !== []) {
+                        $query->whereHas('categories', function ($q) use ($activeCategoryIds) {
+                            $q->whereIn('categories.id', $activeCategoryIds);
+                        });
+                    }
+                }
+            }
+        }
+
+        $products = $query
+            ->with(['thumbnailMedia', 'institutionCategory'])
+            ->paginate(14)
+            ->withQueryString();
+
+        $purchasedProductIds = [];
+        $user = $request->user();
+        if ($user) {
+            $pageIds = $products->getCollection()->pluck('id')->all();
+            if ($pageIds !== []) {
+                $purchasedProductIds = $user
+                    ->productAccesses()
+                    ->whereIn('product_id', $pageIds)
+                    ->where(function ($query) {
+                        $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                    })
+                    ->pluck('product_id')
+                    ->all();
+            }
+        }
+
+        if ($request->headers->get('X-Products-All-Partial') === '1') {
+            return view('catalog.products.partials.all_results', [
+                'products' => $products,
+                'purchasedProductIds' => $purchasedProductIds,
+            ]);
+        }
+
+        return view('catalog.products.all', [
+            'products' => $products,
+            'activeType' => $activeType,
+            'q' => $q,
+            'category' => $categorySlug,
+            'categories' => $categories,
+            'purchasedProductIds' => $purchasedProductIds,
         ]);
     }
 

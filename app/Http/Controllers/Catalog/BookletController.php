@@ -13,11 +13,12 @@ class BookletController extends Controller
     public function index(Request $request): View
     {
         $categorySlug = $request->query('category');
-        $type = 'note'; // Booklets are notes
+        $type = 'note';
 
         $categories = collect();
         $activeCategory = null;
         $groupedBooklets = collect();
+        $latestBooklets = collect();
 
         // 1. Fetch Categories for Booklets
         $categories = Category::query()
@@ -57,12 +58,21 @@ class BookletController extends Controller
             $groupedBooklets = $booklets->groupBy(function ($product) {
                 return $product->institutionCategory ? $product->institutionCategory->title : 'سایر';
             });
+        } else {
+            $latestBooklets = Product::query()
+                ->where('status', 'published')
+                ->where('type', $type)
+                ->with(['thumbnailMedia', 'institutionCategory'])
+                ->orderByDesc('published_at')
+                ->limit(14)
+                ->get();
         }
 
         return view('catalog.booklets.index', [
             'categories' => $categories,
             'activeCategory' => $activeCategory,
             'groupedBooklets' => $groupedBooklets,
+            'latestBooklets' => $latestBooklets,
         ]);
     }
 }

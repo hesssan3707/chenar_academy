@@ -196,6 +196,7 @@ Route::prefix('courses')->name('courses.')->group(function () {
 
 Route::prefix('products')->name('products.')->group(function () {
     Route::get('/', [ProductController::class, 'index'])->name('index');
+    Route::get('/all', [ProductController::class, 'all'])->name('all');
     Route::get('/{slug}/preview', [ProductController::class, 'streamPreview'])->name('preview');
     Route::get('/{slug}', [ProductController::class, 'show'])->name('show');
     Route::post('/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('auth')->name('reviews.store');
