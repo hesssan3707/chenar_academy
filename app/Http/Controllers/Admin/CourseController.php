@@ -236,6 +236,7 @@ class CourseController extends Controller
             'lessons.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:2000000000'],
             'lessons.*.is_preview' => ['nullable', 'in:0,1'],
             'lessons.*.delete' => ['nullable', 'in:0,1'],
+            'lessons.*.video_url' => ['nullable', 'string', 'max:2048', 'url'],
             'lessons.*.file' => ['nullable', 'file', 'max:1048576'],
         ]);
 
@@ -320,6 +321,8 @@ class CourseController extends Controller
             $sortOrder = (int) ($lessonRow['sort_order'] ?? 0);
             $isPreview = (string) ($lessonRow['is_preview'] ?? '0') === '1';
             $delete = (string) ($lessonRow['delete'] ?? '0') === '1';
+            $videoUrl = trim((string) ($lessonRow['video_url'] ?? ''));
+            $videoUrl = $videoUrl !== '' ? $videoUrl : null;
 
             $uploadedFile = $request->file("lessons.$key.file");
             if ($uploadedFile !== null && ! ($uploadedFile instanceof UploadedFile)) {
@@ -327,6 +330,12 @@ class CourseController extends Controller
             }
             if ($uploadedFile === null && isset($lessonRow['file']) && $lessonRow['file'] instanceof UploadedFile) {
                 $uploadedFile = $lessonRow['file'];
+            }
+
+            if ($uploadedFile && $videoUrl) {
+                throw ValidationException::withMessages([
+                    "lessons.$key.video_url" => ['فقط یکی از فایل یا لینک را وارد کنید.'],
+                ]);
             }
 
             $lessonId = isset($lessonRow['id']) && is_numeric($lessonRow['id']) ? (int) $lessonRow['id'] : null;
@@ -354,8 +363,16 @@ class CourseController extends Controller
                     $media = $this->storeUploadedMedia($uploadedFile, 'local', 'protected/course-lessons');
                     if ($media) {
                         $payload['media_id'] = $media->id;
+                        $payload['video_url'] = null;
                         $payload['lesson_type'] = 'video';
                         $payload['duration_seconds'] = $this->extractVideoDurationSecondsOrFail($media);
+                    }
+                } elseif (array_key_exists('video_url', $lessonRow)) {
+                    $payload['video_url'] = $videoUrl;
+                    if ($videoUrl !== null) {
+                        $payload['media_id'] = null;
+                        $payload['duration_seconds'] = null;
+                        $payload['lesson_type'] = 'video';
                     }
                 }
 
@@ -368,7 +385,7 @@ class CourseController extends Controller
                 continue;
             }
 
-            if (! $uploadedFile) {
+            if (! $uploadedFile && $videoUrl === null) {
                 continue;
             }
 
@@ -394,6 +411,7 @@ class CourseController extends Controller
                 'sort_order' => $sortOrder,
                 'lesson_type' => 'video',
                 'media_id' => $mediaId,
+                'video_url' => $videoUrl,
                 'content' => null,
                 'is_preview' => $isPreview,
                 'duration_seconds' => $durationSeconds,

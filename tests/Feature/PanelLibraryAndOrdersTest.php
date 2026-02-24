@@ -14,6 +14,7 @@ use App\Models\ProductPart;
 use App\Models\User;
 use App\Models\Video;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -164,6 +165,65 @@ class PanelLibraryAndOrdersTest extends TestCase
         $this->actingAs($user)
             ->get(route('panel.library.show', $product->slug))
             ->assertForbidden();
+    }
+
+    public function test_panel_forces_password_setup_modal_for_users_without_password(): void
+    {
+        $user = User::factory()->create(['password' => null]);
+
+        $this->actingAs($user)
+            ->get(route('panel.library.index'))
+            ->assertOk()
+            ->assertSee('name="force-password-setup"', false)
+            ->assertSee('password-setup-modal', false);
+    }
+
+    public function test_user_without_password_can_set_password_without_current_password(): void
+    {
+        $user = User::factory()->create(['password' => null]);
+
+        $this->actingAs($user)
+            ->from(route('panel.profile'))
+            ->put(route('panel.profile.password.update'), [
+                'password' => 'newpass123',
+                'password_confirmation' => 'newpass123',
+            ])
+            ->assertRedirect(route('panel.profile'));
+
+        $user->refresh();
+
+        $this->assertNotNull($user->password);
+        $this->assertTrue(Hash::check('newpass123', (string) $user->password));
+    }
+
+    public function test_password_update_requires_letters_and_numbers(): void
+    {
+        $user = User::factory()->create(['password' => null]);
+
+        $this->actingAs($user)
+            ->from(route('panel.profile'))
+            ->put(route('panel.profile.password.update'), [
+                'password' => 'abcdef',
+                'password_confirmation' => 'abcdef',
+            ])
+            ->assertRedirect(route('panel.profile'))
+            ->assertSessionHasErrors(['password']);
+    }
+
+    public function test_user_with_password_must_provide_current_password_to_change_it(): void
+    {
+        $user = User::factory()->create([
+            'password' => 'oldpass123',
+        ]);
+
+        $this->actingAs($user)
+            ->from(route('panel.profile'))
+            ->put(route('panel.profile.password.update'), [
+                'password' => 'newpass123',
+                'password_confirmation' => 'newpass123',
+            ])
+            ->assertRedirect(route('panel.profile'))
+            ->assertSessionHasErrors(['current_password']);
     }
 
     public function test_user_with_access_can_view_note_parts_in_library(): void

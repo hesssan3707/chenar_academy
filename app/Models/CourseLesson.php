@@ -16,6 +16,7 @@ class CourseLesson extends Model
         'sort_order',
         'lesson_type',
         'media_id',
+        'video_url',
         'content',
         'is_preview',
         'duration_seconds',

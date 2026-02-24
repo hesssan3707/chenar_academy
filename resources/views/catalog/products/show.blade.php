@@ -33,7 +33,7 @@
             <button type="button" class="detail-tab is-active" data-detail-tab="info" role="tab" aria-selected="true">اطلاعات و خرید</button>
             <button type="button" class="detail-tab" data-detail-tab="content" role="tab" aria-selected="false" tabindex="-1">محتوا</button>
             @if ($showFeedbackCol)
-                <button type="button" class="detail-tab" data-detail-tab="feedback" role="tab" aria-selected="false" tabindex="-1">نظرات و امتیاز</button>
+                <button type="button" class="detail-tab" data-detail-tab="feedback" role="tab" aria-selected="false" tabindex="-1">امتیاز و نظرات</button>
             @endif
         </div>
 
@@ -228,6 +228,35 @@
                                     </div>
                                 </div>
 
+                                @php($previewImages = $previewImages ?? collect())
+                                @php($samplePdfUrl = (($product->previewPdfMedia?->disk ?? null) === 'public' && ($product->previewPdfMedia?->id ?? null)) ? route('media.stream', $product->previewPdfMedia->id) : null)
+                                @if ($previewImages->isNotEmpty() || $samplePdfUrl)
+                                    <div class="detail-section">
+                                        <div class="detail-section__head">
+                                            <div class="detail-section__title">پیش‌نمایش</div>
+                                        </div>
+                                        <div class="detail-section__body">
+                                            @if ($previewImages->isNotEmpty())
+                                                <div class="h-scroll-container" style="gap: 10px;">
+                                                    @foreach ($previewImages as $media)
+                                                        <a href="{{ route('media.stream', $media->id) }}" target="_blank" rel="noopener" class="block" style="width: 220px;">
+                                                            <div class="spa-cover" style="border-radius: 14px; overflow: hidden;">
+                                                                <img src="{{ route('media.stream', $media->id) }}" alt="" loading="lazy">
+                                                            </div>
+                                                        </a>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+
+                                            @if ($samplePdfUrl)
+                                                <div class="{{ $previewImages->isNotEmpty() ? 'mt-4' : '' }}">
+                                                    <a class="btn btn--secondary btn--sm" href="{{ $samplePdfUrl }}" target="_blank" rel="noopener">View Sample PDF</a>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+
                                 <div class="detail-section">
                                     <div class="detail-section__body">
                                         @if ($product->excerpt)
@@ -315,7 +344,7 @@
                                 @if (($ratingsArePublic ?? false))
                                     <div class="detail-section">
                                         <div class="detail-section__head">
-                                            <div class="detail-section__title">امتیاز</div>
+                                            <div class="detail-section__title">امتیاز کاربران</div>
                                         </div>
                                         <div class="detail-section__body">
                                             @if (isset($avgRating) && $avgRating !== null)
@@ -341,7 +370,7 @@
                                 @if (($reviewsArePublic ?? false))
                                     <div class="detail-section">
                                         <div class="detail-section__head">
-                                            <div class="detail-section__title">نظرات</div>
+                                            <div class="detail-section__title">نظرات کاربران</div>
                                         </div>
                                         <div class="detail-section__body">
                                             @auth
@@ -419,7 +448,7 @@
                                 @if (($ratingsArePublic ?? false))
                                     <div class="detail-section">
                                         <div class="detail-section__head">
-                                            <div class="detail-section__title">امتیاز</div>
+                                            <div class="detail-section__title">امتیاز کاربران</div>
                                         </div>
                                         <div class="detail-section__body">
                                             @if (isset($avgRating) && $avgRating !== null)
@@ -445,7 +474,7 @@
                                 @if (($reviewsArePublic ?? false))
                                     <div class="detail-section">
                                         <div class="detail-section__head">
-                                            <div class="detail-section__title">نظرات</div>
+                                            <div class="detail-section__title">نظرات کاربران</div>
                                         </div>
                                         <div class="detail-section__body">
                                             @auth

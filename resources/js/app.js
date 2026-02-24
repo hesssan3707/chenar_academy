@@ -20,6 +20,7 @@ window.initApp = function() {
 
     initLoginUi();
     initPasswordToggles();
+    initPasswordPolicyUi();
     initOtpSenders();
     initAjaxAuthForms();
     initAdminMobileSidebarUi();
@@ -1819,6 +1820,143 @@ function initPasswordToggles() {
             if (hideIcon) hideIcon.hidden = isPassword;
         });
     });
+}
+
+function initPasswordPolicyUi() {
+    document.querySelectorAll('form').forEach((form) => {
+        if (form.dataset.passwordPolicyBound === '1') {
+            return;
+        }
+
+        const passwordInput = form.querySelector('input[name="password"]');
+        if (!passwordInput) {
+            return;
+        }
+
+        form.dataset.passwordPolicyBound = '1';
+
+        const confirmationInput = form.querySelector('input[name="password_confirmation"]');
+        const currentPasswordInput = form.querySelector('input[name="current_password"]');
+        const loginActionInput = form.querySelector('[data-login-action]');
+
+        const update = () => {
+            const passwordVisible = isInputVisible(passwordInput);
+            const confirmationVisible = confirmationInput ? isInputVisible(confirmationInput) : false;
+            const currentPasswordVisible = currentPasswordInput ? isInputVisible(currentPasswordInput) : false;
+
+            const loginRequiresPassword = loginActionInput && String(loginActionInput.value || '').includes('login_password');
+            const policyRequired = passwordVisible && (passwordInput.required || loginRequiresPassword || (passwordInput.value || '').trim() !== '');
+            const confirmationRequired = confirmationInput && confirmationVisible && (confirmationInput.required || (confirmationInput.value || '').trim() !== '');
+
+            const passwordState = policyRequired ? validatePasswordPolicy(passwordInput.value) : { valid: true, message: '' };
+            const confirmState = confirmationRequired
+                ? validatePasswordConfirmation(passwordInput.value, confirmationInput.value)
+                : { valid: true, message: '' };
+
+            renderPasswordFeedback(passwordInput, passwordVisible ? passwordState : { valid: true, message: '' }, 'password');
+            if (confirmationInput) {
+                renderPasswordFeedback(confirmationInput, confirmationVisible ? confirmState : { valid: true, message: '' }, 'password_confirmation');
+            }
+
+            const currentPasswordOk =
+                !currentPasswordInput ||
+                !currentPasswordVisible ||
+                !currentPasswordInput.required ||
+                (currentPasswordInput.value || '').trim() !== '';
+
+            const shouldDisable = passwordVisible && (!passwordState.valid || !confirmState.valid || !currentPasswordOk);
+            form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((btn) => {
+                if (btn instanceof HTMLButtonElement || btn instanceof HTMLInputElement) {
+                    btn.disabled = shouldDisable;
+                }
+            });
+        };
+
+        passwordInput.addEventListener('input', update);
+        if (confirmationInput) confirmationInput.addEventListener('input', update);
+        if (currentPasswordInput) currentPasswordInput.addEventListener('input', update);
+
+        form.querySelectorAll('[data-login-mode], [data-login-mode-toggle]').forEach((btn) => {
+            if (btn.dataset.passwordPolicyBound === '1') {
+                return;
+            }
+            btn.dataset.passwordPolicyBound = '1';
+            btn.addEventListener('click', () => setTimeout(update, 0));
+        });
+
+        update();
+    });
+}
+
+function isInputVisible(input) {
+    if (!input) return false;
+    if (input.closest('[hidden]')) return false;
+    const style = window.getComputedStyle(input);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    return true;
+}
+
+function validatePasswordPolicy(rawValue) {
+    const value = String(rawValue || '');
+    if (value.length < 6) {
+        return {
+            valid: false,
+            message: 'Password must be at least 6 characters.',
+        };
+    }
+
+    if (!/^[A-Za-z0-9]+$/.test(value)) {
+        return {
+            valid: false,
+            message: 'Password must contain only English letters and numbers.',
+        };
+    }
+
+    if (!/[A-Za-z]/.test(value) || !/\d/.test(value)) {
+        return {
+            valid: false,
+            message: 'Password must include both letters and numbers.',
+        };
+    }
+
+    return { valid: true, message: 'Password is valid.' };
+}
+
+function validatePasswordConfirmation(passwordRaw, confirmationRaw) {
+    const password = String(passwordRaw || '');
+    const confirmation = String(confirmationRaw || '');
+    if (confirmation === '') {
+        return { valid: false, message: 'Please confirm your password.' };
+    }
+    if (password !== confirmation) {
+        return { valid: false, message: 'Passwords do not match.' };
+    }
+    return { valid: true, message: 'Passwords match.' };
+}
+
+function renderPasswordFeedback(input, state, key) {
+    const field = input.closest('.field');
+    if (!field) {
+        return;
+    }
+
+    const nodeKey = `passwordPolicyNode_${key}`;
+    let node = field.querySelector(`[data-${nodeKey}]`);
+    if (!node) {
+        node = document.createElement('div');
+        node.setAttribute(`data-${nodeKey}`, '1');
+        field.appendChild(node);
+    }
+
+    if (!state.message) {
+        node.textContent = '';
+        node.hidden = true;
+        return;
+    }
+
+    node.hidden = false;
+    node.textContent = state.message;
+    node.className = state.valid ? 'field__hint' : 'field__error';
 }
 
 function initOtpSenders() {

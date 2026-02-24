@@ -95,6 +95,14 @@
                     </div>
 
                     <label class="field">
+                        <span class="field__label">لینک ویدیو (URL)</span>
+                        <input type="url" name="video_url" dir="ltr" value="{{ old('video_url', (string) ($video->video_url ?? '')) }}">
+                        @error('video_url')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
+                    <label class="field">
                         <span class="field__label">فایل ویدیو (کامل)</span>
                         <input type="file" name="video_file" accept="video/*">
                         @error('video_file')

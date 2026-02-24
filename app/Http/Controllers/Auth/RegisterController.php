@@ -24,7 +24,7 @@ class RegisterController extends Controller
         $validated = $request->validate([
             'phone' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:160'],
-            'password' => ['required', 'string', 'min:6', 'max:120', 'confirmed'],
+            'password' => $this->passwordPolicyRules(true),
             'password_confirmation' => ['required', 'string', 'max:120'],
             'otp_code' => ['required', 'string', 'max:10'],
         ]);

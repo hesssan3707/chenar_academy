@@ -19,6 +19,7 @@ class Video extends Model
     protected $fillable = [
         'product_id',
         'media_id',
+        'video_url',
         'preview_media_id',
         'duration_seconds',
         'meta',

@@ -116,4 +116,69 @@ class AdminCourseUploadsTest extends TestCase
         $this->assertNotNull($freeLesson);
         $this->assertNotNull($freeLesson->media_id);
     }
+
+    public function test_admin_can_create_course_with_video_url_lessons(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $institution = Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'Azad University',
+            'slug' => 'azad',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $category = Category::query()->create([
+            'type' => 'course',
+            'parent_id' => null,
+            'title' => 'Math Courses',
+            'slug' => 'math-courses',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.courses.store'), [
+            'title' => 'My Url Course',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
+            'status' => 'draft',
+            'base_price' => 1000,
+            'sale_price' => null,
+            'discount_type' => null,
+            'discount_value' => null,
+            'published_at' => null,
+            'description' => null,
+            'lessons' => [
+                'new_0' => [
+                    'title' => 'Url Lesson',
+                    'is_preview' => '1',
+                    'sort_order' => 0,
+                    'video_url' => 'https://example.com/stream/lesson.mp4',
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $product = Product::query()->where('type', 'course')->where('title', 'My Url Course')->first();
+        $this->assertNotNull($product);
+
+        $course = Course::query()->find((int) $product->id);
+        $this->assertNotNull($course);
+        $this->assertSame(1, (int) $course->total_videos_count);
+        $this->assertSame(0, (int) $course->total_duration_seconds);
+
+        $lesson = CourseLesson::query()->where('title', 'Url Lesson')->first();
+        $this->assertNotNull($lesson);
+        $this->assertNull($lesson->media_id);
+        $this->assertSame('https://example.com/stream/lesson.mp4', $lesson->video_url);
+    }
 }

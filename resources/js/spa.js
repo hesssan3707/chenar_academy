@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSiteLoader();
     initSPA();
     initAuthModal();
+    initPasswordSetupModal();
     if (typeof window.initCart === 'function') {
         window.initCart();
     }
@@ -932,6 +933,22 @@ function initAuthModal() {
     setupOtpBtn('btn-send-otp-login', 'login-phone', 'login');
     setupOtpBtn('btn-send-otp-register', 'register-phone', 'register');
     setupOtpBtn('btn-send-otp-forgot', 'forgot-phone', 'password_reset');
+}
+
+function initPasswordSetupModal() {
+    const meta = document.querySelector('meta[name="force-password-setup"]');
+    if (!meta) return;
+
+    const value = String(meta.content || '').trim();
+    if (value !== '1') return;
+
+    if (typeof window.openModal === 'function') {
+        window.openModal('password-setup-modal');
+        return;
+    }
+
+    const modal = document.getElementById('password-setup-modal');
+    if (modal) modal.classList.add('active');
 }
 
 // Cart Logic

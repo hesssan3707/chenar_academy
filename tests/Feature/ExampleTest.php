@@ -20,7 +20,7 @@ class ExampleTest extends TestCase
             'name' => 'Buyer',
             'phone' => '09120000001',
             'email' => 'buyer@example.com',
-            'password' => 'password',
+            'password' => 'password123',
             'is_active' => true,
         ]);
 
@@ -84,7 +84,7 @@ class ExampleTest extends TestCase
             'name' => 'Student',
             'phone' => '09120000002',
             'email' => 'student@example.com',
-            'password' => 'password',
+            'password' => 'password123',
             'is_active' => true,
         ]);
 

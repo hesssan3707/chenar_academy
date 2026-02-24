@@ -19,6 +19,7 @@ class Category extends Model
         'slug',
         'icon_key',
         'description',
+        'cover_media_id',
         'is_active',
         'sort_order',
     ];
@@ -36,5 +37,10 @@ class Category extends Model
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'product_categories', 'category_id', 'product_id');
+    }
+
+    public function coverMedia(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'cover_media_id');
     }
 }

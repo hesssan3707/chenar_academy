@@ -98,6 +98,34 @@ class PublicPagesTest extends TestCase
 
     public function test_product_show_pages_load_for_note_and_video(): void
     {
+        $samplePdf = \App\Models\Media::query()->create([
+            'uploaded_by_user_id' => null,
+            'disk' => 'public',
+            'path' => 'uploads/booklet-samples/sample.pdf',
+            'original_name' => 'sample.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 100,
+            'sha1' => null,
+            'width' => null,
+            'height' => null,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
+        $previewImage = \App\Models\Media::query()->create([
+            'uploaded_by_user_id' => null,
+            'disk' => 'public',
+            'path' => 'uploads/booklet-previews/1.jpg',
+            'original_name' => '1.jpg',
+            'mime_type' => 'image/jpeg',
+            'size' => 100,
+            'sha1' => null,
+            'width' => 200,
+            'height' => 120,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
+
         $note = Product::query()->create([
             'type' => 'note',
             'title' => 'جزوه تست',
@@ -105,6 +133,8 @@ class PublicPagesTest extends TestCase
             'excerpt' => 'خلاصه جزوه',
             'description' => "پاراگراف اول\n\nپاراگراف دوم",
             'thumbnail_media_id' => null,
+            'preview_pdf_media_id' => $samplePdf->id,
+            'preview_image_media_ids' => [$previewImage->id],
             'status' => 'published',
             'base_price' => 100000,
             'sale_price' => null,
@@ -138,6 +168,7 @@ class PublicPagesTest extends TestCase
             ->assertSee('پاراگراف اول')
             ->assertSee('پاراگراف دوم')
             ->assertSee('فایل PDF')
+            ->assertSee('View Sample PDF')
             ->assertSee('detail-shell')
             ->assertSee('detail-grid')
             ->assertDontSee('max-h-[80vh]');

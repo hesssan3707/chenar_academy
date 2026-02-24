@@ -15,6 +15,28 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
 
+    protected function passwordPolicyRegex(): string
+    {
+        return '/^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{6,120}$/';
+    }
+
+    protected function passwordPolicyRules(bool $confirmed = true): array
+    {
+        $rules = [
+            'required',
+            'string',
+            'min:6',
+            'max:120',
+            'regex:'.$this->passwordPolicyRegex(),
+        ];
+
+        if ($confirmed) {
+            $rules[] = 'confirmed';
+        }
+
+        return $rules;
+    }
+
     protected function parseDateTimeOrFail(string $field, mixed $value): ?Carbon
     {
         $raw = trim((string) ($value ?? ''));

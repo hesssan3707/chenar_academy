@@ -21,7 +21,7 @@ class OtpAuthTest extends TestCase
             'email' => $phone.'@chenar.local',
             'phone' => $phone,
             'phone_verified_at' => now(),
-            'password' => 'password',
+            'password' => 'pass1234',
             'is_active' => true,
         ]);
 
@@ -48,7 +48,7 @@ class OtpAuthTest extends TestCase
             'email' => $phone.'@chenar.local',
             'phone' => $phone,
             'phone_verified_at' => now(),
-            'password' => 'password',
+            'password' => 'password123',
             'is_active' => true,
         ]);
 
@@ -78,7 +78,7 @@ class OtpAuthTest extends TestCase
             'email' => $phone.'@chenar.local',
             'phone' => $phone,
             'phone_verified_at' => now(),
-            'password' => 'password',
+            'password' => 'password123',
             'is_active' => true,
         ]);
 
@@ -109,7 +109,7 @@ class OtpAuthTest extends TestCase
             'email' => $phone.'@chenar.local',
             'phone' => $phone,
             'phone_verified_at' => now(),
-            'password' => 'password',
+            'password' => 'password123',
             'is_active' => true,
         ]);
 
@@ -162,14 +162,14 @@ class OtpAuthTest extends TestCase
             'email' => $phone.'@chenar.local',
             'phone' => $phone,
             'phone_verified_at' => now(),
-            'password' => 'password',
+            'password' => 'password123',
             'is_active' => true,
         ]);
 
         $this->post(route('login.store'), [
             'action' => 'login_password',
             'phone' => $phone,
-            'password' => 'password',
+            'password' => 'password123',
         ])->assertRedirect(route('panel.library.index'));
     }
 
@@ -182,14 +182,14 @@ class OtpAuthTest extends TestCase
             'email' => $phone.'@chenar.local',
             'phone' => $phone,
             'phone_verified_at' => now(),
-            'password' => 'password',
+            'password' => 'password123',
             'is_active' => true,
         ]);
 
         $this->postJson(route('login.store'), [
             'action' => 'login_password',
             'phone' => $phone,
-            'password' => 'password',
+            'password' => 'password123',
         ])->assertOk()->assertJson([
             'ok' => true,
             'redirect_to' => route('panel.library.index'),
@@ -205,15 +205,15 @@ class OtpAuthTest extends TestCase
             'email' => $phone.'@chenar.local',
             'phone' => $phone,
             'phone_verified_at' => now(),
-            'password' => 'password',
+            'password' => 'pass1234',
             'is_active' => true,
         ]);
 
         $this->postJson(route('login.store'), [
             'action' => 'login_password',
             'phone' => $phone,
-            'password' => 'wrong-password',
-        ])->assertStatus(422)->assertJsonValidationErrors(['phone']);
+            'password' => 'wrongpass123',
+        ])->assertStatus(422)->assertJsonValidationErrors(['password']);
     }
 
     public function test_login_password_requires_password_field(): void
@@ -225,7 +225,7 @@ class OtpAuthTest extends TestCase
             'email' => $phone.'@chenar.local',
             'phone' => $phone,
             'phone_verified_at' => now(),
-            'password' => 'password',
+            'password' => 'pass1234',
             'is_active' => true,
         ]);
 
@@ -246,7 +246,7 @@ class OtpAuthTest extends TestCase
             'email' => $phone.'@chenar.local',
             'phone' => $phone,
             'phone_verified_at' => now(),
-            'password' => 'password',
+            'password' => 'pass1234',
             'is_active' => true,
         ]);
 
@@ -271,7 +271,7 @@ class OtpAuthTest extends TestCase
             'email' => $phone.'@chenar.local',
             'phone' => $phone,
             'phone_verified_at' => now(),
-            'password' => 'password',
+            'password' => 'password123',
             'is_active' => true,
         ]);
 
@@ -299,7 +299,7 @@ class OtpAuthTest extends TestCase
             'email' => $phone.'@chenar.local',
             'phone' => $phone,
             'phone_verified_at' => now(),
-            'password' => 'password',
+            'password' => 'password123',
             'is_active' => true,
         ]);
 

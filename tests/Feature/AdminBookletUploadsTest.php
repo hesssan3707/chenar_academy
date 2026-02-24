@@ -193,4 +193,70 @@ class AdminBookletUploadsTest extends TestCase
         $this->assertSame('local', $file->disk);
         $this->assertTrue(Storage::disk('local')->exists($file->path));
     }
+
+    public function test_admin_can_upload_booklet_preview_images_and_sample_pdf(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $institution = Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'Azad University',
+            'slug' => 'azad',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $category = Category::query()->create([
+            'type' => 'note',
+            'parent_id' => $institution->id,
+            'title' => 'Math Notes',
+            'slug' => 'azad-math-notes',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.booklets.store'), [
+            'title' => 'Booklet With Preview',
+            'excerpt' => 'Intro',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
+            'status' => 'draft',
+            'base_price' => 1000,
+            'sale_price' => null,
+            'published_at' => null,
+            'booklet_file' => UploadedFile::fake()->create('booklet.pdf', 200, 'application/pdf'),
+            'sample_pdf' => UploadedFile::fake()->create('sample.pdf', 50, 'application/pdf'),
+            'preview_images' => [
+                UploadedFile::fake()->image('p1.jpg', 200, 120),
+                UploadedFile::fake()->image('p2.jpg', 200, 120),
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $productId = (int) DB::table('products')->where('title', 'Booklet With Preview')->value('id');
+        $this->assertNotSame(0, $productId);
+
+        $product = \App\Models\Product::query()->findOrFail($productId);
+        $this->assertNotNull($product->preview_pdf_media_id);
+        $this->assertIsArray($product->preview_image_media_ids);
+        $this->assertCount(2, $product->preview_image_media_ids);
+
+        $sample = \App\Models\Media::query()->findOrFail((int) $product->preview_pdf_media_id);
+        $this->assertSame('public', $sample->disk);
+        $this->assertTrue(Storage::disk('public')->exists($sample->path));
+
+        foreach ($product->preview_image_media_ids as $id) {
+            $media = \App\Models\Media::query()->findOrFail((int) $id);
+            $this->assertSame('public', $media->disk);
+            $this->assertTrue(Storage::disk('public')->exists($media->path));
+        }
+    }
 }

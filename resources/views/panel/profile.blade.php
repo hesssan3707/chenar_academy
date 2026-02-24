@@ -46,7 +46,7 @@
 
                             <div class="field">
                                 <label class="field__label">رمز عبور جدید</label>
-                                <input name="password" type="password" class="field__input" dir="ltr">
+                                <input name="password" type="password" class="field__input" dir="ltr" required>
                                 @error('password')
                                     <div class="field__error">{{ $message }}</div>
                                 @enderror
@@ -54,7 +54,10 @@
 
                             <div class="field">
                                 <label class="field__label">تکرار رمز عبور جدید</label>
-                                <input name="password_confirmation" type="password" class="field__input" dir="ltr">
+                                <input name="password_confirmation" type="password" class="field__input" dir="ltr" required>
+                                @error('password_confirmation')
+                                    <div class="field__error">{{ $message }}</div>
+                                @enderror
                             </div>
 
                             <div class="form-actions mt-4">

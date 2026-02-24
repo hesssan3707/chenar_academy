@@ -43,7 +43,7 @@ class AccessControlTest extends TestCase
         $this->post(route('admin.login.store'), [
             'action' => 'login_password',
             'phone' => $user->phone,
-            'password' => 'password',
+            'password' => 'password123',
         ])->assertRedirect(route('admin.dashboard'));
 
         $this->assertAuthenticatedAs($user, 'admin');
@@ -78,7 +78,7 @@ class AccessControlTest extends TestCase
         $this->post(route('admin.login.store'), [
             'action' => 'login_password',
             'phone' => $user->phone,
-            'password' => 'password',
+            'password' => 'password123',
         ])->assertSessionHasErrors(['phone']);
     }
 
@@ -93,7 +93,8 @@ class AccessControlTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->get('/panel')->assertOk();
+        $this->actingAs($user)->get('/panel')->assertRedirect(route('panel.library.index'));
+        $this->actingAs($user)->get(route('panel.library.index'))->assertOk();
     }
 
     public function test_regular_user_cannot_access_admin_routes(): void
@@ -574,7 +575,8 @@ class AccessControlTest extends TestCase
         $adminRole = Role::create(['name' => 'admin']);
         $user->roles()->attach($adminRole->id);
 
-        $this->actingAs($user)->get('/panel')->assertOk();
+        $this->actingAs($user)->get('/panel')->assertRedirect(route('panel.library.index'));
+        $this->actingAs($user)->get(route('panel.library.index'))->assertOk();
     }
 
     public function test_admin_panel_authentication_does_not_authenticate_user_panel(): void

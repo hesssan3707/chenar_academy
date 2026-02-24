@@ -35,17 +35,28 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
-        $commerceCurrency = 'IRR';
-        if (Schema::hasTable('settings')) {
-            $raw = Setting::query()->where('key', 'commerce.currency')->value('value');
-            $raw = is_string($raw) ? strtoupper(trim($raw)) : '';
-            if (in_array($raw, ['IRR', 'IRT'], true)) {
-                $commerceCurrency = $raw;
-            }
-        }
+        View::composer('*', function ($view): void {
+            static $commercePayload = null;
 
-        View::share('commerceCurrency', $commerceCurrency);
-        View::share('commerceCurrencyLabel', $commerceCurrency === 'IRT' ? 'تومان' : 'ریال');
+            if (! is_array($commercePayload)) {
+                $commerceCurrency = 'IRR';
+
+                if (Schema::hasTable('settings')) {
+                    $raw = Setting::query()->where('key', 'commerce.currency')->value('value');
+                    $raw = is_string($raw) ? strtoupper(trim($raw)) : '';
+                    if (in_array($raw, ['IRR', 'IRT'], true)) {
+                        $commerceCurrency = $raw;
+                    }
+                }
+
+                $commercePayload = [
+                    'commerceCurrency' => $commerceCurrency,
+                    'commerceCurrencyLabel' => $commerceCurrency === 'IRT' ? 'تومان' : 'ریال',
+                ];
+            }
+
+            $view->with($commercePayload);
+        });
 
         $clearCacheGroup = function (string $group): void {
             $keyListKey = "content_cache_keys.{$group}";

@@ -40,6 +40,7 @@ class BookletController extends Controller
                 'currency' => $this->commerceCurrency(),
                 'base_price' => 0,
             ]),
+            'previewImages' => collect(),
             'institutions' => Category::query()
                 ->where('type', 'institution')
                 ->where('is_active', true)
@@ -68,6 +69,8 @@ class BookletController extends Controller
             'excerpt' => $validated['excerpt'],
             'description' => null,
             'thumbnail_media_id' => $validated['thumbnail_media_id'],
+            'preview_pdf_media_id' => $validated['preview_pdf_media_id'],
+            'preview_image_media_ids' => $validated['preview_image_media_ids'],
             'institution_category_id' => $validated['institution_category_id'],
             'status' => $validated['status'],
             'base_price' => $validated['base_price'],
@@ -108,9 +111,19 @@ class BookletController extends Controller
             ->where('type', 'note')
             ->findOrFail($booklet);
 
+        $bookletModel->loadMissing('previewPdfMedia');
+        $previewImages = collect();
+        $previewIds = $bookletModel->preview_image_media_ids;
+        if (is_array($previewIds) && $previewIds !== []) {
+            $ids = array_values(array_map('intval', $previewIds));
+            $mediaById = Media::query()->whereIn('id', $ids)->get()->keyBy('id');
+            $previewImages = collect($ids)->map(fn ($id) => $mediaById->get($id))->filter()->values();
+        }
+
         return view('admin.booklets.form', [
             'title' => 'ویرایش جزوه',
             'booklet' => $bookletModel,
+            'previewImages' => $previewImages,
             'institutions' => Category::query()
                 ->where('type', 'institution')
                 ->where('is_active', true)
@@ -147,6 +160,8 @@ class BookletController extends Controller
             'currency' => $this->commerceCurrency(),
             'published_at' => $validated['published_at'],
             'thumbnail_media_id' => $validated['thumbnail_media_id'] ?? $bookletModel->thumbnail_media_id,
+            'preview_pdf_media_id' => $validated['preview_pdf_media_id'],
+            'preview_image_media_ids' => $validated['preview_image_media_ids'],
             'institution_category_id' => $validated['institution_category_id'],
         ])->save();
 
@@ -225,6 +240,9 @@ class BookletController extends Controller
             ],
             'published_at' => ['nullable', 'string', 'max:32'],
             'cover_image' => ['nullable', 'file', 'image', 'max:5120'],
+            'sample_pdf' => ['nullable', 'file', 'max:51200', 'mimes:pdf'],
+            'preview_images' => ['nullable', 'array', 'max:20'],
+            'preview_images.*' => ['file', 'image', 'max:5120'],
             'booklet_file' => [
                 Rule::when($shouldPublish && ! $hasExistingBookletFile, ['required'], ['nullable']),
                 'file',
@@ -243,6 +261,26 @@ class BookletController extends Controller
 
         $thumbnailMedia = $this->storeUploadedMedia($request->file('cover_image'), 'public', 'uploads/covers');
         $bookletFileMedia = $this->storeUploadedMedia($request->file('booklet_file'), 'local', 'protected/booklets');
+        $samplePdfMedia = $this->storeUploadedMedia($request->file('sample_pdf'), 'public', 'uploads/booklet-samples');
+
+        $previewImageIds = null;
+        if ($request->hasFile('preview_images')) {
+            $previewImageIds = [];
+            $files = $request->file('preview_images');
+            if (is_array($files)) {
+                foreach ($files as $file) {
+                    if ($file instanceof UploadedFile) {
+                        $media = $this->storeUploadedMedia($file, 'public', 'uploads/booklet-previews');
+                        if ($media) {
+                            $previewImageIds[] = (int) $media->id;
+                        }
+                    }
+                }
+            }
+        } elseif ($product && $product->exists) {
+            $existing = $product->preview_image_media_ids;
+            $previewImageIds = is_array($existing) ? array_values(array_map('intval', $existing)) : null;
+        }
 
         $publishedAt = $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null);
         if ($shouldPublish && $publishedAt === null) {
@@ -260,6 +298,8 @@ class BookletController extends Controller
             'discount_value' => ($validated['discount_value'] ?? null) !== null && (string) $validated['discount_value'] !== '' ? (int) $validated['discount_value'] : null,
             'published_at' => $status === 'published' ? $publishedAt : null,
             'thumbnail_media_id' => $thumbnailMedia?->id,
+            'preview_pdf_media_id' => $samplePdfMedia?->id ?? ($product?->preview_pdf_media_id ?? null),
+            'preview_image_media_ids' => $previewImageIds,
             'booklet_file_media_id' => $bookletFileMedia?->id,
             'institution_category_id' => (int) $validated['institution_category_id'],
             'category_id' => (int) $validated['category_id'],

@@ -142,6 +142,26 @@
                     @endforeach
                 </div>
             </div>
+
+            @php($latestPosts = $latestPosts ?? collect())
+            @if ($latestPosts->isNotEmpty())
+                <div class="home-row">
+                    <h2 class="home-row__title">آخرین مقالات</h2>
+                    <div class="h-scroll-container">
+                        @foreach ($latestPosts as $post)
+                            <a href="{{ route('blog.show', $post->slug) }}" class="card-product card-product--home">
+                                <div class="spa-cover">
+                                    <img src="{{ $placeholderThumb }}" alt="{{ $post->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
+                                </div>
+                                <h3 class="card-product__title">{{ $post->title }}</h3>
+                                <div class="card-product__cta">
+                                    <span class="btn btn--secondary btn--sm w-full">مشاهده</span>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 @endsection

@@ -359,6 +359,54 @@ class AdminCrudSmokeTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_publish_video_with_video_url_without_uploading_file(): void
+    {
+        $institution = Category::query()->create([
+            'type' => 'institution',
+            'parent_id' => null,
+            'title' => 'Payame Noor',
+            'slug' => 'pnu',
+            'icon_key' => 'university',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $category = Category::query()->create([
+            'type' => 'video',
+            'parent_id' => $institution->id,
+            'title' => 'Physics',
+            'slug' => 'pnu-physics',
+            'icon_key' => 'video',
+            'description' => null,
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.videos.store'), [
+            'title' => 'Video Url 1',
+            'excerpt' => 'Intro',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
+            'status' => 'published',
+            'base_price' => 1000,
+            'sale_price' => null,
+            'published_at' => now()->toDateTimeString(),
+            'video_url' => 'https://example.com/videos/full.mp4',
+        ]);
+
+        $videoProductId = (int) Product::query()->where('slug', 'video-url-1')->value('id');
+        $response->assertRedirect(route('admin.videos.edit', $videoProductId));
+
+        $this->assertDatabaseHas('videos', [
+            'product_id' => $videoProductId,
+            'video_url' => 'https://example.com/videos/full.mp4',
+        ]);
+    }
+
     public function test_admin_can_create_update_and_close_ticket(): void
     {
         $admin = User::factory()->create();
@@ -615,6 +663,37 @@ class AdminCrudSmokeTest extends TestCase
 
         $category->refresh();
         $this->assertSame('math-1', $category->slug);
+    }
+
+    public function test_admin_can_upload_category_cover_image(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->image('cover.jpg', 200, 120);
+
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.categories.store'), [
+            'type' => 'note',
+            'parent_id' => null,
+            'title' => 'Cover Category',
+            'icon_key' => 'math',
+            'description' => '',
+            'cover_image' => $file,
+            'is_active' => '1',
+            'sort_order' => 0,
+        ]);
+
+        $categoryId = (int) Category::query()->where('type', 'note')->where('title', 'Cover Category')->value('id');
+        $response->assertRedirect(route('admin.categories.edit', $categoryId));
+
+        $category = Category::query()->findOrFail($categoryId);
+        $this->assertNotNull($category->cover_media_id);
+
+        $media = \App\Models\Media::query()->findOrFail((int) $category->cover_media_id);
+        $this->assertSame('public', $media->disk);
+        $this->assertTrue(\Illuminate\Support\Facades\Storage::disk('public')->exists((string) $media->path));
     }
 
     public function test_admin_categories_index_groups_by_type_and_shows_hierarchy(): void
@@ -1694,7 +1773,7 @@ class AdminCrudSmokeTest extends TestCase
             ->assertOk()
             ->assertDontSee('<th>شناسه</th>', false)
             ->assertSee('علی کاظمی')
-            ->assertDontSee((string) $customer->id);
+            ->assertDontSee('>'.$customer->id.'<', false);
 
         $this->actingAs($admin, 'admin')
             ->get(route('admin.tickets.show', $ticket->id))

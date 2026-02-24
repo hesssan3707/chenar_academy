@@ -100,7 +100,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:160'],
             'phone' => ['required', 'string', 'max:20', Rule::unique('users', 'phone')],
-            'password' => ['required', 'string', 'min:6', 'max:120'],
+            'password' => $this->passwordPolicyRules(false),
             'is_active' => ['nullable'],
             'is_admin' => ['nullable'],
             'role_ids' => ['nullable', 'array'],
@@ -205,7 +205,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:160'],
             'phone' => ['required', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($userModel->id)],
-            'password' => ['nullable', 'string', 'min:6', 'max:120'],
+            'password' => ['nullable', 'string', 'min:6', 'max:120', 'regex:'.$this->passwordPolicyRegex()],
             'is_active' => ['nullable'],
             'is_admin' => ['nullable'],
             'role_ids' => ['nullable', 'array'],

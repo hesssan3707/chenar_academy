@@ -21,11 +21,18 @@ class DashboardController extends Controller
 
     public function updatePassword(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'string', 'min:6', 'max:120', 'confirmed'],
+        $user = $request->user();
+
+        $rules = [
+            'password' => $this->passwordPolicyRules(true),
             'password_confirmation' => ['required', 'string', 'max:120'],
-        ]);
+        ];
+
+        if ($user && is_string($user->password) && $user->password !== '') {
+            $rules['current_password'] = ['required', 'current_password'];
+        }
+
+        $validated = $request->validate($rules);
 
         $request->user()->forceFill([
             'password' => $validated['password'],

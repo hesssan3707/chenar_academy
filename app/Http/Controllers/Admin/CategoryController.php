@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Media;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -186,7 +188,7 @@ class CategoryController extends Controller
 
     public function edit(int $category): View
     {
-        $categoryModel = Category::query()->findOrFail($category);
+        $categoryModel = Category::query()->with('coverMedia')->findOrFail($category);
 
         $defaultTypes = ['video', 'note', 'course', 'post', 'ticket', 'institution'];
         $existingTypes = Category::query()->select('type')->distinct()->orderBy('type')->pluck('type')->all();
@@ -222,8 +224,9 @@ class CategoryController extends Controller
             'type' => $validated['type'],
             'parent_id' => $validated['parent_id'],
             'title' => $validated['title'],
-            'icon_key' => $categoryModel->icon_key,
+            'icon_key' => $validated['icon_key'],
             'description' => $validated['description'],
+            'cover_media_id' => $validated['cover_media_id'],
             'is_active' => $validated['is_active'],
             'sort_order' => $validated['sort_order'],
         ])->save();
@@ -300,6 +303,7 @@ class CategoryController extends Controller
                 $uniqueTitleRule,
             ],
             'description' => ['nullable', 'string'],
+            'cover_image' => ['nullable', 'file', 'image', 'max:5120'],
             'is_active' => ['nullable'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
         ], [
@@ -313,6 +317,8 @@ class CategoryController extends Controller
         }
         $slug = $category?->slug ?: $this->uniqueCategorySlug($type, $baseSlug);
 
+        $coverMedia = $this->storeUploadedMedia($request->file('cover_image'), 'public', 'uploads/category-covers');
+
         return [
             'type' => (string) $validated['type'],
             'parent_id' => ($validated['parent_id'] ?? null) !== null ? (int) $validated['parent_id'] : null,
@@ -320,6 +326,7 @@ class CategoryController extends Controller
             'slug' => $slug,
             'icon_key' => $category?->icon_key,
             'description' => isset($validated['description']) && $validated['description'] !== '' ? (string) $validated['description'] : null,
+            'cover_media_id' => $coverMedia?->id ?? (int) ($category?->cover_media_id ?? 0) ?: null,
             'is_active' => $request->boolean('is_active'),
             'sort_order' => ($validated['sort_order'] ?? null) !== null ? (int) $validated['sort_order'] : 0,
         ];
@@ -336,5 +343,28 @@ class CategoryController extends Controller
         }
 
         return $slug;
+    }
+
+    private function storeUploadedMedia(?UploadedFile $file, string $disk, string $directory): ?Media
+    {
+        if (! $file) {
+            return null;
+        }
+
+        $path = $file->store($directory, $disk);
+
+        return Media::query()->create([
+            'uploaded_by_user_id' => request()->user()?->id,
+            'disk' => $disk,
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'sha1' => null,
+            'width' => null,
+            'height' => null,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
     }
 }

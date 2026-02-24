@@ -36,7 +36,8 @@
                 <form method="post"
                     action="{{ $isEdit ? route('admin.categories.update', $category->id) : route('admin.categories.store') }}"
                     class="stack stack--sm"
-                    id="category-form">
+                    id="category-form"
+                    enctype="multipart/form-data">
                     @csrf
                     @if ($isEdit)
                         @method('put')
@@ -86,6 +87,19 @@
                         <span class="field__label">توضیحات</span>
                         <textarea name="description">{{ old('description', (string) ($category->description ?? '')) }}</textarea>
                         @error('description')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </label>
+
+                    <label class="field">
+                        <span class="field__label">کاور</span>
+                        <input type="file" name="cover_image" accept="image/*">
+                        @if (($category?->coverMedia?->disk ?? null) === 'public' && ($category?->coverMedia?->path ?? null))
+                            <div class="mt-2">
+                                <img src="{{ Storage::disk('public')->url($category->coverMedia->path) }}" alt="{{ $category->title }}" style="width: 220px; height: 120px; object-fit: cover; border-radius: 10px;">
+                            </div>
+                        @endif
+                        @error('cover_image')
                             <div class="field__error">{{ $message }}</div>
                         @enderror
                     </label>

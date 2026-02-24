@@ -49,7 +49,8 @@
                 @else
                     <div class="h-scroll-container">
                         @foreach ($categories as $category)
-                            <a href="{!! route('products.index', ['type' => $activeType, 'category' => $category->slug]) !!}" class="card-category" style="background-image: url('{{ $placeholderThumb }}'); background-size: cover; background-position: center; width: 200px;">
+                            @php($coverUrl = (($category->coverMedia?->disk ?? null) === 'public' && ($category->coverMedia?->path ?? null)) ? Storage::disk('public')->url($category->coverMedia->path) : $placeholderThumb)
+                            <a href="{!! route('products.index', ['type' => $activeType, 'category' => $category->slug]) !!}" class="card-category" style="background-image: url('{{ $coverUrl }}'); background-size: cover; background-position: center; width: 200px;">
                                 <div class="card-category__overlay">
                                     <h3 class="card-category__title">{{ $category->title }}</h3>
                                 </div>

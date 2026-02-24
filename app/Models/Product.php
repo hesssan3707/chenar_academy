@@ -20,6 +20,8 @@ class Product extends Model
         'excerpt',
         'description',
         'thumbnail_media_id',
+        'preview_pdf_media_id',
+        'preview_image_media_ids',
         'institution_category_id',
         'status',
         'base_price',
@@ -34,6 +36,7 @@ class Product extends Model
     protected $casts = [
         'published_at' => 'datetime',
         'meta' => 'array',
+        'preview_image_media_ids' => 'array',
     ];
 
     public function categories(): BelongsToMany
@@ -49,6 +52,11 @@ class Product extends Model
     public function thumbnailMedia(): BelongsTo
     {
         return $this->belongsTo(Media::class, 'thumbnail_media_id');
+    }
+
+    public function previewPdfMedia(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'preview_pdf_media_id');
     }
 
     public function accesses(): HasMany

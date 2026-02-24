@@ -45,14 +45,35 @@ class LoginController extends Controller
 
         if ($validated['action'] === 'login_password') {
             $request->validate([
-                'password' => ['required', 'string', 'max:120'],
+                'password' => ['required', 'string', 'min:6', 'max:120', 'regex:'.$this->passwordPolicyRegex()],
             ]);
 
-            if (! $guard->attempt(['phone' => $validated['phone'], 'password' => $validated['password']], $request->boolean('remember'))) {
+            $user = User::query()->where('phone', $validated['phone'])->first();
+            if (! $user) {
                 throw ValidationException::withMessages([
-                    'phone' => 'اطلاعات ورود صحیح نیست.',
+                    'phone' => 'Phone number not found.',
                 ]);
             }
+
+            if (! $user->is_active) {
+                throw ValidationException::withMessages([
+                    'phone' => 'Account is inactive.',
+                ]);
+            }
+
+            if (! is_string($user->password) || $user->password === '') {
+                throw ValidationException::withMessages([
+                    'password' => 'Password login is not available for this account. Please login using OTP.',
+                ]);
+            }
+
+            if (! Hash::check((string) $validated['password'], (string) $user->password)) {
+                throw ValidationException::withMessages([
+                    'password' => 'Incorrect password.',
+                ]);
+            }
+
+            $guard->login($user, $request->boolean('remember'));
 
             $request->session()->regenerate();
 
@@ -75,7 +96,7 @@ class LoginController extends Controller
 
         if (! $user) {
             throw ValidationException::withMessages([
-                'phone' => 'کاربری با این شماره تلفن پیدا نشد.',
+                'phone' => 'Phone number not found.',
             ]);
         }
 
@@ -109,7 +130,7 @@ class LoginController extends Controller
 
         if ($validated['action'] === 'login_password') {
             $request->validate([
-                'password' => ['required', 'string', 'max:120'],
+                'password' => ['required', 'string', 'min:6', 'max:120', 'regex:'.$this->passwordPolicyRegex()],
             ]);
 
             if (! $guard->attempt(['phone' => $validated['phone'], 'password' => $validated['password']], $request->boolean('remember'))) {
@@ -169,7 +190,7 @@ class LoginController extends Controller
         $validated = $request->validate([
             'phone' => ['required', 'string', 'max:20'],
             'otp_code' => ['required', 'string', 'max:10'],
-            'password' => ['required', 'string', 'min:6', 'max:120', 'confirmed'],
+            'password' => $this->passwordPolicyRules(true),
             'password_confirmation' => ['required', 'string', 'max:120'],
         ]);
 
@@ -177,7 +198,7 @@ class LoginController extends Controller
 
         if (! $user) {
             throw ValidationException::withMessages([
-                'phone' => 'کاربری با این شماره تلفن پیدا نشد.',
+                'phone' => 'Phone number not found.',
             ]);
         }
 

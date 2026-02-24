@@ -57,6 +57,7 @@ class ProductController extends Controller
             $rawCategories = Category::query()
                 ->whereIn('type', $categoryTypes)
                 ->where('is_active', true)
+                ->with('coverMedia')
                 ->withCount(['products' => function ($q) use ($typesForCategory) {
                     $q->where('products.status', 'published')
                         ->whereIn('products.type', $typesForCategory);
@@ -93,6 +94,7 @@ class ProductController extends Controller
                     ->whereIn('type', $categoryTypes)
                     ->where('slug', $categorySlug)
                     ->where('is_active', true)
+                    ->with('coverMedia')
                     ->get();
 
                 $activeCategory = $type === 'video'
@@ -218,7 +220,7 @@ class ProductController extends Controller
         $product = Product::query()
             ->where('slug', $slug)
             ->whereIn('type', ['note', 'video'])
-            ->with(['thumbnailMedia', 'parts', 'video.media', 'video.previewMedia', 'institutionCategory', 'categories'])
+            ->with(['thumbnailMedia', 'previewPdfMedia', 'parts', 'video.media', 'video.previewMedia', 'institutionCategory', 'categories'])
             ->firstOrFail();
 
         $user = request()->user();
@@ -267,10 +269,19 @@ class ProductController extends Controller
                 ->first();
         }
 
+        $previewImages = collect();
+        $previewIds = $product->preview_image_media_ids;
+        if (is_array($previewIds) && $previewIds !== []) {
+            $ids = array_values(array_map('intval', $previewIds));
+            $mediaById = Media::query()->whereIn('id', $ids)->get()->keyBy('id');
+            $previewImages = collect($ids)->map(fn ($id) => $mediaById->get($id))->filter()->values();
+        }
+
         return view('catalog.products.show', [
             'product' => $product,
             'isPurchased' => $isPurchased,
             'currencyUnit' => $product->currency ?: $this->commerceCurrency(),
+            'previewImages' => $previewImages,
             'reviewsArePublic' => $reviewsArePublic,
             'ratingsArePublic' => $ratingsArePublic,
             'avgRating' => $avgRating,

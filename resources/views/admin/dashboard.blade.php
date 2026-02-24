@@ -52,7 +52,7 @@
                                 @php($height = (int) round(((int) ($point['total'] ?? 0) / $maxValue) * 100))
                                 @php($pointDate = \Illuminate\Support\Carbon::parse((string) ($point['date'] ?? now()->toDateString())))
                                 <div class="admin-chart__bar-wrap">
-                                    <div class="admin-chart__bar" style="height: {{ max(4, $height) }}%;"></div>
+                                    <div class="admin-chart__bar" data-bar-height="{{ max(4, $height) }}"></div>
                                     <div class="card__meta admin-chart__label">{{ jdate($pointDate)->format('m/d') }}</div>
                                 </div>
                             @endforeach
@@ -107,7 +107,7 @@
                                 <div class="admin-kv__value" dir="ltr">
                                     @php($mobilePct = (int) ($deviceRows->firstWhere('key', 'mobile')['pct'] ?? 0))
                                     @php($webPct = (int) ($deviceRows->firstWhere('key', 'web')['pct'] ?? 0))
-                                    {{ $mobilePct }}% Mobile · {{ $webPct }}% Web
+                                    {{ $mobilePct }}% / {{ $webPct }}%
                                 </div>
                             </div>
                         </div>
@@ -137,4 +137,15 @@
             </div>
         </div>
     </section>
+
+    <script>
+        document.querySelectorAll('.admin-chart__bar[data-bar-height]').forEach((el) => {
+            const raw = el.getAttribute('data-bar-height') || '0';
+            const height = Number.parseInt(raw, 10);
+            if (!Number.isNaN(height)) {
+                const clamped = Math.max(0, Math.min(100, height));
+                el.style.height = `${clamped}%`;
+            }
+        });
+    </script>
 @endsection

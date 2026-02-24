@@ -9,6 +9,11 @@
     <meta name="cart-url" content="{{ route('cart.index') }}">
     <meta name="checkout-url" content="{{ route('checkout.index') }}">
 
+    @php($forcePasswordSetup = auth()->check() && request()->routeIs('panel.*') && ! filled(auth()->user()?->password))
+    @if ($forcePasswordSetup)
+        <meta name="force-password-setup" content="1">
+    @endif
+
     <title>@yield('title', config('app.name'))</title>
 
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -98,6 +103,43 @@
             </a>
         </nav>
     </div>
+
+    @if ($forcePasswordSetup)
+        <div id="password-setup-modal" class="spa-modal">
+            <div class="spa-modal-content" style="max-width: 520px;">
+                <div class="cluster mb-4" style="justify-content: space-between;">
+                    <h3 class="h3">تنظیم رمز عبور</h3>
+                </div>
+
+                <div class="text-muted text-sm mb-4" style="line-height: 1.8;">
+                    For account security and to enable login using a password, please set a password for your account.
+                </div>
+
+                <form method="post" action="{{ route('panel.profile.password.update') }}" class="stack stack--sm">
+                    @csrf
+                    @method('put')
+
+                    <div class="field">
+                        <label class="field__label">رمز عبور جدید</label>
+                        <input name="password" type="password" class="field__input" dir="ltr" required>
+                        @error('password')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="field">
+                        <label class="field__label">تکرار رمز عبور جدید</label>
+                        <input name="password_confirmation" type="password" class="field__input" dir="ltr" required>
+                        @error('password_confirmation')
+                            <div class="field__error">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <button type="submit" class="btn btn--primary w-full">ذخیره</button>
+                </form>
+            </div>
+        </div>
+    @endif
 
     <!-- Auth Modal -->
     <div id="auth-modal" class="spa-modal">

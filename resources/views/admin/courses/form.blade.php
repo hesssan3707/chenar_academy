@@ -155,12 +155,13 @@
 
                         @if ($existingLessons->isNotEmpty())
                             <div class="table-wrap">
-                                <table class="table" style="min-width: 980px;">
+                                <table class="table" style="min-width: 1180px;">
                                     <thead>
                                         <tr>
                                             <th></th>
                                             <th>عنوان</th>
                                             <th>رایگان</th>
+                                            <th>لینک</th>
                                             <th>فایل جدید</th>
                                             <th>حذف</th>
                                         </tr>
@@ -183,6 +184,9 @@
                                                         <input type="checkbox" name="lessons[{{ $lesson->id }}][is_preview]" value="1" @checked($isPreviewValue === '1')>
                                                     </label>
                                                 </td>
+                                                <td class="admin-min-w-260">
+                                                    <input type="url" dir="ltr" name="lessons[{{ $lesson->id }}][video_url]" value="{{ old('lessons.'.$lesson->id.'.video_url', (string) ($lesson->video_url ?? '')) }}">
+                                                </td>
                                                 <td class="admin-nowrap">
                                                     <input type="file" name="lessons[{{ $lesson->id }}][file]" accept="video/*">
                                                 </td>
@@ -204,12 +208,13 @@
                             <div class="stack stack--sm">
                                 <div class="field__label">افزودن ویدیو جدید</div>
                                 <div class="table-wrap">
-                                    <table class="table" style="min-width: 980px;">
+                                    <table class="table" style="min-width: 1180px;">
                                         <thead>
                                             <tr>
                                                 <th></th>
                                                 <th>عنوان</th>
                                                 <th>رایگان</th>
+                                                <th>لینک</th>
                                                 <th>فایل</th>
                                                 <th>حذف</th>
                                             </tr>
@@ -235,6 +240,9 @@
                                                             <input type="hidden" name="lessons[{{ $key }}][is_preview]" value="0">
                                                             <input type="checkbox" name="lessons[{{ $key }}][is_preview]" value="1" @checked($isPreviewValue === '1')>
                                                         </label>
+                                                    </td>
+                                                    <td class="admin-min-w-260">
+                                                        <input type="url" dir="ltr" name="lessons[{{ $key }}][video_url]" value="{{ old('lessons.'.$key.'.video_url', '') }}">
                                                     </td>
                                                     <td class="admin-nowrap">
                                                         <input type="file" name="lessons[{{ $key }}][file]" accept="video/*">
@@ -266,6 +274,9 @@
                                                 <input type="hidden" name="lessons[__KEY__][is_preview]" value="0">
                                                 <input type="checkbox" name="lessons[__KEY__][is_preview]" value="1">
                                             </label>
+                                        </td>
+                                        <td class="admin-min-w-260">
+                                            <input type="url" dir="ltr" name="lessons[__KEY__][video_url]" value="">
                                         </td>
                                         <td class="admin-nowrap">
                                             <input type="file" name="lessons[__KEY__][file]" accept="video/*">

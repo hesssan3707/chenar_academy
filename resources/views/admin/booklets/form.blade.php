@@ -93,6 +93,40 @@
                         </label>
                     </div>
 
+                    <div class="grid admin-grid-2 admin-grid-2--flush">
+                        <label class="field">
+                            <span class="field__label">نمونه PDF</span>
+                            <input type="file" name="sample_pdf" accept="application/pdf">
+                            @if (($booklet?->previewPdfMedia?->disk ?? null) === 'public' && ($booklet?->previewPdfMedia?->id ?? null))
+                                <div class="mt-2">
+                                    <a class="btn btn--ghost btn--sm" href="{{ route('media.stream', $booklet->previewPdfMedia->id) }}" target="_blank" rel="noopener">مشاهده نمونه</a>
+                                </div>
+                            @endif
+                            @error('sample_pdf')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+
+                        <label class="field">
+                            <span class="field__label">تصاویر پیش‌نمایش</span>
+                            <input type="file" name="preview_images[]" accept="image/*" multiple>
+                            @php($previewImages = $previewImages ?? collect())
+                            @if ($previewImages->isNotEmpty())
+                                <div class="mt-2" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    @foreach ($previewImages as $media)
+                                        <img src="{{ route('media.stream', $media->id) }}" alt="" style="width: 90px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);">
+                                    @endforeach
+                                </div>
+                            @endif
+                            @error('preview_images')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                            @error('preview_images.*')
+                                <div class="field__error">{{ $message }}</div>
+                            @enderror
+                        </label>
+                    </div>
+
                     <label class="field">
                         <span class="field__label">خلاصه</span>
                         <textarea name="excerpt">{{ old('excerpt', (string) ($booklet->excerpt ?? '')) }}</textarea>

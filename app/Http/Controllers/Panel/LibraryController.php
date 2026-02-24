@@ -127,10 +127,14 @@ class LibraryController extends Controller
     {
         abort_if(! $product->userHasAccess($request->user()), 403);
         abort_if($lesson->lesson_type !== 'video', 404);
-        abort_if(! $lesson->media_id, 404);
+        abort_if(! $lesson->media_id && ! $lesson->video_url, 404);
 
         $lesson->loadMissing('section');
         abort_if(! $lesson->section || (int) $lesson->section->course_product_id !== (int) $product->id, 404);
+
+        if (is_string($lesson->video_url) && trim($lesson->video_url) !== '') {
+            return redirect()->away($lesson->video_url);
+        }
 
         $media = Media::query()->findOrFail($lesson->media_id);
         $disk = Storage::disk($media->disk);
@@ -150,7 +154,11 @@ class LibraryController extends Controller
         abort_if($product->type !== 'video', 404);
 
         $product->loadMissing('video');
-        abort_if(! $product->video?->media_id, 404);
+        abort_if(! $product->video?->media_id && ! $product->video?->video_url, 404);
+
+        if (is_string($product->video?->video_url) && trim((string) $product->video->video_url) !== '') {
+            return redirect()->away((string) $product->video->video_url);
+        }
 
         $media = Media::query()->findOrFail($product->video->media_id);
         $disk = Storage::disk($media->disk);

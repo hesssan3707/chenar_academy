@@ -96,6 +96,7 @@ class VideoController extends Controller
         Video::query()->create([
             'product_id' => $product->id,
             'media_id' => $validated['media_id'],
+            'video_url' => $validated['video_url'],
             'preview_media_id' => $validated['preview_media_id'],
             'duration_seconds' => $durationSeconds,
             'meta' => [],
@@ -168,11 +169,17 @@ class VideoController extends Controller
         $videoPayload = [
             'meta' => [],
         ];
+        $videoPayload['video_url'] = $validated['video_url'];
 
         if (($validated['media_id'] ?? null) !== null) {
             $fullMedia = Media::query()->findOrFail((int) $validated['media_id']);
             $videoPayload['duration_seconds'] = $this->extractVideoDurationSecondsOrFail($fullMedia);
             $videoPayload['media_id'] = $validated['media_id'];
+        }
+
+        if (($validated['video_url'] ?? null) !== null) {
+            $videoPayload['media_id'] = null;
+            $videoPayload['duration_seconds'] = null;
         }
 
         if (($validated['preview_media_id'] ?? null) !== null) {
@@ -213,8 +220,10 @@ class VideoController extends Controller
         }
 
         $existingVideoMediaId = null;
+        $existingVideoUrl = null;
         if ($product && $product->exists) {
             $existingVideoMediaId = Video::query()->where('product_id', $product->id)->value('media_id');
+            $existingVideoUrl = Video::query()->where('product_id', $product->id)->value('video_url');
         }
 
         $rules = [
@@ -238,10 +247,26 @@ class VideoController extends Controller
             'published_at' => ['nullable', 'string', 'max:32'],
             'cover_image' => ['nullable', 'file', 'image', 'max:5120'],
             'preview_video' => ['nullable', 'file', 'max:102400'],
+            'video_url' => [
+                Rule::when(
+                    $shouldPublish && ! $existingVideoMediaId && ! $existingVideoUrl && ! $request->hasFile('video_file'),
+                    ['required'],
+                    ['nullable']
+                ),
+                'string',
+                'max:2048',
+                'url',
+                'prohibits:video_file',
+            ],
             'video_file' => [
-                Rule::when($shouldPublish && ! $existingVideoMediaId, ['required'], ['nullable']),
+                Rule::when(
+                    $shouldPublish && ! $existingVideoMediaId && ! $existingVideoUrl && trim((string) $request->input('video_url', '')) === '',
+                    ['required'],
+                    ['nullable']
+                ),
                 'file',
                 'max:1048576',
+                'prohibits:video_url',
             ],
         ];
 
@@ -261,6 +286,14 @@ class VideoController extends Controller
         $previewMedia = $this->storeUploadedMedia($request->file('preview_video'), 'videos', 'protected/previews');
         $fullMedia = $this->storeUploadedMedia($request->file('video_file'), 'videos', 'protected/videos');
 
+        $videoUrl = null;
+        if ($request->has('video_url')) {
+            $videoUrl = trim((string) $request->input('video_url', ''));
+            $videoUrl = $videoUrl !== '' ? $videoUrl : null;
+        } elseif (is_string($existingVideoUrl) && trim($existingVideoUrl) !== '') {
+            $videoUrl = trim($existingVideoUrl);
+        }
+
         $publishedAt = $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null);
         if ($shouldPublish && $publishedAt === null) {
             $publishedAt = now(config('app.timezone'));
@@ -279,6 +312,7 @@ class VideoController extends Controller
             'thumbnail_media_id' => $thumbnailMedia?->id,
             'preview_media_id' => $previewMedia?->id,
             'media_id' => $fullMedia?->id,
+            'video_url' => $videoUrl,
             'institution_category_id' => (int) $validated['institution_category_id'],
             'category_id' => (int) $validated['category_id'],
         ];

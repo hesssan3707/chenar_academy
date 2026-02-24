@@ -11,7 +11,10 @@
                     @php($user = $user ?? null)
                     <p class="page-subtitle">
                         @if ($user)
-                            مدیریت محصولات و دسترسی‌های {{ $user->name ?: $user->phone }}
+                            مدیریت محصولات و دسترسی‌های {{ $user->name ?: 'کاربر' }}
+                            @if ($user->phone)
+                                <span class="text-muted" dir="ltr">{{ $user->phone }}</span>
+                            @endif
                         @else
                             مدیریت محصولات و دسترسی‌های کاربر
                         @endif
