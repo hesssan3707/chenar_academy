@@ -38,7 +38,7 @@
                                 </a>
                             @endforeach
                         @else
-                            <a href="{{ route('products.all') }}" class="card-product card-product--home">
+                            <a href="{{ route('products.index') }}" class="card-product card-product--home">
                                 <div class="spa-cover">
                                     <img src="{{ $placeholderThumb }}" alt="ادامه یادگیری" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                                 </div>
@@ -87,7 +87,7 @@
                                 </a>
                             @endforeach
                         @else
-                            <a href="{{ route('products.all') }}" class="card-product card-product--home">
+                            <a href="{{ route('products.index') }}" class="card-product card-product--home">
                                 <div class="spa-cover">
                                     <img src="{{ $placeholderThumb }}" alt="پرفروش‌ها" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                                 </div>
@@ -104,7 +104,7 @@
             <div class="home-row">
                 <div class="home-row__head">
                     <h2 class="home-row__title">جدیدترین‌ها</h2>
-                    <a class="link home-row__more" href="{{ route('products.all') }}">مشاهده همه</a>
+                    <a class="link home-row__more" href="{{ route('products.index') }}">مشاهده همه</a>
                 </div>
                 <div class="h-scroll-container">
                     @foreach ($latestProducts as $item)

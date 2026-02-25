@@ -9,7 +9,7 @@
                 <h1 class="page-title">سبد خرید</h1>
             </div>
             <div class="cluster">
-                <a class="btn btn--ghost" href="{{ route('courses.index') }}">دوره‌ها</a>
+                <a class="btn btn--ghost" href="{{ route('products.index') }}">محصولات</a>
             </div>
         </div>
 
@@ -21,7 +21,7 @@
                     <p class="text-muted">سبد خرید شما خالی است.</p>
                     <div class="form-actions">
                         <a class="btn btn--primary" href="{{ route('products.index') }}">مشاهده محصولات</a>
-                        <a class="btn btn--ghost" href="{{ route('courses.index') }}">مشاهده دوره‌ها</a>
+                        <a class="btn btn--ghost" href="{{ route('products.index') }}">مشاهده محصولات</a>
                     </div>
                 </div>
             </div>

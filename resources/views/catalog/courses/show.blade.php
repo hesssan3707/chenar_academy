@@ -110,9 +110,9 @@
                                                             <span class="text-green-400 text-xs">آزاد</span>
                                                         @elseif ($lesson->is_preview)
                                                             <div class="flex items-center gap-3">
-                                                                <a class="btn btn--ghost btn--sm"
-                                                                    href="{{ route('courses.lessons.preview', ['slug' => $course->slug, 'lesson' => $lesson->id]) }}"
-                                                                    target="_blank" rel="noreferrer">مشاهده</a>
+                                                                <button type="button" class="btn btn--ghost btn--sm"
+                                                                    data-video-modal-url="{{ route('courses.lessons.preview', ['slug' => $course->slug, 'lesson' => $lesson->id]) }}"
+                                                                    data-video-modal-title="{{ $course->title }} - {{ $lesson->title }}">مشاهده</button>
                                                                 <span class="text-brand text-xs">پیش‌نمایش</span>
                                                             </div>
                                                         @else

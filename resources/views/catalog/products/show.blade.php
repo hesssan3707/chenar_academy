@@ -43,9 +43,16 @@
                     <div class="p-6 bg-black/20 border-b border-white/10">
                         <div class="spa-cover shadow-lg border border-white/5">
                             @if ($hasIntroVideo)
-                                <video class="w-full rounded-xl border border-white/10" controls preload="metadata">
-                                    <source src="{{ route('products.preview', $product->slug) }}" type="video/mp4">
-                                </video>
+                                <div class="relative cursor-pointer group" data-video-modal-url="{{ route('products.preview', $product->slug) }}" data-video-modal-title="{{ $product->title }}">
+                                    <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';" class="w-full rounded-xl border border-white/10">
+                                    <div class="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/50 transition-colors rounded-xl">
+                                        <div class="w-16 h-16 rounded-full bg-brand/80 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="none">
+                                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
                             @else
                                 <img src="{{ $thumbUrl }}" alt="{{ $product->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                             @endif

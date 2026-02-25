@@ -9,7 +9,7 @@
 
     <div class="spa-page" data-products-all>
         <div class="panel p-4 bg-white/5 border border-white/10 rounded-xl">
-            <form method="get" action="{{ route('products.all') }}" class="stack stack--sm" data-products-all-form>
+            <form method="get" action="{{ route('products.index') }}" class="stack stack--sm" data-products-all-form>
                 <div class="cluster" style="justify-content: space-between; gap: 10px; padding: 0;">
                     <div class="cluster" style="gap: 10px; padding: 0;">
                         <button type="button" class="btn btn--sm {{ $activeType === 'all' ? 'btn--primary' : 'btn--ghost' }}" data-products-all-type="all">همه</button>
@@ -34,4 +34,3 @@
         </div>
     </div>
 @endsection
-

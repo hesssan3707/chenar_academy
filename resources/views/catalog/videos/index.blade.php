@@ -1,24 +1,24 @@
 @extends('layouts.spa')
 
-@section('title', 'جزوات آموزشی')
+@section('title', 'ویدیوهای آموزشی')
 
 @section('content')
     <div class="w-full h-full flex flex-col justify-center max-w-7xl mx-auto">
         @if ($activeCategory)
             <div style="position: relative; margin-bottom: 24px;">
-                <a class="btn btn--ghost btn--sm" style="position: absolute; top: 0; right: 0;" href="{{ route('booklets.index') }}">
+                <a class="btn btn--ghost btn--sm" style="position: absolute; top: 0; right: 0;" href="{{ route('videos.index') }}">
                     ← بازگشت
                 </a>
                 <div style="text-align: center;">
-                    <span class="badge badge--brand">جزوه</span>
+                    <span class="badge badge--brand">ویدیو</span>
                     <h1 class="h2 text-white" style="margin-top: 14px;">{{ $activeCategory->title }}</h1>
                 </div>
             </div>
         @else
             <div class="mb-6 text-center">
-                <h1 class="h2 text-white">جزوات آموزشی</h1>
+                <h1 class="h2 text-white">ویدیوهای آموزشی</h1>
                 <p class="text-muted">
-                    دسترسی به منابع آموزشی دانشگاهی و تخصصی
+                    دسترسی به ویدیوها و دوره‌های آموزشی
                 </p>
             </div>
         @endif
@@ -37,13 +37,13 @@
                             @php($coverPath = (string) ($category->coverMedia?->path ?? ''))
                             @php($coverPath = $coverPath !== '' ? str_replace('\\', '/', $coverPath) : '')
                             @php($coverUrl = (($category->coverMedia?->disk ?? null) === 'public' && $coverPath !== '') ? Storage::disk('public')->url($coverPath) : $placeholderThumb)
-                            <a href="{{ route('booklets.index', ['category' => $category->slug]) }}" 
+                            <a href="{{ route('videos.index', ['category' => $category->slug]) }}" 
                                 class="card-category" style="background-image: url('{{ $coverUrl }}'); background-size: cover; background-position: center;">
                                  <div class="card-category__overlay">
                                      <h3 class="card-category__title">{{ $category->title }}</h3>
                                 </div>
                                 <div class="info text-xs">
-                                    {{ $category->products_count ?? 0 }} جزوه
+                                    {{ $category->products_count ?? 0 }} ویدیو
                                 </div>
                             </a>
                         @endforeach
@@ -51,10 +51,10 @@
                 @endif
 
             @else
-                {{-- Active Category: Grouped Booklets View --}}
-                @if ($groupedBooklets->isEmpty())
+                {{-- Active Category: Grouped Videos View with University Switching --}}
+                @if ($groupedVideos->isEmpty())
                     <div class="panel p-6 bg-white/5 rounded-xl border border-gray-700 text-center">
-                        <p class="text-muted">در این دسته‌بندی جزوه‌ای یافت نشد.</p>
+                        <p class="text-muted">در این دسته‌بندی ویدیویی یافت نشد.</p>
                     </div>
                 @else
                     <div data-uni-wheel style="max-width: 100%;">
@@ -69,7 +69,7 @@
 
                         <div data-uni-wheel-viewport style="max-width: 100%;">
                             <div data-uni-wheel-track style="max-width: 100%;">
-                                @foreach ($groupedBooklets as $institution => $booklets)
+                                @foreach ($groupedVideos as $institution => $videos)
                                     <div data-uni-wheel-slide data-uni-wheel-title="{{ $institution }}" style="padding-bottom: 24px; max-width: 100%;">
                                         <div style="margin-bottom: 12px;">
                                             <div class="flex items-center gap-3 mb-4">
@@ -80,16 +80,21 @@
 
                                         <div class="h-scroll-container">
                                             @php($placeholderThumb = asset('images/default_image.webp'))
-                                            @foreach ($booklets as $booklet)
+                                            @foreach ($videos as $video)
                                                 <div class="card-product">
-                                                    <a href="{{ route('products.show', $booklet->slug) }}" class="block">
-                                                        @php($thumbUrl = ($booklet->thumbnailMedia?->disk ?? null) === 'public' && ($booklet->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($booklet->thumbnailMedia->path) : $placeholderThumb)
+                                                    <a href="{{ $video->type === 'course' ? route('courses.show', $video->slug) : route('products.show', $video->slug) }}" class="block">
+                                                        @php($thumbUrl = ($video->thumbnailMedia?->disk ?? null) === 'public' && ($video->thumbnailMedia?->path ?? null) ? Storage::disk('public')->url($video->thumbnailMedia->path) : $placeholderThumb)
                                                         <div class="spa-cover group" style="margin-bottom: 5px;">
-                                                            <img src="{{ $thumbUrl }}" alt="{{ $booklet->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
+                                                            <img src="{{ $thumbUrl }}" alt="{{ $video->title }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $placeholderThumb }}';">
                                                             <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
+                                                            <div class="absolute top-0 left-0 right-0 flex gap-2 p-2">
+                                                                <span class="badge bg-black/50 backdrop-blur-sm text-white border border-white/10">
+                                                                    {{ $video->type === 'course' ? 'دوره' : 'ویدیو' }}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                         
-                                                        <h3 class="card-product__title text-white line-clamp-2">{{ $booklet->title }}</h3>
+                                                        <h3 class="card-product__title text-white line-clamp-2">{{ $video->title }}</h3>
                                                     </a>
                                                     
                                                     <div class="card-product__cta">
@@ -97,9 +102,9 @@
                                                             <div class="card-price-row">
                                                                 @php($currencyCode = strtoupper((string) ($commerceCurrency ?? 'IRR')))
                                                                 @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
-                                                                @php($originalPrice = $booklet->displayOriginalPrice($currencyCode))
-                                                                @php($finalPrice = $booklet->displayFinalPrice($currencyCode))
-                                                                @if($booklet->hasDiscount())
+                                                                @php($originalPrice = $video->displayOriginalPrice($currencyCode))
+                                                                @php($finalPrice = $video->displayFinalPrice($currencyCode))
+                                                                @if($video->hasDiscount())
                                                                     <div class="card-price-stack flex flex-col">
                                                                         <span class="text-xs text-muted line-through">{{ number_format($originalPrice) }}</span>
                                                                         <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
@@ -111,7 +116,7 @@
                                                                 @endif
                                                                 <form method="post" action="{{ route('cart.items.store') }}" class="cart-inline-form">
                                                                     @csrf
-                                                                    <input type="hidden" name="product_id" value="{{ $booklet->id }}">
+                                                                    <input type="hidden" name="product_id" value="{{ $video->id }}">
                                                                     <button class="cart-inline-icon" type="submit" aria-label="افزودن به سبد خرید">
                                                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                                             <circle cx="9" cy="21" r="1"></circle>

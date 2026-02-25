@@ -28,6 +28,7 @@ use App\Http\Controllers\Blog\PostController;
 use App\Http\Controllers\Catalog\BookletController;
 use App\Http\Controllers\Catalog\CourseController;
 use App\Http\Controllers\Catalog\ProductController;
+use App\Http\Controllers\Catalog\VideoController as CatalogVideoController;
 use App\Http\Controllers\Commerce\CartController;
 use App\Http\Controllers\Commerce\CheckoutController;
 use App\Http\Controllers\HomeController;
@@ -188,15 +189,19 @@ Route::prefix('booklets')->name('booklets.')->group(function () {
     Route::get('/', [BookletController::class, 'index'])->name('index');
 });
 
+Route::prefix('videos')->name('videos.')->group(function () {
+    Route::get('/', [CatalogVideoController::class, 'index'])->name('index');
+});
+
 Route::prefix('courses')->name('courses.')->group(function () {
-    Route::get('/', [CourseController::class, 'index'])->name('index');
+    Route::get('/', fn () => redirect()->route('products.index', request()->query(), 301))->name('index');
     Route::get('/{slug}/lessons/{lesson}/preview', [CourseController::class, 'streamPreviewLesson'])->name('lessons.preview');
     Route::get('/{slug}', [CourseController::class, 'show'])->name('show');
 });
 
 Route::prefix('products')->name('products.')->group(function () {
-    Route::get('/', [ProductController::class, 'index'])->name('index');
-    Route::get('/all', [ProductController::class, 'all'])->name('all');
+    Route::get('/', [ProductController::class, 'all'])->name('index');
+    Route::get('/all', fn () => redirect()->route('products.index', request()->query(), 301));
     Route::get('/{slug}/preview', [ProductController::class, 'streamPreview'])->name('preview');
     Route::get('/{slug}', [ProductController::class, 'show'])->name('show');
     Route::post('/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('auth')->name('reviews.store');
@@ -244,7 +249,6 @@ Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/{slug}', [PostController::class, 'show'])->name('show');
 });
 
-Route::get('/videos', [ProductController::class, 'index'])->name('videos.index');
 Route::get('/notes', [ProductController::class, 'index'])->name('notes.index');
 
 Route::prefix('cart')->name('cart.')->group(function () {

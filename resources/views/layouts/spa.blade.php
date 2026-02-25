@@ -430,5 +430,222 @@
     <script type="application/json" data-flashes>
         @json(['toast' => session('toast'), 'otp_sent' => session('otp_sent')])
     </script>
+
+    {{-- Video Playback Modal --}}
+    <div id="video-player-modal" class="video-modal" hidden aria-hidden="true">
+        <div class="video-modal__backdrop" data-video-modal-close></div>
+        <div class="video-modal__container">
+            <div class="video-modal__header">
+                <span class="video-modal__title" data-video-modal-title></span>
+                <div class="video-modal__actions">
+                    <button type="button" class="video-modal__btn" data-video-modal-fullscreen aria-label="تمام‌صفحه">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <polyline points="9 21 3 21 3 15"></polyline>
+                            <line x1="21" y1="3" x2="14" y2="10"></line>
+                            <line x1="3" y1="21" x2="10" y2="14"></line>
+                        </svg>
+                    </button>
+                    <button type="button" class="video-modal__btn" data-video-modal-close aria-label="بستن">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="video-modal__body">
+                <video class="video-modal__player" controls preload="metadata" data-video-modal-player>
+                    <source data-video-modal-source src="" type="video/mp4">
+                </video>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .video-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .video-modal[hidden] {
+            display: none !important;
+        }
+        .video-modal__backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            cursor: pointer;
+        }
+        .video-modal__container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 900px;
+            background: rgba(17, 17, 27, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5);
+        }
+        .video-modal__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .video-modal__title {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70%;
+        }
+        .video-modal__actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .video-modal__btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .video-modal__btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        .video-modal__body {
+            padding: 0;
+            background: black;
+        }
+        .video-modal__player {
+            width: 100%;
+            display: block;
+            max-height: 70vh;
+            outline: none;
+        }
+        .video-modal.is-fullscreen .video-modal__container {
+            max-width: 100%;
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            border: none;
+        }
+        .video-modal.is-fullscreen .video-modal__player {
+            max-height: calc(100vh - 50px);
+            height: calc(100vh - 50px);
+        }
+        @media (max-width: 640px) {
+            .video-modal {
+                padding: 0;
+            }
+            .video-modal__container {
+                border-radius: 0;
+                max-width: 100%;
+                height: 100%;
+            }
+            .video-modal__player {
+                max-height: calc(100vh - 60px);
+            }
+        }
+    </style>
+
+    <script>
+        (function () {
+            var modal = document.getElementById('video-player-modal');
+            if (!modal) return;
+
+            var player = modal.querySelector('[data-video-modal-player]');
+            var source = modal.querySelector('[data-video-modal-source]');
+            var titleEl = modal.querySelector('[data-video-modal-title]');
+            var closeButtons = modal.querySelectorAll('[data-video-modal-close]');
+            var fullscreenBtn = modal.querySelector('[data-video-modal-fullscreen]');
+
+            function openVideoModal(url, title) {
+                if (!url) return;
+                source.src = url;
+                player.load();
+                if (titleEl) titleEl.textContent = title || '';
+                modal.hidden = false;
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                player.play().catch(function () {});
+            }
+
+            function closeVideoModal() {
+                player.pause();
+                source.src = '';
+                player.load();
+                modal.hidden = true;
+                modal.setAttribute('aria-hidden', 'true');
+                modal.classList.remove('is-fullscreen');
+                document.body.style.overflow = '';
+            }
+
+            function toggleFullscreen() {
+                if (modal.classList.contains('is-fullscreen')) {
+                    modal.classList.remove('is-fullscreen');
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen().catch(function () {});
+                    }
+                } else {
+                    modal.classList.add('is-fullscreen');
+                    if (modal.requestFullscreen) {
+                        modal.requestFullscreen().catch(function () {});
+                    }
+                }
+            }
+
+            closeButtons.forEach(function (btn) {
+                btn.addEventListener('click', closeVideoModal);
+            });
+
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', toggleFullscreen);
+            }
+
+            modal.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    closeVideoModal();
+                }
+            });
+
+            // Global function for triggering from anywhere
+            window.openVideoModal = openVideoModal;
+            window.closeVideoModal = closeVideoModal;
+
+            // Auto-attach to elements with data-video-modal-url
+            document.addEventListener('click', function (e) {
+                var trigger = e.target.closest('[data-video-modal-url]');
+                if (trigger) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var url = trigger.getAttribute('data-video-modal-url');
+                    var title = trigger.getAttribute('data-video-modal-title') || '';
+                    openVideoModal(url, title);
+                }
+            });
+        })();
+    </script>
 </body>
 </html>
