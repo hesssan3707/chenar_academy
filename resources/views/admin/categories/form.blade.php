@@ -26,8 +26,8 @@
             @php($typeLabels = [
                 'institution' => 'دانشگاه',
                 'note' => 'جزوه',
-                'video' => 'ویدیو',
-                'course' => 'دوره',
+                'video' => 'دوره و ویدیو',
+                'course' => 'دوره و ویدیو',
                 'post' => 'مقاله',
                 'ticket' => 'تیکت',
             ])
@@ -96,7 +96,14 @@
                         <input type="file" name="cover_image" accept="image/*">
                         @if (($category?->coverMedia?->disk ?? null) === 'public' && ($category?->coverMedia?->path ?? null))
                             <div class="mt-2">
-                                <img src="{{ Storage::disk('public')->url($category->coverMedia->path) }}" alt="{{ $category->title }}" style="width: 220px; height: 120px; object-fit: cover; border-radius: 10px;">
+                                @php($coverUrl = Storage::disk('public')->url($category->coverMedia->path))
+                                <button type="button"
+                                    style="all: unset; cursor: zoom-in; display: inline-block;"
+                                    data-media-preview-src="{{ $coverUrl }}"
+                                    data-media-preview-type="image"
+                                    data-media-preview-label="پیش‌نمایش کاور دسته‌بندی">
+                                    <img src="{{ $coverUrl }}" alt="{{ $category->title }}" style="width: 220px; height: 120px; object-fit: cover; border-radius: 10px; display: block;">
+                                </button>
                             </div>
                         @endif
                         @error('cover_image')

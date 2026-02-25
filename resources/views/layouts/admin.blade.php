@@ -170,6 +170,20 @@
             </div>
         </div>
 
+        <div class="admin-modal" data-media-preview-modal hidden>
+            <div class="admin-modal__backdrop" data-media-preview-close></div>
+            <div class="admin-modal__panel">
+                <div class="admin-modal__header">
+                    <div class="admin-modal__title" data-media-preview-title>پیش‌نمایش</div>
+                    <button class="btn btn--ghost btn--sm" type="button" data-media-preview-close>بستن</button>
+                </div>
+                <div style="padding: 12px; display: flex; align-items: center; justify-content: center; background: var(--panel-2);">
+                    <img data-media-preview-image src="" alt="" style="max-width: 100%; max-height: 100%; border-radius: 12px; display: none;">
+                    <video data-media-preview-video controls style="max-width: 100%; max-height: 100%; border-radius: 12px; display: none;"></video>
+                </div>
+            </div>
+        </div>
+
         <div class="modal" data-confirm-modal hidden>
             <div class="modal__backdrop" data-confirm-cancel></div>
             <div class="modal__dialog">

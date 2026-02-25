@@ -33,6 +33,7 @@ window.initApp = function() {
     initAdminBulkDiscountUi();
     initAdminCouponFormUi();
     initAdminProductInitialSelectsUi();
+    initAdminMediaPreviewUi();
     initHomeRowsAutoHideUi();
     initCategoryTapPreviewUi();
     initHorizontalWheelScrollUi();
@@ -968,6 +969,115 @@ function initAdminProductInitialSelectsUi() {
             });
         });
     }
+}
+
+function initAdminMediaPreviewUi() {
+    if (!isAdminTheme()) {
+        return;
+    }
+
+    const modal = document.querySelector('[data-media-preview-modal]');
+    if (!(modal instanceof HTMLElement)) {
+        return;
+    }
+
+    if (modal.dataset.bound === '1') {
+        return;
+    }
+    modal.dataset.bound = '1';
+
+    const titleNode = modal.querySelector('[data-media-preview-title]');
+    const imageNode = modal.querySelector('[data-media-preview-image]');
+    const videoNode = modal.querySelector('[data-media-preview-video]');
+    const closeNodes = modal.querySelectorAll('[data-media-preview-close]');
+
+    const hideAllMedia = () => {
+        if (imageNode instanceof HTMLImageElement) {
+            imageNode.style.display = 'none';
+            imageNode.src = '';
+        }
+        if (videoNode instanceof HTMLVideoElement) {
+            try {
+                videoNode.pause();
+            } catch (e) {}
+            videoNode.removeAttribute('src');
+            videoNode.load();
+            videoNode.style.display = 'none';
+        }
+    };
+
+    const close = () => {
+        modal.hidden = true;
+        document.body.classList.remove('has-modal');
+        hideAllMedia();
+    };
+
+    closeNodes.forEach((node) => {
+        node.addEventListener('click', close);
+    });
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            close();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !modal.hidden) {
+            close();
+        }
+    });
+
+    const open = ({ src, type, title }) => {
+        const safeSrc = String(src || '').trim();
+        const kind = type === 'video' ? 'video' : 'image';
+        if (!safeSrc) {
+            return;
+        }
+
+        hideAllMedia();
+
+        if (titleNode instanceof HTMLElement) {
+            titleNode.textContent = String(title || (kind === 'video' ? 'پیش‌نمایش ویدیو' : 'پیش‌نمایش تصویر'));
+        }
+
+        if (kind === 'video' && videoNode instanceof HTMLVideoElement) {
+            videoNode.src = safeSrc;
+            videoNode.style.display = 'block';
+            try {
+                videoNode.play().catch(() => {});
+            } catch (e) {}
+        } else if (imageNode instanceof HTMLImageElement) {
+            imageNode.src = safeSrc;
+            imageNode.style.display = 'block';
+        }
+
+        modal.hidden = false;
+        document.body.classList.add('has-modal');
+    };
+
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) {
+            return;
+        }
+
+        const trigger = target.closest('[data-media-preview-src]');
+        if (!(trigger instanceof HTMLElement)) {
+            return;
+        }
+
+        const src = trigger.getAttribute('data-media-preview-src') || '';
+        const typeAttr = trigger.getAttribute('data-media-preview-type') || '';
+        const label = trigger.getAttribute('data-media-preview-label') || '';
+
+        event.preventDefault();
+        open({
+            src,
+            type: typeAttr === 'video' ? 'video' : 'image',
+            title: label,
+        });
+    });
 }
 
 function isAdminTheme() {

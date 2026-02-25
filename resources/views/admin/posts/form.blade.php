@@ -62,7 +62,14 @@
                         <span class="field__label">تصویر کاور</span>
                         @if (($post?->cover_media_id ?? null))
                             <div class="post-cover-preview">
-                                <img src="{{ route('admin.media.stream', (int) $post->cover_media_id) }}" alt="">
+                                <button type="button"
+                                    class="btn btn--ghost"
+                                    style="all: unset; cursor: zoom-in; display: block; width: 100%; height: 100%;"
+                                    data-media-preview-src="{{ route('admin.media.stream', (int) $post->cover_media_id) }}"
+                                    data-media-preview-type="image"
+                                    data-media-preview-label="پیش‌نمایش تصویر کاور">
+                                    <img src="{{ route('admin.media.stream', (int) $post->cover_media_id) }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                </button>
                             </div>
                             <div class="field__hint">کاور فعلی. برای جایگزینی، تصویر جدید انتخاب کنید.</div>
                         @endif

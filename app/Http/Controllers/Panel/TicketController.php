@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Media;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -118,6 +120,7 @@ class TicketController extends Controller
     {
         $validated = $request->validate([
             'body' => ['required', 'string', 'max:5000'],
+            'attachment' => ['nullable', 'file', 'image', 'max:1024'],
         ]);
 
         $ticketModel = Ticket::query()
@@ -126,14 +129,41 @@ class TicketController extends Controller
 
         abort_if($ticketModel->status === 'closed', 403);
 
+        $meta = [];
+        $attachment = $request->file('attachment');
+        if ($attachment instanceof UploadedFile) {
+            $media = $this->storeUploadedMedia($attachment, 'public', 'uploads/ticket-attachments');
+            if ($media) {
+                $meta['attachment_media_id'] = $media->id;
+                $meta['attachment_url'] = \Storage::disk('public')->url($media->path);
+            }
+        }
+
         TicketMessage::query()->create([
             'ticket_id' => $ticketModel->id,
             'sender_user_id' => $request->user()->id,
             'body' => $validated['body'],
+            'meta' => $meta ?: null,
         ]);
 
         $ticketModel->forceFill([
             'last_message_at' => now(),
+        ])->save();
+
+        return redirect()->route('panel.tickets.show', $ticketModel->id);
+    }
+
+    public function close(Request $request, int $ticket): RedirectResponse
+    {
+        $ticketModel = Ticket::query()
+            ->where('user_id', $request->user()->id)
+            ->findOrFail($ticket);
+
+        abort_if($ticketModel->status === 'closed', 403);
+
+        $ticketModel->forceFill([
+            'status' => 'closed',
+            'closed_at' => now(),
         ])->save();
 
         return redirect()->route('panel.tickets.show', $ticketModel->id);
@@ -150,5 +180,28 @@ class TicketController extends Controller
         $ticketModel->delete();
 
         return redirect()->route('panel.tickets.index');
+    }
+
+    private function storeUploadedMedia(?UploadedFile $file, string $disk, string $directory): ?Media
+    {
+        if (! $file) {
+            return null;
+        }
+
+        $path = $file->store($directory, $disk);
+
+        return Media::query()->create([
+            'uploaded_by_user_id' => request()->user()?->id,
+            'disk' => $disk,
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'sha1' => null,
+            'width' => null,
+            'height' => null,
+            'duration_seconds' => null,
+            'meta' => [],
+        ]);
     }
 }

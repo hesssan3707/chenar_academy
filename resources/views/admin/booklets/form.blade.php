@@ -78,6 +78,18 @@
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
                             <span class="field__label">کاور (تصویر)</span>
+                            @if (($booklet?->thumbnail_media_id ?? null))
+                                <div class="post-cover-preview" style="max-width: 320px; margin-bottom: 8px;">
+                                    <button type="button"
+                                        style="all: unset; cursor: zoom-in; display: block; width: 100%; height: 100%;"
+                                        data-media-preview-src="{{ route('admin.media.stream', (int) $booklet->thumbnail_media_id) }}"
+                                        data-media-preview-type="image"
+                                        data-media-preview-label="پیش‌نمایش کاور جزوه">
+                                        <img src="{{ route('admin.media.stream', (int) $booklet->thumbnail_media_id) }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                    </button>
+                                </div>
+                                <div class="field__hint">کاور فعلی. برای جایگزینی، تصویر جدید انتخاب کنید.</div>
+                            @endif
                             <input type="file" name="cover_image" accept="image/*">
                             @error('cover_image')
                                 <div class="field__error">{{ $message }}</div>
@@ -86,6 +98,17 @@
 
                         <label class="field">
                             <span class="field__label">فایل PDF جزوه</span>
+                            @php($hasExistingBookletFile = ($booklet?->parts?->firstWhere('part_type', 'file')?->media_id ?? null))
+                            @if ($hasExistingBookletFile)
+                                <div class="field__hint" style="margin-bottom: 6px;">
+                                    <a class="btn btn--ghost btn--sm"
+                                       href="{{ route('admin.media.stream', (int) $booklet->parts->firstWhere('part_type', 'file')->media_id) }}"
+                                       target="_blank"
+                                       rel="noopener">
+                                        دانلود فایل فعلی
+                                    </a>
+                                </div>
+                            @endif
                             <input type="file" name="booklet_file" accept="application/pdf">
                             @error('booklet_file')
                                 <div class="field__error">{{ $message }}</div>
@@ -99,7 +122,12 @@
                             <input type="file" name="sample_pdf" accept="application/pdf">
                             @if (($booklet?->previewPdfMedia?->disk ?? null) === 'public' && ($booklet?->previewPdfMedia?->id ?? null))
                                 <div class="mt-2">
-                                    <a class="btn btn--ghost btn--sm" href="{{ route('media.stream', $booklet->previewPdfMedia->id) }}" target="_blank" rel="noopener">مشاهده نمونه</a>
+                                    <a class="btn btn--ghost btn--sm"
+                                       href="{{ route('media.stream', $booklet->previewPdfMedia->id) }}"
+                                       target="_blank"
+                                       rel="noopener">
+                                        مشاهده نمونه
+                                    </a>
                                 </div>
                             @endif
                             @error('sample_pdf')
@@ -114,7 +142,13 @@
                             @if ($previewImages->isNotEmpty())
                                 <div class="mt-2" style="display: flex; gap: 8px; flex-wrap: wrap;">
                                     @foreach ($previewImages as $media)
-                                        <img src="{{ route('media.stream', $media->id) }}" alt="" style="width: 90px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);">
+                                        <button type="button"
+                                            style="all: unset; cursor: zoom-in;"
+                                            data-media-preview-src="{{ route('media.stream', $media->id) }}"
+                                            data-media-preview-type="image"
+                                            data-media-preview-label="پیش‌نمایش تصویر جزوه">
+                                            <img src="{{ route('media.stream', $media->id) }}" alt="" style="width: 90px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); display: block;">
+                                        </button>
                                     @endforeach
                                 </div>
                             @endif

@@ -183,6 +183,7 @@ Route::prefix('panel')
         Route::get('/library/{product:slug}/lessons/{lesson}/stream', [LibraryController::class, 'streamLesson'])->name('library.lessons.stream');
         Route::resource('orders', OrderController::class)->only(['index', 'show']);
         Route::resource('tickets', TicketController::class);
+        Route::post('tickets/{ticket}/close', [TicketController::class, 'close'])->name('tickets.close');
     });
 
 Route::prefix('booklets')->name('booklets.')->group(function () {

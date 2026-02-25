@@ -65,7 +65,13 @@
                                 </div>
                                 @if (! empty($logoPreviewUrl))
                                     <div class="field__hint">
-                                        <img src="{{ $logoPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                        <button type="button"
+                                            style="all: unset; cursor: zoom-in; display: inline-block;"
+                                            data-media-preview-src="{{ $logoPreviewUrl }}"
+                                            data-media-preview-type="image"
+                                            data-media-preview-label="پیش‌نمایش لوگو">
+                                            <img src="{{ $logoPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12); display: block;">
+                                        </button>
                                     </div>
                                 @endif
                                 @error('logo_file')
@@ -258,7 +264,13 @@
                                 </div>
                                 @if (! empty($backgroundDefaultPreviewUrl))
                                     <div class="field__hint">
-                                        <img src="{{ $backgroundDefaultPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                        <button type="button"
+                                            style="all: unset; cursor: zoom-in; display: inline-block;"
+                                            data-media-preview-src="{{ $backgroundDefaultPreviewUrl }}"
+                                            data-media-preview-type="image"
+                                            data-media-preview-label="پیش‌نمایش پس‌زمینه پیش‌فرض">
+                                            <img src="{{ $backgroundDefaultPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12); display: block;">
+                                        </button>
                                     </div>
                                 @endif
                                 @error('background_default_file')
@@ -285,7 +297,13 @@
                                 </div>
                                 @if (! empty($backgroundHomePreviewUrl))
                                     <div class="field__hint">
-                                        <img src="{{ $backgroundHomePreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                        <button type="button"
+                                            style="all: unset; cursor: zoom-in; display: inline-block;"
+                                            data-media-preview-src="{{ $backgroundHomePreviewUrl }}"
+                                            data-media-preview-type="image"
+                                            data-media-preview-label="پیش‌نمایش پس‌زمینه صفحه خانه">
+                                            <img src="{{ $backgroundHomePreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12); display: block;">
+                                        </button>
                                     </div>
                                 @endif
                                 @error('background_home_file')
@@ -312,7 +330,13 @@
                                 </div>
                                 @if (! empty($backgroundVideosPreviewUrl))
                                     <div class="field__hint">
-                                        <img src="{{ $backgroundVideosPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                        <button type="button"
+                                            style="all: unset; cursor: zoom-in; display: inline-block;"
+                                            data-media-preview-src="{{ $backgroundVideosPreviewUrl }}"
+                                            data-media-preview-type="image"
+                                            data-media-preview-label="پیش‌نمایش پس‌زمینه صفحات ویدیو">
+                                            <img src="{{ $backgroundVideosPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12); display: block;">
+                                        </button>
                                     </div>
                                 @endif
                                 @error('background_videos_file')
@@ -339,7 +363,13 @@
                                 </div>
                                 @if (! empty($backgroundBookletsPreviewUrl))
                                     <div class="field__hint">
-                                        <img src="{{ $backgroundBookletsPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                        <button type="button"
+                                            style="all: unset; cursor: zoom-in; display: inline-block;"
+                                            data-media-preview-src="{{ $backgroundBookletsPreviewUrl }}"
+                                            data-media-preview-type="image"
+                                            data-media-preview-label="پیش‌نمایش پس‌زمینه صفحات جزوه">
+                                            <img src="{{ $backgroundBookletsPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12); display: block;">
+                                        </button>
                                     </div>
                                 @endif
                                 @error('background_booklets_file')
@@ -366,7 +396,13 @@
                                 </div>
                                 @if (! empty($backgroundOtherPreviewUrl))
                                     <div class="field__hint">
-                                        <img src="{{ $backgroundOtherPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12);">
+                                        <button type="button"
+                                            style="all: unset; cursor: zoom-in; display: inline-block;"
+                                            data-media-preview-src="{{ $backgroundOtherPreviewUrl }}"
+                                            data-media-preview-type="image"
+                                            data-media-preview-label="پیش‌نمایش پس‌زمینه سایر صفحات">
+                                            <img src="{{ $backgroundOtherPreviewUrl }}" alt="" style="max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12); display: block;">
+                                        </button>
                                     </div>
                                 @endif
                                 @error('background_other_file')

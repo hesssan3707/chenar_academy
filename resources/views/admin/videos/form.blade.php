@@ -79,6 +79,18 @@
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
                             <span class="field__label">کاور (تصویر)</span>
+                            @if (($videoProduct?->thumbnail_media_id ?? null))
+                                <div class="post-cover-preview" style="max-width: 320px; margin-bottom: 8px;">
+                                    <button type="button"
+                                        style="all: unset; cursor: zoom-in; display: block; width: 100%; height: 100%;"
+                                        data-media-preview-src="{{ route('admin.media.stream', (int) $videoProduct->thumbnail_media_id) }}"
+                                        data-media-preview-type="image"
+                                        data-media-preview-label="پیش‌نمایش کاور ویدیو">
+                                        <img src="{{ route('admin.media.stream', (int) $videoProduct->thumbnail_media_id) }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                    </button>
+                                </div>
+                                <div class="field__hint">کاور فعلی. برای جایگزینی، تصویر جدید انتخاب کنید.</div>
+                            @endif
                             <input type="file" name="cover_image" accept="image/*">
                             @error('cover_image')
                                 <div class="field__error">{{ $message }}</div>
@@ -87,6 +99,17 @@
 
                         <label class="field">
                             <span class="field__label">پیش‌نمایش (ویدیو کوتاه)</span>
+                            @if (($video?->preview_media_id ?? null))
+                                <div class="field__hint" style="margin-bottom: 6px;">
+                                    <button type="button"
+                                        class="btn btn--ghost btn--sm"
+                                        data-media-preview-src="{{ route('admin.media.stream', (int) $video->preview_media_id) }}"
+                                        data-media-preview-type="video"
+                                        data-media-preview-label="پیش‌نمایش ویدیو کوتاه">
+                                        مشاهده ویدیو فعلی
+                                    </button>
+                                </div>
+                            @endif
                             <input type="file" name="preview_video" accept="video/*">
                             @error('preview_video')
                                 <div class="field__error">{{ $message }}</div>
@@ -104,6 +127,17 @@
 
                     <label class="field">
                         <span class="field__label">فایل ویدیو (کامل)</span>
+                        @if (($video?->media_id ?? null))
+                            <div class="field__hint" style="margin-bottom: 6px;">
+                                <button type="button"
+                                    class="btn btn--ghost btn--sm"
+                                    data-media-preview-src="{{ route('admin.media.stream', (int) $video->media_id) }}"
+                                    data-media-preview-type="video"
+                                    data-media-preview-label="ویدیو کامل فعلی">
+                                    مشاهده ویدیو کامل فعلی
+                                </button>
+                            </div>
+                        @endif
                         <input type="file" name="video_file" accept="video/*">
                         @error('video_file')
                             <div class="field__error">{{ $message }}</div>

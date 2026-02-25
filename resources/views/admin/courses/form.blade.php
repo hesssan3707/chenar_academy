@@ -61,7 +61,7 @@
 
                         <label class="field">
                             <span class="field__label">دسته‌بندی</span>
-                            @php($categoryValue = old('category_id', (string) ($isEdit ? ($courseProduct?->categories()->where('type', 'course')->value('categories.id') ?? '') : '')))
+                            @php($categoryValue = old('category_id', (string) ($isEdit ? ($courseProduct?->categories()->whereIn('type', ['course', 'video'])->value('categories.id') ?? '') : '')))
                             <select name="category_id" required>
                                 <option value="" @selected($categoryValue === '')>—</option>
                                 @foreach ($categories as $category)
@@ -111,6 +111,18 @@
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
                             <span class="field__label">کاور (تصویر)</span>
+                            @if (($courseProduct?->thumbnail_media_id ?? null))
+                                <div class="post-cover-preview" style="max-width: 320px; margin-bottom: 8px;">
+                                    <button type="button"
+                                        style="all: unset; cursor: zoom-in; display: block; width: 100%; height: 100%;"
+                                        data-media-preview-src="{{ route('admin.media.stream', (int) $courseProduct->thumbnail_media_id) }}"
+                                        data-media-preview-type="image"
+                                        data-media-preview-label="پیش‌نمایش کاور دوره">
+                                        <img src="{{ route('admin.media.stream', (int) $courseProduct->thumbnail_media_id) }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                    </button>
+                                </div>
+                                <div class="field__hint">کاور فعلی. برای جایگزینی، تصویر جدید انتخاب کنید.</div>
+                            @endif
                             <input type="file" name="cover_image" accept="image/*">
                             @error('cover_image')
                                 <div class="field__error">{{ $message }}</div>
@@ -185,7 +197,30 @@
                                                     </label>
                                                 </td>
                                                 <td class="admin-min-w-260">
-                                                    <input type="url" dir="ltr" name="lessons[{{ $lesson->id }}][video_url]" value="{{ old('lessons.'.$lesson->id.'.video_url', (string) ($lesson->video_url ?? '')) }}">
+                                                <input type="url" dir="ltr" name="lessons[{{ $lesson->id }}][video_url]" value="{{ old('lessons.'.$lesson->id.'.video_url', (string) ($lesson->video_url ?? '')) }}">
+                                                @php($hasLessonMedia = (int) ($lesson->media_id ?? 0) > 0)
+                                                @php($hasLessonUrl = isset($lesson->video_url) && trim((string) $lesson->video_url) !== '')
+                                                @if ($hasLessonMedia || $hasLessonUrl)
+                                                    <div class="field__hint" style="margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap;">
+                                                        @if ($hasLessonMedia)
+                                                            <button type="button"
+                                                                class="btn btn--ghost btn--sm"
+                                                                data-media-preview-src="{{ route('admin.media.stream', (int) $lesson->media_id) }}"
+                                                                data-media-preview-type="video"
+                                                                data-media-preview-label="پیش‌نمایش ویدیو درس">
+                                                                مشاهده ویدیو فعلی
+                                                            </button>
+                                                        @endif
+                                                        @if ($hasLessonUrl)
+                                                            <a class="btn btn--ghost btn--sm"
+                                                               href="{{ $lesson->video_url }}"
+                                                               target="_blank"
+                                                               rel="noopener">
+                                                                لینک فعلی
+                                                            </a>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                                 </td>
                                                 <td class="admin-nowrap">
                                                     <input type="file" name="lessons[{{ $lesson->id }}][file]" accept="video/*">

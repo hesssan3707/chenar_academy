@@ -25,8 +25,8 @@
                 @php($typeLabels = [
                     'institution' => 'دانشگاه',
                     'note' => 'جزوه',
-                    'video' => 'ویدیو',
-                    'course' => 'دوره',
+                    'video' => 'دوره و ویدیو',
+                    'course' => 'دوره و ویدیو',
                     'post' => 'مقاله',
                     'ticket' => 'تیکت',
                 ])
