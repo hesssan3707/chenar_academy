@@ -33,7 +33,7 @@ class CatalogSeeder extends Seeder
 
         foreach ($items as $item) {
             Category::query()->firstOrCreate(
-                ['type' => 'post', 'slug' => $item['slug']],
+                ['category_type_id' => Category::typeId('post'), 'slug' => $item['slug']],
                 [
                     'title' => $item['title'],
                     'parent_id' => null,
@@ -55,7 +55,7 @@ class CatalogSeeder extends Seeder
 
         foreach ($items as $item) {
             Category::query()->firstOrCreate(
-                ['type' => 'ticket', 'slug' => $item['slug']],
+                ['category_type_id' => Category::typeId('ticket'), 'slug' => $item['slug']],
                 [
                     'title' => $item['title'],
                     'parent_id' => null,
@@ -76,7 +76,7 @@ class CatalogSeeder extends Seeder
 
         foreach ($institutions as $institution) {
             Category::query()->firstOrCreate(
-                ['type' => 'institution', 'slug' => $institution['slug']],
+                ['category_type_id' => Category::typeId('institution'), 'slug' => $institution['slug']],
                 [
                     'title' => $institution['title'],
                     'parent_id' => null,
@@ -103,7 +103,7 @@ class CatalogSeeder extends Seeder
 
         foreach ($items as $item) {
             $institution = Category::query()
-                ->where('type', 'institution')
+                ->ofType('institution')
                 ->where('slug', $item['parent'])
                 ->first();
 
@@ -112,7 +112,7 @@ class CatalogSeeder extends Seeder
             }
 
             Category::query()->firstOrCreate(
-                ['type' => $item['type'], 'slug' => $item['slug']],
+                ['category_type_id' => Category::typeId((string) $item['type']), 'slug' => $item['slug']],
                 [
                     'title' => $item['title'],
                     'parent_id' => $institution->id,
@@ -205,7 +205,7 @@ class CatalogSeeder extends Seeder
 
             $categorySlug = (string) ($item['category'] ?? '');
             if ($categorySlug !== '') {
-                $category = Category::query()->where('type', 'post')->where('slug', $categorySlug)->first();
+                $category = Category::query()->ofType('post')->where('slug', $categorySlug)->first();
                 if ($category) {
                     $post->categories()->syncWithoutDetaching([$category->id]);
                 }
@@ -254,7 +254,7 @@ class CatalogSeeder extends Seeder
 
             $categorySlug = $noteCategorySlugs[$i] ?? null;
             if ($categorySlug) {
-                $category = Category::query()->where('type', 'note')->where('slug', $categorySlug)->first();
+                $category = Category::query()->ofType('note')->where('slug', $categorySlug)->first();
                 if ($category) {
                     $product->categories()->syncWithoutDetaching([$category->id]);
                 }
@@ -294,7 +294,7 @@ class CatalogSeeder extends Seeder
 
             $categorySlug = $videoCategorySlugs[$i] ?? null;
             if ($categorySlug) {
-                $category = Category::query()->where('type', 'video')->where('slug', $categorySlug)->first();
+                $category = Category::query()->ofType('video')->where('slug', $categorySlug)->first();
                 if ($category) {
                     $product->categories()->syncWithoutDetaching([$category->id]);
                 }

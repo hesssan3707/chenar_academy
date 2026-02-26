@@ -13,7 +13,8 @@ class ProductionDatabaseSeeder extends Seeder
         $this->purgeDatabase();
 
         $this->call([
-            ProductionCategorySeeder::class,
+            CategoryTypeSeeder::class,
+            CategorySeeder::class,
             ProductionUserSeeder::class,
             ProductionProductSeeder::class,
             ProductionOrderSeeder::class,

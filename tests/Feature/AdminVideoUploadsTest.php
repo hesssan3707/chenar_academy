@@ -15,13 +15,8 @@ class AdminVideoUploadsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_can_upload_video_cover_preview_and_full_video(): void
+    private function makeAdminAndCategories(): array
     {
-        Storage::fake('public');
-        Storage::fake('local');
-        Storage::fake('videos');
-        Process::fake(fn () => Process::result(output: "120.0\n"));
-
         $institution = Category::query()->create([
             'type' => 'institution',
             'parent_id' => null,
@@ -44,6 +39,18 @@ class AdminVideoUploadsTest extends TestCase
 
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        return [$admin, $institution, $category];
+    }
+
+    public function test_admin_can_upload_video_cover_preview_and_full_video(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+        Storage::fake('videos');
+        Process::fake(fn () => Process::result(output: "120.0\n"));
+
+        [$admin, $institution, $category] = $this->makeAdminAndCategories();
 
         $response = $this->actingAs($admin, 'admin')->post(route('admin.videos.store'), [
             'title' => 'My Video',
@@ -100,5 +107,42 @@ class AdminVideoUploadsTest extends TestCase
         $this->assertSame('videos', $full->disk);
         Storage::disk('videos')->assertExists($full->path);
         $this->assertSame(120, (int) $full->duration_seconds);
+    }
+
+    public function test_admin_cannot_submit_video_with_both_url_and_file(): void
+    {
+        Storage::fake('videos');
+
+        [$admin, $institution, $category] = $this->makeAdminAndCategories();
+
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.videos.store'), [
+            'title' => 'Invalid Video',
+            'excerpt' => 'Invalid',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
+            'status' => 'draft',
+            'base_price' => 1000,
+            'video_url' => 'https://example.com/video.mp4',
+            'video_file' => UploadedFile::fake()->create('full.mp4', 2400, 'video/mp4'),
+        ]);
+
+        $response->assertSessionHasErrors(['video_url', 'video_file']);
+    }
+
+    public function test_admin_cannot_submit_video_without_any_source(): void
+    {
+        [$admin, $institution, $category] = $this->makeAdminAndCategories();
+
+        $response = $this->actingAs($admin, 'admin')->post(route('admin.videos.store'), [
+            'title' => 'No Source Video',
+            'excerpt' => 'Invalid',
+            'institution_category_id' => $institution->id,
+            'category_id' => $category->id,
+            'status' => 'draft',
+            'base_price' => 1000,
+            'video_url' => '',
+        ]);
+
+        $response->assertSessionHasErrors(['video_url', 'video_file']);
     }
 }

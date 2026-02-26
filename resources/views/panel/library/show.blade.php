@@ -81,6 +81,15 @@
             @else
                 @php($parts = $product->parts ?? collect())
                 @php($singleVideoMediaId = $product->type === 'video' ? ($product->video?->media_id) : null)
+                @php($bookletFileMediaId = $product->type === 'note' ? (int) ($product->booklet?->file_media_id ?? 0) : 0)
+
+                @if ($product->type === 'note' && $bookletFileMediaId > 0)
+                    <div class="panel" style="margin-top: 18px;">
+                        <div class="form-actions">
+                            <a class="btn btn--primary" href="{{ route('panel.library.booklet.stream', ['product' => $product->slug]) }}">دانلود فایل جزوه</a>
+                        </div>
+                    </div>
+                @endif
 
                 @if ($parts->isNotEmpty())
                     <div class="stack" style="margin-top: 18px;">

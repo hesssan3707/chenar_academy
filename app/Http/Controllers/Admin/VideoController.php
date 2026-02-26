@@ -47,14 +47,14 @@ class VideoController extends Controller
                 'duration_seconds' => null,
             ]),
             'institutions' => Category::query()
-                ->where('type', 'institution')
+                ->ofType('institution')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->where('type', 'video')
+                ->ofType('video')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
@@ -126,14 +126,14 @@ class VideoController extends Controller
             'videoProduct' => $product,
             'video' => $videoModel,
             'institutions' => Category::query()
-                ->where('type', 'institution')
+                ->ofType('institution')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->where('type', 'video')
+                ->ofType('video')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
@@ -160,7 +160,9 @@ class VideoController extends Controller
             'discount_value' => $validated['discount_value'],
             'currency' => $this->commerceCurrency(),
             'published_at' => $validated['published_at'],
-            'thumbnail_media_id' => $validated['thumbnail_media_id'] ?? $product->thumbnail_media_id,
+            'thumbnail_media_id' => $validated['remove_cover_image']
+                ? null
+                : ($validated['thumbnail_media_id'] ?? $product->thumbnail_media_id),
             'institution_category_id' => $validated['institution_category_id'],
         ])->save();
 
@@ -169,20 +171,20 @@ class VideoController extends Controller
         $videoPayload = [
             'meta' => [],
         ];
-        $videoPayload['video_url'] = $validated['video_url'];
-
         if (($validated['media_id'] ?? null) !== null) {
             $fullMedia = Media::query()->findOrFail((int) $validated['media_id']);
             $videoPayload['duration_seconds'] = $this->extractVideoDurationSecondsOrFail($fullMedia);
             $videoPayload['media_id'] = $validated['media_id'];
-        }
-
-        if (($validated['video_url'] ?? null) !== null) {
+            $videoPayload['video_url'] = null;
+        } else {
             $videoPayload['media_id'] = null;
             $videoPayload['duration_seconds'] = null;
+            $videoPayload['video_url'] = $validated['video_url'];
         }
 
-        if (($validated['preview_media_id'] ?? null) !== null) {
+        if ($validated['remove_preview_video']) {
+            $videoPayload['preview_media_id'] = null;
+        } elseif (($validated['preview_media_id'] ?? null) !== null) {
             $videoPayload['preview_media_id'] = $validated['preview_media_id'];
         }
 
@@ -226,11 +228,16 @@ class VideoController extends Controller
             $existingVideoUrl = Video::query()->where('product_id', $product->id)->value('video_url');
         }
 
+        $removeVideoFile = $request->boolean('remove_video_file');
+        if ($removeVideoFile) {
+            $existingVideoMediaId = null;
+        }
+
         $rules = [
             'title' => ['required', 'string', 'max:180'],
             'excerpt' => ['nullable', 'string', 'max:500'],
-            'institution_category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'institution')],
-            'category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'video')],
+            'institution_category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('category_type_id', Category::typeId('institution'))],
+            'category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('category_type_id', Category::typeId('video'))],
             'status' => ['nullable', 'string', Rule::in(['draft', 'published'])],
             'base_price' => [$shouldPublish ? 'required' : 'nullable', 'integer', 'min:0', 'max:2000000000'],
             'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibits:discount_type,discount_value'],
@@ -247,27 +254,11 @@ class VideoController extends Controller
             'published_at' => ['nullable', 'string', 'max:32'],
             'cover_image' => ['nullable', 'file', 'image', 'max:5120'],
             'preview_video' => ['nullable', 'file', 'max:102400'],
-            'video_url' => [
-                Rule::when(
-                    $shouldPublish && ! $existingVideoMediaId && ! $existingVideoUrl && ! $request->hasFile('video_file'),
-                    ['required'],
-                    ['nullable']
-                ),
-                'string',
-                'max:2048',
-                'url',
-                'prohibits:video_file',
-            ],
-            'video_file' => [
-                Rule::when(
-                    $shouldPublish && ! $existingVideoMediaId && ! $existingVideoUrl && trim((string) $request->input('video_url', '')) === '',
-                    ['required'],
-                    ['nullable']
-                ),
-                'file',
-                'max:1048576',
-                'prohibits:video_url',
-            ],
+            'remove_cover_image' => ['nullable', 'in:0,1'],
+            'remove_preview_video' => ['nullable', 'in:0,1'],
+            'remove_video_file' => ['nullable', 'in:0,1'],
+            'video_url' => ['nullable', 'string', 'max:2048', 'url', 'prohibits:video_file'],
+            'video_file' => ['nullable', 'file', 'max:1048576', 'prohibits:video_url'],
         ];
 
         $validated = $request->validate($rules);
@@ -286,12 +277,34 @@ class VideoController extends Controller
         $previewMedia = $this->storeUploadedMedia($request->file('preview_video'), 'videos', 'protected/previews');
         $fullMedia = $this->storeUploadedMedia($request->file('video_file'), 'videos', 'protected/videos');
 
-        $videoUrl = null;
-        if ($request->has('video_url')) {
-            $videoUrl = trim((string) $request->input('video_url', ''));
-            $videoUrl = $videoUrl !== '' ? $videoUrl : null;
-        } elseif (is_string($existingVideoUrl) && trim($existingVideoUrl) !== '') {
-            $videoUrl = trim($existingVideoUrl);
+        $videoUrlInput = trim((string) $request->input('video_url', ''));
+        $videoUrl = $videoUrlInput !== '' ? $videoUrlInput : null;
+
+        $effectiveMediaId = $fullMedia?->id ?? ($removeVideoFile ? null : ($existingVideoMediaId ? (int) $existingVideoMediaId : null));
+        $effectiveVideoUrl = $videoUrl;
+
+        if (($fullMedia?->id ?? null) !== null && $effectiveVideoUrl !== null) {
+            throw ValidationException::withMessages([
+                'video_url' => ['ÙÙ‚Ø· ÛŒÚ©ÛŒ Ø§Ø² Ù„ÛŒÙ†Ú© ÙˆÛŒØ¯ÛŒÙˆ ÛŒØ§ ÙØ§ÛŒÙ„ ÙˆÛŒØ¯ÛŒÙˆ Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù†ÛŒØ¯.'],
+                'video_file' => ['ÙÙ‚Ø· ÛŒÚ©ÛŒ Ø§Ø² Ù„ÛŒÙ†Ú© ÙˆÛŒØ¯ÛŒÙˆ ÛŒØ§ ÙØ§ÛŒÙ„ ÙˆÛŒØ¯ÛŒÙˆ Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù†ÛŒØ¯.'],
+            ]);
+        }
+
+        if (($fullMedia?->id ?? null) !== null) {
+            $effectiveVideoUrl = null;
+        } elseif ($effectiveVideoUrl === null && is_string($existingVideoUrl) && trim($existingVideoUrl) !== '') {
+            $effectiveVideoUrl = trim($existingVideoUrl);
+        }
+
+        if ($effectiveVideoUrl !== null) {
+            $effectiveMediaId = null;
+        }
+
+        if (($effectiveMediaId === null && $effectiveVideoUrl === null) || ($effectiveMediaId !== null && $effectiveVideoUrl !== null)) {
+            throw ValidationException::withMessages([
+                'video_url' => ['Ø¨Ø§ÛŒØ¯ Ø¯Ù‚ÛŒÙ‚Ø§Ù‹ ÛŒÚ©ÛŒ Ø§Ø² Ù„ÛŒÙ†Ú© ÙˆÛŒØ¯ÛŒÙˆ ÛŒØ§ ÙØ§ÛŒÙ„ ÙˆÛŒØ¯ÛŒÙˆ ØªØ¹ÛŒÛŒÙ† Ø´ÙˆØ¯.'],
+                'video_file' => ['Ø¨Ø§ÛŒØ¯ Ø¯Ù‚ÛŒÙ‚Ø§Ù‹ ÛŒÚ©ÛŒ Ø§Ø² Ù„ÛŒÙ†Ú© ÙˆÛŒØ¯ÛŒÙˆ ÛŒØ§ ÙØ§ÛŒÙ„ ÙˆÛŒØ¯ÛŒÙˆ ØªØ¹ÛŒÛŒÙ† Ø´ÙˆØ¯.'],
+            ]);
         }
 
         $publishedAt = $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null);
@@ -311,8 +324,10 @@ class VideoController extends Controller
             'published_at' => $status === 'published' ? $publishedAt : null,
             'thumbnail_media_id' => $thumbnailMedia?->id,
             'preview_media_id' => $previewMedia?->id,
-            'media_id' => $fullMedia?->id,
-            'video_url' => $videoUrl,
+            'media_id' => $effectiveMediaId,
+            'video_url' => $effectiveVideoUrl,
+            'remove_cover_image' => $request->boolean('remove_cover_image'),
+            'remove_preview_video' => $request->boolean('remove_preview_video'),
             'institution_category_id' => (int) $validated['institution_category_id'],
             'category_id' => (int) $validated['category_id'],
         ];

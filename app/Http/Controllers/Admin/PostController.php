@@ -22,9 +22,9 @@ class PostController extends Controller
         $query = Post::query()->orderByDesc('published_at')->orderByDesc('id');
 
         if ($categoryId > 0) {
-            $category = Category::query()->where('type', 'post')->find($categoryId);
+            $category = Category::query()->ofType('post')->find($categoryId);
             if ($category) {
-                $descendantIds = $this->descendantCategoryIds($category->id, 'post');
+                $descendantIds = $this->descendantCategoryIds($category->id, (int) $category->category_type_id);
                 $query->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $descendantIds));
             }
         }
@@ -161,11 +161,15 @@ class PostController extends Controller
         return $slug;
     }
 
-    private function descendantCategoryIds(int $rootCategoryId, string $type): array
+    private function descendantCategoryIds(int $rootCategoryId, int $categoryTypeId): array
     {
+        if ($rootCategoryId <= 0 || $categoryTypeId <= 0) {
+            return [];
+        }
+
         $categories = Category::query()
             ->select(['id', 'parent_id'])
-            ->where('type', $type)
+            ->where('category_type_id', $categoryTypeId)
             ->get();
 
         $childrenByParent = [];

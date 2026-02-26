@@ -18,19 +18,12 @@
             @php($category = $category ?? null)
             @php($isEdit = $category && $category->exists)
             @php($relatedCount = (int) ($category?->related_count ?? 0))
-            @php($typeValue = (string) ($category?->type ?? ''))
-            @php($isProductType = in_array($typeValue, ['note', 'video', 'course'], true))
+            @php($typeKeyValue = (string) ($category?->type ?? ''))
+            @php($isProductType = in_array($typeKeyValue, ['note', 'video'], true))
             @php($canDelete = $isEdit && (! $isProductType || $relatedCount === 0))
             @php($parents = $parents ?? collect())
-            @php($types = $types ?? [])
-            @php($typeLabels = [
-                'institution' => 'دانشگاه',
-                'note' => 'جزوه',
-                'video' => 'دوره و ویدیو',
-                'course' => 'دوره و ویدیو',
-                'post' => 'مقاله',
-                'ticket' => 'تیکت',
-            ])
+            @php($categoryTypes = $categoryTypes ?? collect())
+            @php($typeTitles = $typeTitles ?? [])
 
             <div class="panel">
                 <form method="post"
@@ -46,14 +39,14 @@
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
                             <span class="field__label">نوع</span>
-                            @php($typeValue = old('type', (string) ($category->type ?? '')))
-                            <select name="type" required data-category-type>
-                                <option value="" @selected($typeValue === '')>—</option>
-                                @foreach ($types as $type)
-                                    <option value="{{ $type }}" @selected((string) $type === (string) $typeValue)>{{ $typeLabels[$type] ?? $type }}</option>
+                            @php($typeIdValue = old('category_type_id', (string) ($category->category_type_id ?? '')))
+                            <select name="category_type_id" required data-category-type>
+                                <option value="" @selected($typeIdValue === '')>—</option>
+                                @foreach ($categoryTypes as $type)
+                                    <option value="{{ $type->id }}" @selected((string) $type->id === (string) $typeIdValue)>{{ $type->title ?? $type->key }}</option>
                                 @endforeach
                             </select>
-                            @error('type')
+                            @error('category_type_id')
                                 <div class="field__error">{{ $message }}</div>
                             @enderror
                         </label>
@@ -73,8 +66,9 @@
                         <select name="parent_id" data-category-parent>
                             <option value="">—</option>
                             @foreach ($parents as $parent)
-                                <option value="{{ $parent->id }}" data-type="{{ $parent->type }}" @selected((string) $parent->id === (string) $parentValue)>
-                                    {{ $typeLabels[$parent->type] ?? $parent->type }} — {{ $parent->title }}
+                                @php($parentTypeKey = (string) ($parent->type ?? ''))
+                                <option value="{{ $parent->id }}" data-type="{{ (string) ($parent->category_type_id ?? '') }}" @selected((string) $parent->id === (string) $parentValue)>
+                                    {{ $typeTitles[$parentTypeKey] ?? $parentTypeKey }} — {{ $parent->title }}
                                 </option>
                             @endforeach
                         </select>
@@ -105,6 +99,11 @@
                                     <img src="{{ $coverUrl }}" alt="{{ $category->title }}" style="width: 220px; height: 120px; object-fit: cover; border-radius: 10px; display: block;">
                                 </button>
                             </div>
+                            <label class="cluster mt-2">
+                                <input type="hidden" name="remove_cover_image" value="0">
+                                <input type="checkbox" name="remove_cover_image" value="1" @checked(old('remove_cover_image') === '1')>
+                                <span>حذف کاور فعلی</span>
+                            </label>
                         @endif
                         @error('cover_image')
                             <div class="field__error">{{ $message }}</div>

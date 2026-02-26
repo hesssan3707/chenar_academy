@@ -16,6 +16,7 @@
             </div>
 
             @php($booklet = $booklet ?? null)
+            @php($bookletDetails = $bookletDetails ?? null)
             @php($isEdit = $booklet && $booklet->exists)
             @php($institutions = $institutions ?? collect())
             @php($categories = $categories ?? collect())
@@ -60,7 +61,7 @@
 
                         <label class="field">
                             <span class="field__label">دسته‌بندی</span>
-                            @php($categoryValue = old('category_id', (string) ($isEdit ? ($booklet?->categories()->where('type', 'note')->value('categories.id') ?? '') : '')))
+                            @php($categoryValue = old('category_id', (string) ($isEdit ? ($booklet?->categories()->whereHas('categoryType', fn ($q) => $q->where('key', 'note'))->value('categories.id') ?? '') : '')))
                             <select name="category_id" required>
                                 <option value="" @selected($categoryValue === '')>—</option>
                                 @foreach ($categories as $category)
@@ -88,6 +89,11 @@
                                         <img src="{{ route('admin.media.stream', (int) $booklet->thumbnail_media_id) }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                                     </button>
                                 </div>
+                                <label class="cluster" style="margin-bottom: 8px;">
+                                    <input type="hidden" name="remove_cover_image" value="0">
+                                    <input type="checkbox" name="remove_cover_image" value="1" @checked(old('remove_cover_image') === '1')>
+                                    <span>حذف کاور فعلی</span>
+                                </label>
                                 <div class="field__hint">کاور فعلی. برای جایگزینی، تصویر جدید انتخاب کنید.</div>
                             @endif
                             <input type="file" name="cover_image" accept="image/*">
@@ -98,16 +104,21 @@
 
                         <label class="field">
                             <span class="field__label">فایل PDF جزوه</span>
-                            @php($hasExistingBookletFile = ($booklet?->parts?->firstWhere('part_type', 'file')?->media_id ?? null))
+                            @php($hasExistingBookletFile = (int) ($bookletDetails?->file_media_id ?? 0) > 0)
                             @if ($hasExistingBookletFile)
                                 <div class="field__hint" style="margin-bottom: 6px;">
                                     <a class="btn btn--ghost btn--sm"
-                                       href="{{ route('admin.media.stream', (int) $booklet->parts->firstWhere('part_type', 'file')->media_id) }}"
+                                       href="{{ route('admin.media.stream', (int) $bookletDetails->file_media_id) }}"
                                        target="_blank"
                                        rel="noopener">
                                         دانلود فایل فعلی
                                     </a>
                                 </div>
+                                <label class="cluster" style="margin-bottom: 8px;">
+                                    <input type="hidden" name="remove_booklet_file" value="0">
+                                    <input type="checkbox" name="remove_booklet_file" value="1" @checked(old('remove_booklet_file') === '1')>
+                                    <span>حذف فایل فعلی</span>
+                                </label>
                             @endif
                             <input type="file" name="booklet_file" accept="application/pdf">
                             @error('booklet_file')
@@ -120,15 +131,20 @@
                         <label class="field">
                             <span class="field__label">نمونه PDF</span>
                             <input type="file" name="sample_pdf" accept="application/pdf">
-                            @if (($booklet?->previewPdfMedia?->disk ?? null) === 'public' && ($booklet?->previewPdfMedia?->id ?? null))
+                            @if (($bookletDetails?->sample_pdf_media_id ?? null))
                                 <div class="mt-2">
                                     <a class="btn btn--ghost btn--sm"
-                                       href="{{ route('media.stream', $booklet->previewPdfMedia->id) }}"
+                                       href="{{ route('media.stream', (int) $bookletDetails->sample_pdf_media_id) }}"
                                        target="_blank"
                                        rel="noopener">
                                         مشاهده نمونه
                                     </a>
                                 </div>
+                                <label class="cluster mt-2">
+                                    <input type="hidden" name="remove_sample_pdf" value="0">
+                                    <input type="checkbox" name="remove_sample_pdf" value="1" @checked(old('remove_sample_pdf') === '1')>
+                                    <span>حذف نمونه فعلی</span>
+                                </label>
                             @endif
                             @error('sample_pdf')
                                 <div class="field__error">{{ $message }}</div>
@@ -151,6 +167,11 @@
                                         </button>
                                     @endforeach
                                 </div>
+                                <label class="cluster mt-2">
+                                    <input type="hidden" name="remove_preview_images" value="0">
+                                    <input type="checkbox" name="remove_preview_images" value="1" @checked(old('remove_preview_images') === '1')>
+                                    <span>حذف تصاویر پیش‌نمایش فعلی</span>
+                                </label>
                             @endif
                             @error('preview_images')
                                 <div class="field__error">{{ $message }}</div>

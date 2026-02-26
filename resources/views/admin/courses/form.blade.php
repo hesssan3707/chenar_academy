@@ -61,7 +61,7 @@
 
                         <label class="field">
                             <span class="field__label">دسته‌بندی</span>
-                            @php($categoryValue = old('category_id', (string) ($isEdit ? ($courseProduct?->categories()->whereIn('type', ['course', 'video'])->value('categories.id') ?? '') : '')))
+                            @php($categoryValue = old('category_id', (string) ($isEdit ? ($courseProduct?->categories()->whereHas('categoryType', fn ($q) => $q->where('key', 'video'))->value('categories.id') ?? '') : '')))
                             <select name="category_id" required>
                                 <option value="" @selected($categoryValue === '')>—</option>
                                 @foreach ($categories as $category)
@@ -121,6 +121,11 @@
                                         <img src="{{ route('admin.media.stream', (int) $courseProduct->thumbnail_media_id) }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                                     </button>
                                 </div>
+                                <label class="cluster" style="margin-bottom: 8px;">
+                                    <input type="hidden" name="remove_cover_image" value="0">
+                                    <input type="checkbox" name="remove_cover_image" value="1" @checked(old('remove_cover_image') === '1')>
+                                    <span>حذف کاور فعلی</span>
+                                </label>
                                 <div class="field__hint">کاور فعلی. برای جایگزینی، تصویر جدید انتخاب کنید.</div>
                             @endif
                             <input type="file" name="cover_image" accept="image/*">
@@ -180,7 +185,9 @@
                                     </thead>
                                     <tbody data-course-lessons-list>
                                         @foreach ($existingLessons as $lesson)
-                                            <tr draggable="false">
+                                            @php($hasLessonMedia = (int) ($lesson->media_id ?? 0) > 0)
+                                            @php($hasLessonUrl = isset($lesson->video_url) && trim((string) $lesson->video_url) !== '')
+                                            <tr draggable="false" data-existing-media="{{ $hasLessonMedia ? '1' : '0' }}" data-existing-url="{{ $hasLessonUrl ? '1' : '0' }}">
                                                 <td class="admin-nowrap">
                                                     <button class="btn btn--ghost btn--sm" type="button" data-drag-handle>≡</button>
                                                 </td>
@@ -197,12 +204,17 @@
                                                     </label>
                                                 </td>
                                                 <td class="admin-min-w-260">
-                                                <input type="url" dir="ltr" name="lessons[{{ $lesson->id }}][video_url]" value="{{ old('lessons.'.$lesson->id.'.video_url', (string) ($lesson->video_url ?? '')) }}">
-                                                @php($hasLessonMedia = (int) ($lesson->media_id ?? 0) > 0)
-                                                @php($hasLessonUrl = isset($lesson->video_url) && trim((string) $lesson->video_url) !== '')
+                                                <input type="url" dir="ltr" data-lesson-video-url name="lessons[{{ $lesson->id }}][video_url]" value="{{ old('lessons.'.$lesson->id.'.video_url', (string) ($lesson->video_url ?? '')) }}">
                                                 @if ($hasLessonMedia || $hasLessonUrl)
                                                     <div class="field__hint" style="margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap;">
                                                         @if ($hasLessonMedia)
+                                                            <button type="button"
+                                                                style="all: unset; cursor: zoom-in; display: block; width: 120px; border-radius: 8px; overflow: hidden;"
+                                                                data-media-preview-src="{{ route('admin.media.stream', (int) $lesson->media_id) }}"
+                                                                data-media-preview-type="video"
+                                                                data-media-preview-label="پیش‌نمایش ویدیو درس">
+                                                                <video src="{{ route('admin.media.stream', (int) $lesson->media_id) }}" muted playsinline preload="metadata" style="width: 120px; height: 72px; object-fit: cover; display: block;"></video>
+                                                            </button>
                                                             <button type="button"
                                                                 class="btn btn--ghost btn--sm"
                                                                 data-media-preview-src="{{ route('admin.media.stream', (int) $lesson->media_id) }}"
@@ -220,10 +232,17 @@
                                                             </a>
                                                         @endif
                                                     </div>
+                                                    @if ($hasLessonMedia)
+                                                        <label class="cluster" style="margin-top: 6px;">
+                                                            <input type="hidden" name="lessons[{{ $lesson->id }}][remove_media]" value="0">
+                                                            <input type="checkbox" name="lessons[{{ $lesson->id }}][remove_media]" value="1" @checked((string) old('lessons.'.$lesson->id.'.remove_media', '0') === '1')>
+                                                            <span>حذف ویدیوی فعلی</span>
+                                                        </label>
+                                                    @endif
                                                 @endif
                                                 </td>
                                                 <td class="admin-nowrap">
-                                                    <input type="file" name="lessons[{{ $lesson->id }}][file]" accept="video/*">
+                                                    <input type="file" data-lesson-video-file name="lessons[{{ $lesson->id }}][file]" accept="video/*">
                                                 </td>
                                                 <td class="admin-nowrap">
                                                     @php($deleteValue = (string) old('lessons.'.$lesson->id.'.delete', '0'))
@@ -261,7 +280,7 @@
                                         <tbody data-course-new-lessons data-course-lessons-list data-next-index="{{ $newRowsCount }}">
                                             @for ($i = 0; $i < $newRowsCount; $i++)
                                                 @php($key = (string) ($oldNewKeys[$i] ?? ('new_'.$i)))
-                                                <tr draggable="false">
+                                                <tr draggable="false" data-existing-media="0" data-existing-url="0">
                                                     <td class="admin-nowrap">
                                                         <button class="btn btn--ghost btn--sm" type="button" data-drag-handle>≡</button>
                                                     </td>
@@ -277,10 +296,10 @@
                                                         </label>
                                                     </td>
                                                     <td class="admin-min-w-260">
-                                                        <input type="url" dir="ltr" name="lessons[{{ $key }}][video_url]" value="{{ old('lessons.'.$key.'.video_url', '') }}">
+                                                        <input type="url" dir="ltr" data-lesson-video-url name="lessons[{{ $key }}][video_url]" value="{{ old('lessons.'.$key.'.video_url', '') }}">
                                                     </td>
                                                     <td class="admin-nowrap">
-                                                        <input type="file" name="lessons[{{ $key }}][file]" accept="video/*">
+                                                        <input type="file" data-lesson-video-file name="lessons[{{ $key }}][file]" accept="video/*">
                                                     </td>
                                                     <td class="admin-nowrap">
                                                         <button class="btn btn--ghost btn--sm" type="button" data-course-remove-lesson>حذف</button>
@@ -296,7 +315,7 @@
                                 </div>
 
                                 <template data-course-lesson-row-template>
-                                    <tr draggable="false">
+                                    <tr draggable="false" data-existing-media="0" data-existing-url="0">
                                         <td class="admin-nowrap">
                                             <button class="btn btn--ghost btn--sm" type="button" data-drag-handle>≡</button>
                                         </td>
@@ -311,10 +330,10 @@
                                             </label>
                                         </td>
                                         <td class="admin-min-w-260">
-                                            <input type="url" dir="ltr" name="lessons[__KEY__][video_url]" value="">
+                                            <input type="url" dir="ltr" data-lesson-video-url name="lessons[__KEY__][video_url]" value="">
                                         </td>
                                         <td class="admin-nowrap">
-                                            <input type="file" name="lessons[__KEY__][file]" accept="video/*">
+                                            <input type="file" data-lesson-video-file name="lessons[__KEY__][file]" accept="video/*">
                                         </td>
                                         <td class="admin-nowrap">
                                             <button class="btn btn--ghost btn--sm" type="button" data-course-remove-lesson>حذف</button>

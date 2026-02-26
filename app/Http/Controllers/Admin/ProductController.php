@@ -47,15 +47,15 @@ class ProductController extends Controller
 
             if ($activeCategory) {
                 $activeCategoryType = (string) ($activeCategory->type ?? '');
-                $descendantIds = $this->descendantCategoryIds($activeCategory->id, $activeCategoryType);
+                $descendantIds = $this->descendantCategoryIds($activeCategory->id, (int) ($activeCategory->category_type_id ?? 0));
 
                 $productsQuery->whereHas('categories', function ($q) use ($descendantIds) {
                     $q->whereIn('categories.id', $descendantIds);
                 });
 
-                if (in_array($activeCategoryType, ['note', 'video', 'course'], true)) {
+                if (in_array($activeCategoryType, ['note', 'video'], true)) {
                     $categoryOptions = Category::query()
-                        ->where('type', $activeCategoryType)
+                        ->ofType($activeCategoryType)
                         ->where('is_active', true)
                         ->orderBy('sort_order')
                         ->orderBy('title')
@@ -88,13 +88,13 @@ class ProductController extends Controller
         $category = Category::query()->findOrFail($categoryId);
         $type = (string) ($category->type ?? '');
 
-        abort_unless(in_array($type, ['note', 'video', 'course'], true), 403);
+        abort_unless(in_array($type, ['note', 'video'], true), 403);
 
         $productModel = Product::query()->findOrFail($product);
 
         DB::transaction(function () use ($productModel, $categoryId, $type) {
             $existingIds = $productModel->categories()
-                ->where('categories.type', $type)
+                ->whereHas('categoryType', fn ($q) => $q->where('key', $type))
                 ->pluck('categories.id')
                 ->map(fn ($id) => (int) $id)
                 ->all();
@@ -120,16 +120,16 @@ class ProductController extends Controller
                 'base_price' => 0,
             ]),
             'institutions' => Category::query()
-                ->where('type', 'institution')
+                ->ofType('institution')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->whereIn('type', ['note', 'video', 'course'])
+                ->ofTypes(['note', 'video'])
                 ->where('is_active', true)
-                ->orderBy('type')
+                ->orderBy('category_type_id')
                 ->orderBy('sort_order')
                 ->orderBy('title')
                 ->orderBy('id')
@@ -167,16 +167,16 @@ class ProductController extends Controller
             'title' => 'ویرایش محصول',
             'product' => $productModel,
             'institutions' => Category::query()
-                ->where('type', 'institution')
+                ->ofType('institution')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->whereIn('type', ['note', 'video', 'course'])
+                ->ofTypes(['note', 'video'])
                 ->where('is_active', true)
-                ->orderBy('type')
+                ->orderBy('category_type_id')
                 ->orderBy('sort_order')
                 ->orderBy('title')
                 ->orderBy('id')
@@ -218,19 +218,21 @@ class ProductController extends Controller
             'title' => ['required', 'string', 'max:180'],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
-            'institution_category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'institution')],
+            'institution_category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('category_type_id', Category::typeId('institution'))],
             'category_id' => [
                 'required',
                 'integer',
                 'min:1',
                 Rule::exists('categories', 'id')->where(function ($query) use ($inputType) {
-                    if (in_array($inputType, ['note', 'video', 'course'], true)) {
-                        $query->where('type', $inputType);
+                    $categoryType = $inputType === 'course' ? 'video' : $inputType;
+
+                    if (in_array($categoryType, ['note', 'video'], true)) {
+                        $query->where('category_type_id', Category::typeId($categoryType));
 
                         return;
                     }
 
-                    $query->whereIn('type', ['note', 'video', 'course']);
+                    $query->whereIn('category_type_id', Category::typeIds(['note', 'video']));
                 }),
             ],
             'status' => ['required', 'string', Rule::in(['draft', 'published'])],
@@ -282,10 +284,10 @@ class ProductController extends Controller
 
         $category = Category::query()->findOrFail($categoryId);
         $categoryType = (string) ($category->type ?? '');
-        abort_unless(in_array($categoryType, ['note', 'video', 'course'], true), 403);
+        abort_unless(in_array($categoryType, ['note', 'video'], true), 403);
 
         $existingIds = $product->categories()
-            ->whereIn('categories.type', ['note', 'video', 'course'])
+            ->whereIn('category_type_id', Category::typeIds(['note', 'video']))
             ->pluck('categories.id')
             ->map(fn ($id) => (int) $id)
             ->all();
@@ -315,15 +317,15 @@ class ProductController extends Controller
         return $slug;
     }
 
-    private function descendantCategoryIds(int $rootCategoryId, string $type): array
+    private function descendantCategoryIds(int $rootCategoryId, int $categoryTypeId): array
     {
-        if ($rootCategoryId <= 0 || $type === '') {
+        if ($rootCategoryId <= 0 || $categoryTypeId <= 0) {
             return [];
         }
 
         $categories = Category::query()
             ->select(['id', 'parent_id'])
-            ->where('type', $type)
+            ->where('category_type_id', $categoryTypeId)
             ->get();
 
         $childrenByParent = [];

@@ -49,10 +49,10 @@ class ProductController extends Controller
 
         $categories = collect();
         if (in_array($activeType, ['note', 'video'], true)) {
-            $categoryTypes = $activeType === 'video' ? ['video', 'course'] : [$activeType];
+            $categoryTypes = $activeType === 'video' ? ['video'] : [$activeType];
 
             $rawCategories = Category::query()
-                ->whereIn('type', $categoryTypes)
+                ->ofTypes($categoryTypes)
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('id')
@@ -72,16 +72,16 @@ class ProductController extends Controller
 
             if ($categorySlug !== '') {
                 $activeCategories = Category::query()
-                    ->whereIn('type', $categoryTypes)
+                    ->ofTypes($categoryTypes)
                     ->where('slug', $categorySlug)
                     ->where('is_active', true)
                     ->get();
 
                 if ($activeType === 'video') {
-                    $activeCategory = $activeCategories->firstWhere('type', 'video') ?: $activeCategories->first();
+                    $activeCategory = $activeCategories->first();
                     if ($activeCategory) {
                         $activeCategoryIds = Category::query()
-                            ->whereIn('type', $categoryTypes)
+                            ->ofTypes($categoryTypes)
                             ->where('is_active', true)
                             ->where('parent_id', $activeCategory->parent_id)
                             ->where('title', $activeCategory->title)
@@ -147,7 +147,7 @@ class ProductController extends Controller
         $product = Product::query()
             ->where('slug', $slug)
             ->whereIn('type', ['note', 'video'])
-            ->with(['thumbnailMedia', 'previewPdfMedia', 'parts', 'video.media', 'video.previewMedia', 'institutionCategory', 'categories'])
+            ->with(['thumbnailMedia', 'booklet', 'parts', 'video.media', 'video.previewMedia', 'institutionCategory', 'categories'])
             ->firstOrFail();
 
         $user = request()->user();
@@ -197,7 +197,7 @@ class ProductController extends Controller
         }
 
         $previewImages = collect();
-        $previewIds = $product->preview_image_media_ids;
+        $previewIds = $product->booklet?->preview_image_media_ids;
         if (is_array($previewIds) && $previewIds !== []) {
             $ids = array_values(array_map('intval', $previewIds));
             $mediaById = Media::query()->whereIn('id', $ids)->get()->keyBy('id');

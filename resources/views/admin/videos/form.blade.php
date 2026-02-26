@@ -28,6 +28,9 @@
                     class="stack stack--sm"
                     id="video-form"
                     data-discount-unit-form
+                    data-video-source-form="1"
+                    data-existing-video-media="{{ (int) ($video?->media_id ?? 0) > 0 ? '1' : '0' }}"
+                    data-existing-video-url="{{ trim((string) ($video?->video_url ?? '')) !== '' ? '1' : '0' }}"
                     data-currency-unit="{{ $commerceCurrencyLabel ?? 'ریال' }}">
                     @csrf
                     @if ($isEdit)
@@ -61,7 +64,7 @@
 
                         <label class="field">
                             <span class="field__label">دسته‌بندی</span>
-                            @php($categoryValue = old('category_id', (string) ($isEdit ? ($videoProduct?->categories()->where('type', 'video')->value('categories.id') ?? '') : '')))
+                            @php($categoryValue = old('category_id', (string) ($isEdit ? ($videoProduct?->categories()->whereHas('categoryType', fn ($q) => $q->where('key', 'video'))->value('categories.id') ?? '') : '')))
                             <select name="category_id" required>
                                 <option value="" @selected($categoryValue === '')>—</option>
                                 @foreach ($categories as $category)
@@ -89,6 +92,11 @@
                                         <img src="{{ route('admin.media.stream', (int) $videoProduct->thumbnail_media_id) }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                                     </button>
                                 </div>
+                                <label class="cluster" style="margin-bottom: 8px;">
+                                    <input type="hidden" name="remove_cover_image" value="0">
+                                    <input type="checkbox" name="remove_cover_image" value="1" @checked(old('remove_cover_image') === '1')>
+                                    <span>حذف کاور فعلی</span>
+                                </label>
                                 <div class="field__hint">کاور فعلی. برای جایگزینی، تصویر جدید انتخاب کنید.</div>
                             @endif
                             <input type="file" name="cover_image" accept="image/*">
@@ -100,15 +108,18 @@
                         <label class="field">
                             <span class="field__label">پیش‌نمایش (ویدیو کوتاه)</span>
                             @if (($video?->preview_media_id ?? null))
-                                <div class="field__hint" style="margin-bottom: 6px;">
-                                    <button type="button"
-                                        class="btn btn--ghost btn--sm"
-                                        data-media-preview-src="{{ route('admin.media.stream', (int) $video->preview_media_id) }}"
-                                        data-media-preview-type="video"
-                                        data-media-preview-label="پیش‌نمایش ویدیو کوتاه">
-                                        مشاهده ویدیو فعلی
-                                    </button>
-                                </div>
+                                <button type="button"
+                                    style="all: unset; cursor: zoom-in; display: block; width: 180px; border-radius: 10px; overflow: hidden; margin-bottom: 8px;"
+                                    data-media-preview-src="{{ route('admin.media.stream', (int) $video->preview_media_id) }}"
+                                    data-media-preview-type="video"
+                                    data-media-preview-label="پیش‌نمایش ویدیو کوتاه">
+                                    <video src="{{ route('admin.media.stream', (int) $video->preview_media_id) }}" muted playsinline preload="metadata" style="width: 180px; height: 110px; object-fit: cover; display: block;"></video>
+                                </button>
+                                <label class="cluster" style="margin-bottom: 8px;">
+                                    <input type="hidden" name="remove_preview_video" value="0">
+                                    <input type="checkbox" name="remove_preview_video" value="1" @checked(old('remove_preview_video') === '1')>
+                                    <span>حذف پیش‌نمایش فعلی</span>
+                                </label>
                             @endif
                             <input type="file" name="preview_video" accept="video/*">
                             @error('preview_video')
@@ -128,15 +139,18 @@
                     <label class="field">
                         <span class="field__label">فایل ویدیو (کامل)</span>
                         @if (($video?->media_id ?? null))
-                            <div class="field__hint" style="margin-bottom: 6px;">
-                                <button type="button"
-                                    class="btn btn--ghost btn--sm"
-                                    data-media-preview-src="{{ route('admin.media.stream', (int) $video->media_id) }}"
-                                    data-media-preview-type="video"
-                                    data-media-preview-label="ویدیو کامل فعلی">
-                                    مشاهده ویدیو کامل فعلی
-                                </button>
-                            </div>
+                            <button type="button"
+                                style="all: unset; cursor: zoom-in; display: block; width: 180px; border-radius: 10px; overflow: hidden; margin-bottom: 8px;"
+                                data-media-preview-src="{{ route('admin.media.stream', (int) $video->media_id) }}"
+                                data-media-preview-type="video"
+                                data-media-preview-label="ویدیو کامل فعلی">
+                                <video src="{{ route('admin.media.stream', (int) $video->media_id) }}" muted playsinline preload="metadata" style="width: 180px; height: 110px; object-fit: cover; display: block;"></video>
+                            </button>
+                            <label class="cluster" style="margin-bottom: 8px;">
+                                <input type="hidden" name="remove_video_file" value="0">
+                                <input type="checkbox" name="remove_video_file" value="1" @checked(old('remove_video_file') === '1')>
+                                <span>حذف ویدیو فعلی</span>
+                            </label>
                         @endif
                         <input type="file" name="video_file" accept="video/*">
                         @error('video_file')

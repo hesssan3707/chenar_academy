@@ -50,14 +50,14 @@ class CourseController extends Controller
                 'meta' => [],
             ]),
             'institutions' => Category::query()
-                ->where('type', 'institution')
+                ->ofType('institution')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->whereIn('type', ['course', 'video'])
+                ->ofType('video')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
@@ -126,14 +126,14 @@ class CourseController extends Controller
             'courseProduct' => $product,
             'course' => $courseModel,
             'institutions' => Category::query()
-                ->where('type', 'institution')
+                ->ofType('institution')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->whereIn('type', ['course', 'video'])
+                ->ofType('video')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
@@ -161,7 +161,9 @@ class CourseController extends Controller
             'discount_value' => $validated['discount_value'],
             'currency' => $this->commerceCurrency(),
             'published_at' => $validated['published_at'],
-            'thumbnail_media_id' => $validated['thumbnail_media_id'] ?? $product->thumbnail_media_id,
+            'thumbnail_media_id' => $validated['remove_cover_image']
+                ? null
+                : ($validated['thumbnail_media_id'] ?? $product->thumbnail_media_id),
             'institution_category_id' => $validated['institution_category_id'],
         ])->save();
 
@@ -213,8 +215,8 @@ class CourseController extends Controller
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:180'],
-            'institution_category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'institution')],
-            'category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->whereIn('type', ['course', 'video'])],
+            'institution_category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('category_type_id', Category::typeId('institution'))],
+            'category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('category_type_id', Category::typeId('video'))],
             'description' => ['nullable', 'string'],
             'status' => ['nullable', 'string', Rule::in(['draft', 'published'])],
             'base_price' => [$shouldPublish ? 'required' : 'nullable', 'integer', 'min:0', 'max:2000000000'],
@@ -231,11 +233,13 @@ class CourseController extends Controller
             ],
             'published_at' => ['nullable', 'string', 'max:32'],
             'cover_image' => ['nullable', 'file', 'image', 'max:5120'],
+            'remove_cover_image' => ['nullable', 'in:0,1'],
             'lessons' => ['nullable', 'array'],
             'lessons.*.title' => ['nullable', 'string', 'max:180'],
             'lessons.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:2000000000'],
             'lessons.*.is_preview' => ['nullable', 'in:0,1'],
             'lessons.*.delete' => ['nullable', 'in:0,1'],
+            'lessons.*.remove_media' => ['nullable', 'in:0,1'],
             'lessons.*.video_url' => ['nullable', 'string', 'max:2048', 'url'],
             'lessons.*.file' => ['nullable', 'file', 'max:1048576'],
         ]);
@@ -264,6 +268,7 @@ class CourseController extends Controller
             'discount_value' => ($validated['discount_value'] ?? null) !== null && (string) $validated['discount_value'] !== '' ? (int) $validated['discount_value'] : null,
             'published_at' => $status === 'published' ? $publishedAt : null,
             'thumbnail_media_id' => $thumbnailMedia?->id,
+            'remove_cover_image' => $request->boolean('remove_cover_image'),
             'institution_category_id' => (int) $validated['institution_category_id'],
             'category_id' => (int) $validated['category_id'],
         ];
@@ -321,6 +326,7 @@ class CourseController extends Controller
             $sortOrder = (int) ($lessonRow['sort_order'] ?? 0);
             $isPreview = (string) ($lessonRow['is_preview'] ?? '0') === '1';
             $delete = (string) ($lessonRow['delete'] ?? '0') === '1';
+            $removeMedia = (string) ($lessonRow['remove_media'] ?? '0') === '1';
             $videoUrl = trim((string) ($lessonRow['video_url'] ?? ''));
             $videoUrl = $videoUrl !== '' ? $videoUrl : null;
 
@@ -359,22 +365,36 @@ class CourseController extends Controller
                     'is_preview' => $isPreview,
                 ];
 
+                $finalMediaId = $removeMedia ? null : ((int) ($lesson->media_id ?? 0) ?: null);
+                $finalVideoUrl = array_key_exists('video_url', $lessonRow)
+                    ? $videoUrl
+                    : (trim((string) ($lesson->video_url ?? '')) !== '' ? trim((string) $lesson->video_url) : null);
+                $finalDurationSeconds = $finalMediaId !== null ? (int) ($lesson->duration_seconds ?? 0) : null;
+
                 if ($uploadedFile) {
                     $media = $this->storeUploadedMedia($uploadedFile, 'local', 'protected/course-lessons');
                     if ($media) {
-                        $payload['media_id'] = $media->id;
-                        $payload['video_url'] = null;
-                        $payload['lesson_type'] = 'video';
-                        $payload['duration_seconds'] = $this->extractVideoDurationSecondsOrFail($media);
+                        $finalMediaId = $media->id;
+                        $finalVideoUrl = null;
+                        $finalDurationSeconds = $this->extractVideoDurationSecondsOrFail($media);
                     }
-                } elseif (array_key_exists('video_url', $lessonRow)) {
-                    $payload['video_url'] = $videoUrl;
-                    if ($videoUrl !== null) {
-                        $payload['media_id'] = null;
-                        $payload['duration_seconds'] = null;
-                        $payload['lesson_type'] = 'video';
-                    }
+                } elseif ($finalVideoUrl !== null) {
+                    $finalMediaId = null;
+                    $finalDurationSeconds = null;
                 }
+
+                $hasMediaSource = $finalMediaId !== null;
+                $hasUrlSource = $finalVideoUrl !== null;
+                if (($hasMediaSource && $hasUrlSource) || (! $hasMediaSource && ! $hasUrlSource)) {
+                    throw ValidationException::withMessages([
+                        "lessons.$key.video_url" => ['Ø¨Ø±Ø§ÛŒ Ù‡Ø± Ø¯Ø±Ø³ Ø¨Ø§ÛŒØ¯ Ø¯Ù‚ÛŒÙ‚Ø§Ù‹ ÛŒÚ©ÛŒ Ø§Ø² Ù„ÛŒÙ†Ú© ÙˆÛŒØ¯ÛŒÙˆ ÛŒØ§ ÙØ§ÛŒÙ„ ÙˆÛŒØ¯ÛŒÙˆ ØªØ¹ÛŒÛŒÙ† Ø´ÙˆØ¯.'],
+                    ]);
+                }
+
+                $payload['media_id'] = $finalMediaId;
+                $payload['video_url'] = $finalVideoUrl;
+                $payload['lesson_type'] = 'video';
+                $payload['duration_seconds'] = $hasMediaSource ? $finalDurationSeconds : null;
 
                 $lesson->forceFill($payload)->save();
 
@@ -385,8 +405,21 @@ class CourseController extends Controller
                 continue;
             }
 
-            if (! $uploadedFile && $videoUrl === null) {
+            $hasAnyInput = $title !== '' || $uploadedFile !== null || $videoUrl !== null;
+            if (! $hasAnyInput) {
                 continue;
+            }
+
+            if ($uploadedFile && $videoUrl !== null) {
+                throw ValidationException::withMessages([
+                    "lessons.$key.video_url" => ['ÙÙ‚Ø· ÛŒÚ©ÛŒ Ø§Ø² ÙØ§ÛŒÙ„ ÛŒØ§ Ù„ÛŒÙ†Ú© Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù†ÛŒØ¯.'],
+                ]);
+            }
+
+            if (! $uploadedFile && $videoUrl === null) {
+                throw ValidationException::withMessages([
+                    "lessons.$key.video_url" => ['Ø¨Ø§ÛŒØ¯ Ø¨Ø±Ø§ÛŒ Ø¯Ø±Ø³ Ø¬Ø¯ÛŒØ¯ ÛŒØ§ Ù„ÛŒÙ†Ú© ÙˆÛŒØ¯ÛŒÙˆ ÙˆØ§Ø±Ø¯ Ú©Ù†ÛŒØ¯ ÛŒØ§ ÙØ§ÛŒÙ„ Ø¢Ù¾Ù„ÙˆØ¯ Ú©Ù†ÛŒØ¯.'],
+                ]);
             }
 
             if ($title === '') {

@@ -67,6 +67,63 @@ class AdminCrudSmokeTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_scoped_admin_only_sees_and_can_open_scoped_user_orders(): void
+    {
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
+
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
+
+        $orderA = Order::query()->create([
+            'order_number' => 'ORD-SCOPE-A',
+            'user_id' => $userA->id,
+            'status' => 'paid',
+            'currency' => 'IRR',
+            'subtotal_amount' => 1000,
+            'discount_amount' => 0,
+            'total_amount' => 1000,
+            'payable_amount' => 1000,
+            'placed_at' => now(),
+            'paid_at' => now(),
+            'cancelled_at' => null,
+            'meta' => [],
+        ]);
+
+        $orderB = Order::query()->create([
+            'order_number' => 'ORD-SCOPE-B',
+            'user_id' => $userB->id,
+            'status' => 'paid',
+            'currency' => 'IRR',
+            'subtotal_amount' => 2000,
+            'discount_amount' => 0,
+            'total_amount' => 2000,
+            'payable_amount' => 2000,
+            'placed_at' => now(),
+            'paid_at' => now(),
+            'cancelled_at' => null,
+            'meta' => [],
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['admin_scoped_user_id' => $userA->id])
+            ->get(route('admin.orders.index'))
+            ->assertOk()
+            ->assertSee('ORD-SCOPE-A')
+            ->assertDontSee('ORD-SCOPE-B');
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['admin_scoped_user_id' => $userA->id])
+            ->get(route('admin.orders.show', $orderA->id))
+            ->assertOk()
+            ->assertSee('ORD-SCOPE-A');
+
+        $this->actingAs($admin, 'admin')
+            ->withSession(['admin_scoped_user_id' => $userA->id])
+            ->get(route('admin.orders.show', $orderB->id))
+            ->assertNotFound();
+    }
+
     public function test_admin_can_grant_and_revoke_product_access_for_user(): void
     {
         $admin = User::factory()->create();
@@ -328,6 +385,7 @@ class AdminCrudSmokeTest extends TestCase
             'base_price' => 1000,
             'sale_price' => null,
             'published_at' => null,
+            'video_url' => 'https://example.com/video-1.mp4',
         ]);
 
         $videoProductId = (int) Product::query()->where('slug', 'video-1')->value('id');
@@ -632,11 +690,15 @@ class AdminCrudSmokeTest extends TestCase
 
     public function test_admin_can_create_and_update_category_without_slug(): void
     {
+        $this->seed(\Database\Seeders\CategoryTypeSeeder::class);
+
+        $noteTypeId = (int) \App\Models\CategoryType::query()->where('key', 'note')->value('id');
+
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
         $response = $this->actingAs($admin, 'admin')->post(route('admin.categories.store'), [
-            'type' => 'note',
+            'category_type_id' => $noteTypeId,
             'parent_id' => null,
             'title' => 'Math 1',
             'icon_key' => 'math',
@@ -652,7 +714,7 @@ class AdminCrudSmokeTest extends TestCase
         $this->assertSame('math-1', $category->slug);
 
         $this->actingAs($admin, 'admin')->put(route('admin.categories.update', $categoryId), [
-            'type' => 'note',
+            'category_type_id' => $noteTypeId,
             'parent_id' => null,
             'title' => 'Math 1 Updated',
             'icon_key' => 'math',
@@ -669,13 +731,16 @@ class AdminCrudSmokeTest extends TestCase
     {
         \Illuminate\Support\Facades\Storage::fake('public');
 
+        $this->seed(\Database\Seeders\CategoryTypeSeeder::class);
+        $noteTypeId = (int) \App\Models\CategoryType::query()->where('key', 'note')->value('id');
+
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
         $file = \Illuminate\Http\UploadedFile::fake()->image('cover.jpg', 200, 120);
 
         $response = $this->actingAs($admin, 'admin')->post(route('admin.categories.store'), [
-            'type' => 'note',
+            'category_type_id' => $noteTypeId,
             'parent_id' => null,
             'title' => 'Cover Category',
             'icon_key' => 'math',
@@ -698,6 +763,8 @@ class AdminCrudSmokeTest extends TestCase
 
     public function test_admin_categories_index_groups_by_type_and_shows_hierarchy(): void
     {
+        $this->seed(\Database\Seeders\CategoryTypeSeeder::class);
+
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
@@ -738,18 +805,22 @@ class AdminCrudSmokeTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('نوع: جزوه')
-            ->assertSee('نوع: دانشگاه')
+            ->assertSee('نوع: Booklet')
+            ->assertSee('نوع: University')
             ->assertSeeInOrder(['Root', 'Child']);
     }
 
     public function test_admin_categories_disallow_duplicate_titles_per_type_and_block_delete_when_has_products(): void
     {
+        $this->seed(\Database\Seeders\CategoryTypeSeeder::class);
+        $noteTypeId = (int) \App\Models\CategoryType::query()->where('key', 'note')->value('id');
+        $videoTypeId = (int) \App\Models\CategoryType::query()->where('key', 'video')->value('id');
+
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
         $this->actingAs($admin, 'admin')->post(route('admin.categories.store'), [
-            'type' => 'note',
+            'category_type_id' => $noteTypeId,
             'parent_id' => null,
             'title' => 'Math',
             'description' => '',
@@ -758,7 +829,7 @@ class AdminCrudSmokeTest extends TestCase
         ])->assertRedirect();
 
         $this->actingAs($admin, 'admin')->post(route('admin.categories.store'), [
-            'type' => 'note',
+            'category_type_id' => $noteTypeId,
             'parent_id' => null,
             'title' => 'Math',
             'description' => '',
@@ -767,7 +838,7 @@ class AdminCrudSmokeTest extends TestCase
         ])->assertSessionHasErrors('title');
 
         $this->actingAs($admin, 'admin')->post(route('admin.categories.store'), [
-            'type' => 'video',
+            'category_type_id' => $videoTypeId,
             'parent_id' => null,
             'title' => 'Math',
             'description' => '',
@@ -823,6 +894,8 @@ class AdminCrudSmokeTest extends TestCase
 
     public function test_admin_categories_index_orders_types_as_requested(): void
     {
+        $this->seed(\Database\Seeders\CategoryTypeSeeder::class);
+
         $admin = User::factory()->create();
         $admin->roles()->attach(Role::create(['name' => 'admin'])->id);
 
@@ -849,10 +922,10 @@ class AdminCrudSmokeTest extends TestCase
         ]);
 
         Category::query()->create([
-            'type' => 'course',
+            'type' => 'institution',
             'parent_id' => null,
-            'title' => 'Course Cat',
-            'slug' => 'course-cat',
+            'title' => 'University Cat',
+            'slug' => 'university-cat',
             'icon_key' => null,
             'description' => null,
             'is_active' => true,
@@ -884,7 +957,7 @@ class AdminCrudSmokeTest extends TestCase
         $this->actingAs($admin, 'admin')
             ->get(route('admin.categories.index'))
             ->assertOk()
-            ->assertSeeInOrder(['نوع: ویدیو', 'نوع: جزوه', 'نوع: دوره', 'نوع: مقاله', 'نوع: تیکت']);
+            ->assertSeeInOrder(['نوع: University', 'نوع: Course & Video', 'نوع: Booklet', 'نوع: Article', 'نوع: Ticket']);
     }
 
     public function test_admin_categories_ticket_type_has_no_related_count_column(): void

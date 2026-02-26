@@ -179,6 +179,7 @@ Route::prefix('panel')
         Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
         Route::get('/library/{product:slug}', [LibraryController::class, 'show'])->name('library.show');
         Route::get('/library/{product:slug}/stream', [LibraryController::class, 'streamVideo'])->name('library.video.stream');
+        Route::get('/library/{product:slug}/booklet/stream', [LibraryController::class, 'streamBooklet'])->name('library.booklet.stream');
         Route::get('/library/{product:slug}/parts/{part}/stream', [LibraryController::class, 'streamPart'])->name('library.parts.stream');
         Route::get('/library/{product:slug}/lessons/{lesson}/stream', [LibraryController::class, 'streamLesson'])->name('library.lessons.stream');
         Route::resource('orders', OrderController::class)->only(['index', 'show']);

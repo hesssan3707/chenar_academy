@@ -25,6 +25,7 @@ window.initApp = function() {
     initAjaxAuthForms();
     initAdminMobileSidebarUi();
     initAdminUploadUi();
+    initAdminVideoSourceUi();
     initAdminCourseLessonUi();
     initAdminConfirmModalUi();
     initAdminCategoryFormUi();
@@ -1328,6 +1329,74 @@ function initAdminUploadUi() {
     });
 }
 
+function initAdminVideoSourceUi() {
+    if (!isAdminTheme()) {
+        return;
+    }
+
+    const form = document.querySelector('form[data-video-source-form="1"]');
+    if (!(form instanceof HTMLFormElement)) {
+        return;
+    }
+
+    if (form.dataset.videoSourceBound === '1') {
+        return;
+    }
+    form.dataset.videoSourceBound = '1';
+
+    const urlInput = form.querySelector('input[name="video_url"]');
+    const fileInput = form.querySelector('input[name="video_file"]');
+    const removeFileInput = form.querySelector('input[name="remove_video_file"][type="checkbox"]');
+    if (!(urlInput instanceof HTMLInputElement) || !(fileInput instanceof HTMLInputElement)) {
+        return;
+    }
+
+    const existingMedia = String(form.dataset.existingVideoMedia || '') === '1';
+    const existingUrl = String(form.dataset.existingVideoUrl || '') === '1';
+
+    const clearValidity = () => {
+        urlInput.setCustomValidity('');
+        fileInput.setCustomValidity('');
+    };
+
+    form.addEventListener('submit', (event) => {
+        clearValidity();
+
+        const hasUrlInput = String(urlInput.value || '').trim() !== '';
+        const hasNewFile = !!(fileInput.files && fileInput.files.length > 0);
+        const removeExistingFile = !!(removeFileInput instanceof HTMLInputElement && removeFileInput.checked);
+        const hasUrlSource = hasUrlInput || (!hasNewFile && !hasUrlInput && existingUrl);
+
+        const hasFileSource = hasNewFile || (existingMedia && !removeExistingFile && !hasUrlSource);
+        const hasBoth = hasUrlSource && hasFileSource;
+        const hasAny = hasUrlSource || hasFileSource;
+
+        if (!hasBoth && hasAny) {
+            return;
+        }
+
+        const message = hasBoth
+            ? 'Only one source is allowed: either video URL or video file.'
+            : 'Provide exactly one source: video URL or video file.';
+
+        event.preventDefault();
+        urlInput.setCustomValidity(message);
+        fileInput.setCustomValidity(message);
+        urlInput.reportValidity();
+        showUploadUiMessage({
+            type: 'danger',
+            title: 'Validation',
+            message,
+        });
+    });
+
+    urlInput.addEventListener('input', clearValidity);
+    fileInput.addEventListener('change', clearValidity);
+    if (removeFileInput instanceof HTMLInputElement) {
+        removeFileInput.addEventListener('change', clearValidity);
+    }
+}
+
 function ensureTinyMceLoaded({ maxAttempts = 30, intervalMs = 250 } = {}) {
     return new Promise((resolve, reject) => {
         let attempts = 0;
@@ -1689,6 +1758,84 @@ function initAdminCourseLessonUi() {
         }
 
         syncSortOrders();
+    });
+
+    courseForm.addEventListener('submit', (event) => {
+        let errorMessage = '';
+        let errorInput = null;
+
+        const setError = (message, input) => {
+            if (errorMessage !== '') {
+                return;
+            }
+            errorMessage = message;
+            if (input instanceof HTMLElement) {
+                errorInput = input;
+            }
+        };
+
+        const rows = Array.from(courseForm.querySelectorAll('tbody[data-course-lessons-list] tr'));
+        rows.forEach((row) => {
+            if (!(row instanceof HTMLTableRowElement)) {
+                return;
+            }
+
+            const deleteInput = row.querySelector('input[name*="[delete]"][type="checkbox"]');
+            if (deleteInput instanceof HTMLInputElement && deleteInput.checked) {
+                return;
+            }
+
+            const titleInput = row.querySelector('input[name*="[title]"]');
+            const urlInput = row.querySelector('input[data-lesson-video-url]');
+            const fileInput = row.querySelector('input[data-lesson-video-file]');
+            if (!(urlInput instanceof HTMLInputElement) || !(fileInput instanceof HTMLInputElement)) {
+                return;
+            }
+
+            const removeMediaInput = row.querySelector('input[name*="[remove_media]"][type="checkbox"]');
+
+            const title = titleInput instanceof HTMLInputElement ? String(titleInput.value || '').trim() : '';
+            const hasUrl = String(urlInput.value || '').trim() !== '';
+            const hasNewFile = !!(fileInput.files && fileInput.files.length > 0);
+            const hasExistingMedia = row.dataset.existingMedia === '1' && !(removeMediaInput instanceof HTMLInputElement && removeMediaInput.checked);
+            const isExistingRow = row.querySelector('input[name*="[id]"]') instanceof HTMLInputElement;
+
+            const hasFileSource = hasNewFile || (isExistingRow && hasExistingMedia && !hasUrl);
+            const hasAnySource = hasUrl || hasFileSource;
+            const hasBothSources = hasUrl && hasFileSource;
+
+            if (!isExistingRow && title === '' && !hasUrl && !hasNewFile) {
+                return;
+            }
+
+            if (hasBothSources) {
+                setError('Each lesson can have only one source: URL or file.', urlInput);
+                return;
+            }
+
+            if (!hasAnySource) {
+                setError('Each lesson must have exactly one source: URL or file.', urlInput);
+                return;
+            }
+
+            if (title === '') {
+                setError('Lesson title is required.', titleInput);
+            }
+        });
+
+        if (errorMessage === '') {
+            return;
+        }
+
+        event.preventDefault();
+        if (errorInput instanceof HTMLElement && typeof errorInput.focus === 'function') {
+            errorInput.focus();
+        }
+        showUploadUiMessage({
+            type: 'danger',
+            title: 'Validation',
+            message: errorMessage,
+        });
     });
 }
 

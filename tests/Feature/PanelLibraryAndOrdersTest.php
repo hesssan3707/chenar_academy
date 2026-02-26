@@ -371,13 +371,11 @@ class PanelLibraryAndOrdersTest extends TestCase
             'meta' => [],
         ]);
 
-        $part = ProductPart::query()->create([
+        \App\Models\Booklet::query()->create([
             'product_id' => $product->id,
-            'part_type' => 'file',
-            'title' => 'فایل جزوه',
-            'sort_order' => 0,
-            'media_id' => $media->id,
-            'content' => null,
+            'file_media_id' => $media->id,
+            'sample_pdf_media_id' => null,
+            'preview_image_media_ids' => [],
             'meta' => [],
         ]);
 
@@ -391,7 +389,7 @@ class PanelLibraryAndOrdersTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->get(route('panel.library.parts.stream', ['product' => $product->slug, 'part' => $part->id]))
+            ->get(route('panel.library.booklet.stream', ['product' => $product->slug]))
             ->assertOk();
 
         $contentDisposition = (string) $response->headers->get('Content-Disposition');

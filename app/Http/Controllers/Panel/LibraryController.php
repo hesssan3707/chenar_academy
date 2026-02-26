@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booklet;
 use App\Models\CourseLesson;
 use App\Models\Media;
 use App\Models\Product;
@@ -71,7 +72,7 @@ class LibraryController extends Controller
             if ($selectedProduct->type === 'course') {
                 $selectedProduct->load(['thumbnailMedia', 'course.sections.lessons']);
             } else {
-                $selectedProduct->load(['thumbnailMedia', 'parts', 'video.media']);
+                $selectedProduct->load(['thumbnailMedia', 'booklet', 'parts', 'video.media']);
             }
 
             $userReview = ProductReview::query()
@@ -118,6 +119,27 @@ class LibraryController extends Controller
         return call_user_func([$disk, 'response'], $media->path, null, [
             'Content-Type' => $media->mime_type ?: 'application/octet-stream',
             'Content-Disposition' => 'inline',
+            'Cache-Control' => 'private, no-store, max-age=0',
+            'Pragma' => 'no-cache',
+        ]);
+    }
+
+    public function streamBooklet(Request $request, Product $product): Response
+    {
+        abort_if(! $product->userHasAccess($request->user()), 403);
+        abort_if($product->type !== 'note', 404);
+
+        $details = Booklet::query()->where('product_id', $product->id)->first();
+        abort_if(! $details || ! $details->file_media_id, 404);
+
+        $media = Media::query()->findOrFail($details->file_media_id);
+        $disk = Storage::disk($media->disk);
+        abort_if(! $disk instanceof FilesystemAdapter, 500);
+
+        $downloadName = $media->original_name ?: null;
+
+        return call_user_func([$disk, 'download'], $media->path, $downloadName, [
+            'Content-Type' => $media->mime_type ?: 'application/octet-stream',
             'Cache-Control' => 'private, no-store, max-age=0',
             'Pragma' => 'no-cache',
         ]);

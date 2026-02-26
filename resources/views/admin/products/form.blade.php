@@ -85,11 +85,12 @@
                         <label class="field">
                             <span class="field__label">دسته‌بندی</span>
                             @php($productTypeValue = (string) ($product->type ?? ''))
-                            @php($fallbackCategoryId = $isEdit ? ($product?->categories()->whereIn('type', ['note', 'video', 'course'])->value('categories.id') ?? '') : '')
-                            @php($currentCategoryId = $isEdit && in_array($productTypeValue, ['note', 'video', 'course'], true) ? ($product?->categories()->where('type', $productTypeValue)->value('categories.id') ?? $fallbackCategoryId) : $fallbackCategoryId)
+                            @php($categoryTypeValue = $productTypeValue === 'course' ? 'video' : $productTypeValue)
+                            @php($fallbackCategoryId = $isEdit ? ($product?->categories()->whereHas('categoryType', fn ($q) => $q->whereIn('key', ['note', 'video']))->value('categories.id') ?? '') : '')
+                            @php($currentCategoryId = $isEdit && in_array($categoryTypeValue, ['note', 'video'], true) ? ($product?->categories()->whereHas('categoryType', fn ($q) => $q->where('key', $categoryTypeValue))->value('categories.id') ?? $fallbackCategoryId) : $fallbackCategoryId)
                             @php($categoryValue = $useOld ? (string) old('category_id', '') : (string) ($currentCategoryId ?? ''))
                             @php($currentCategoryTitle = $isEdit ? trim((string) ($categories->firstWhere('id', (int) ($currentCategoryId ?? 0))?->title ?? '')) : '')
-                            @php($typeLabels = ['note' => 'جزوه', 'video' => 'ویدیو', 'course' => 'دوره'])
+                            @php($typeLabels = ['note' => 'جزوه', 'video' => 'ویدیو'])
                             <select name="category_id" required data-initial-value="{{ $categoryValue }}" autocomplete="off">
                                 <option value="" @selected($categoryValue === '')>—</option>
                                 @foreach ($categories as $category)

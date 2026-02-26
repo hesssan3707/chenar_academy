@@ -13,6 +13,7 @@ use App\Models\Setting;
 use App\Models\SocialLink;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -34,6 +35,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+
+        if (! app()->runningInConsole()) {
+            $request = request();
+            if ($request->is('admin') || $request->is('admin/*')) {
+                Paginator::defaultView('admin.partials.pagination');
+            }
+        }
 
         View::composer('*', function ($view): void {
             static $commercePayload = null;

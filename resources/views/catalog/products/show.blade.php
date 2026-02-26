@@ -13,9 +13,8 @@
     @php($durationMinutes = $durationSeconds > 0 ? (int) floor($durationSeconds / 60) : 0)
     @php($durationRemainderSeconds = $durationSeconds > 0 ? $durationSeconds % 60 : 0)
     @php($hasFullVideo = ($product->type ?? null) === 'video' && (int) ($product->video?->media_id ?? 0) > 0)
-    @php($hasBookletFile = ($product->type ?? null) === 'note' && ($product->parts ?? collect())->contains(fn ($part) => (string) ($part->part_type ?? '') === 'file' && (int) ($part->media_id ?? 0) > 0))
-    @php($bookletFilePart = ($product->type ?? null) === 'note' ? ($product->parts ?? collect())->first(fn ($part) => (string) ($part->part_type ?? '') === 'file' && (int) ($part->media_id ?? 0) > 0) : null)
-    @php($bookletFileStreamUrl = $bookletFilePart && ($isPurchased ?? false) && auth()->check() ? route('panel.library.parts.stream', ['product' => $product->slug, 'part' => $bookletFilePart->id]) : null)
+    @php($hasBookletFile = ($product->type ?? null) === 'note' && (int) ($product->booklet?->file_media_id ?? 0) > 0)
+    @php($bookletFileStreamUrl = $hasBookletFile && ($isPurchased ?? false) && auth()->check() ? route('panel.library.booklet.stream', ['product' => $product->slug]) : null)
     @php($productTypeLabel = ($product->type ?? null) === 'video' ? 'ویدیو آموزشی' : (($product->type ?? null) === 'course' ? 'دوره آموزشی' : 'جزوه آموزشی'))
     @php($listingType = ($product->type ?? null) === 'note' ? 'note' : 'video')
     @php($backCategory = ($product->categories ?? collect())->firstWhere('type', (string) ($product->type ?? '')) ?: ($product->categories ?? collect())->first())
@@ -236,7 +235,7 @@
                                 </div>
 
                                 @php($previewImages = $previewImages ?? collect())
-                                @php($samplePdfUrl = (($product->previewPdfMedia?->disk ?? null) === 'public' && ($product->previewPdfMedia?->id ?? null)) ? route('media.stream', $product->previewPdfMedia->id) : null)
+                                @php($samplePdfUrl = (int) ($product->booklet?->sample_pdf_media_id ?? 0) > 0 ? route('media.stream', (int) $product->booklet->sample_pdf_media_id) : null)
                                 @if ($previewImages->isNotEmpty() || $samplePdfUrl)
                                     <div class="detail-section">
                                         <div class="detail-section__head">

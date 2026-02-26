@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\CategoryType;
 use App\Models\Media;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -18,15 +20,18 @@ class CategoryController extends Controller
     public function index(): View
     {
         $categories = Category::query()
-            ->orderByRaw("case type when 'video' then 1 when 'note' then 2 when 'course' then 3 when 'post' then 4 when 'ticket' then 5 else 99 end")
-            ->orderBy('sort_order')
-            ->orderBy('title')
-            ->orderBy('id')
+            ->select('categories.*')
+            ->join('category_types', 'category_types.id', '=', 'categories.category_type_id')
+            ->with('categoryType')
+            ->orderByRaw("case category_types.key when 'institution' then 1 when 'video' then 2 when 'note' then 3 when 'post' then 4 when 'ticket' then 5 else 99 end")
+            ->orderBy('categories.sort_order')
+            ->orderBy('categories.title')
+            ->orderBy('categories.id')
             ->get();
 
         $categoryGroups = [];
 
-        foreach ($categories->groupBy('type') as $type => $typeCategories) {
+        foreach ($categories->groupBy(fn (Category $category) => (string) ($category->categoryType?->key ?? '')) as $type => $typeCategories) {
             $type = (string) $type;
             $childrenByParent = [];
             foreach ($typeCategories as $category) {
@@ -62,10 +67,10 @@ class CategoryController extends Controller
                 $childrenIdsByParent[$parentId][] = (int) $category->id;
             }
 
-            if (in_array($type, ['note', 'video', 'course', 'post'], true)) {
+            if (in_array($type, ['note', 'video', 'post'], true)) {
                 $directIds = [];
 
-                if (in_array($type, ['note', 'video', 'course'], true)) {
+                if (in_array($type, ['note', 'video'], true)) {
                     $rows = DB::table('product_categories')
                         ->select(['category_id', 'product_id'])
                         ->whereIn('category_id', $categoryIds)
@@ -152,14 +157,13 @@ class CategoryController extends Controller
         return view('admin.categories.index', [
             'title' => 'دسته‌بندی‌ها',
             'categoryGroups' => $categoryGroups,
+            'typeTitles' => $this->categoryTypeTitles(),
         ]);
     }
 
     public function create(): View
     {
-        $defaultTypes = ['video', 'note', 'post', 'ticket', 'institution'];
-        $existingTypes = Category::query()->select('type')->distinct()->orderBy('type')->pluck('type')->all();
-        $types = array_values(array_unique(array_merge($defaultTypes, $existingTypes)));
+        $categoryTypes = $this->categoryTypes();
 
         return view('admin.categories.form', [
             'title' => 'ایجاد دسته‌بندی',
@@ -167,8 +171,9 @@ class CategoryController extends Controller
                 'is_active' => true,
                 'sort_order' => 0,
             ]),
-            'types' => $types,
-            'parents' => Category::query()->orderBy('type')->orderBy('title')->orderBy('id')->get(),
+            'categoryTypes' => $categoryTypes,
+            'typeTitles' => $this->categoryTypeTitles(),
+            'parents' => Category::query()->with('categoryType')->orderBy('category_type_id')->orderBy('title')->orderBy('id')->get(),
         ]);
     }
 
@@ -190,13 +195,11 @@ class CategoryController extends Controller
     {
         $categoryModel = Category::query()->with('coverMedia')->findOrFail($category);
 
-        $defaultTypes = ['video', 'note', 'post', 'ticket', 'institution'];
-        $existingTypes = Category::query()->select('type')->distinct()->orderBy('type')->pluck('type')->all();
-        $types = array_values(array_unique(array_merge($defaultTypes, $existingTypes)));
+        $categoryTypes = $this->categoryTypes();
 
         $type = (string) ($categoryModel->type ?? '');
-        if (in_array($type, ['note', 'video', 'course'], true)) {
-            $descendantIds = $this->descendantCategoryIds($categoryModel->id, $type);
+        if (in_array($type, ['note', 'video'], true)) {
+            $descendantIds = $this->descendantCategoryIds($categoryModel->id, (int) ($categoryModel->category_type_id ?? 0));
             $hasProducts = DB::table('product_categories')->whereIn('category_id', $descendantIds)->exists();
             $categoryModel->setAttribute('related_count', $hasProducts ? 1 : 0);
         }
@@ -204,10 +207,12 @@ class CategoryController extends Controller
         return view('admin.categories.form', [
             'title' => 'ویرایش دسته‌بندی',
             'category' => $categoryModel,
-            'types' => $types,
+            'categoryTypes' => $categoryTypes,
+            'typeTitles' => $this->categoryTypeTitles(),
             'parents' => Category::query()
                 ->where('id', '!=', $categoryModel->id)
-                ->orderBy('type')
+                ->with('categoryType')
+                ->orderBy('category_type_id')
                 ->orderBy('title')
                 ->orderBy('id')
                 ->get(),
@@ -221,12 +226,12 @@ class CategoryController extends Controller
         $validated = $this->validatePayload($request, $categoryModel);
 
         $categoryModel->forceFill([
-            'type' => $validated['type'],
+            'category_type_id' => $validated['category_type_id'],
             'parent_id' => $validated['parent_id'],
             'title' => $validated['title'],
             'icon_key' => $validated['icon_key'],
             'description' => $validated['description'],
-            'cover_media_id' => $validated['cover_media_id'],
+            'cover_media_id' => $validated['remove_cover_image'] ? null : $validated['cover_media_id'],
             'is_active' => $validated['is_active'],
             'sort_order' => $validated['sort_order'],
         ])->save();
@@ -238,8 +243,8 @@ class CategoryController extends Controller
     {
         $categoryModel = Category::query()->findOrFail($category);
         $type = (string) ($categoryModel->type ?? '');
-        if (in_array($type, ['note', 'video', 'course'], true)) {
-            $descendantIds = $this->descendantCategoryIds($categoryModel->id, $type);
+        if (in_array($type, ['note', 'video'], true)) {
+            $descendantIds = $this->descendantCategoryIds($categoryModel->id, (int) ($categoryModel->category_type_id ?? 0));
             if (DB::table('product_categories')->whereIn('category_id', $descendantIds)->exists()) {
                 return redirect()
                     ->route('admin.categories.edit', $categoryModel->id)
@@ -251,11 +256,15 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.index');
     }
 
-    private function descendantCategoryIds(int $rootCategoryId, string $type): array
+    private function descendantCategoryIds(int $rootCategoryId, int $categoryTypeId): array
     {
+        if ($rootCategoryId <= 0 || $categoryTypeId <= 0) {
+            return [];
+        }
+
         $categories = Category::query()
             ->select(['id', 'parent_id'])
-            ->where('type', $type)
+            ->where('category_type_id', $categoryTypeId)
             ->get();
 
         $childrenByParent = [];
@@ -287,15 +296,15 @@ class CategoryController extends Controller
 
     private function validatePayload(Request $request, ?Category $category = null): array
     {
-        $type = trim((string) $request->input('type', ''));
-        $uniqueTitleRule = Rule::unique('categories', 'title')->where('type', $type);
+        $categoryTypeId = (int) $request->input('category_type_id', 0);
+        $uniqueTitleRule = Rule::unique('categories', 'title')->where('category_type_id', $categoryTypeId);
         if ($category?->id) {
             $uniqueTitleRule->ignore($category->id);
         }
 
         $validated = $request->validate([
-            'type' => ['required', 'string', 'max:20'],
-            'parent_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', $type)],
+            'category_type_id' => ['required', 'integer', 'min:1', Rule::exists('category_types', 'id')],
+            'parent_id' => ['nullable', 'integer', 'min:1', Rule::exists('categories', 'id')->where('category_type_id', $categoryTypeId)],
             'title' => [
                 'required',
                 'string',
@@ -304,6 +313,7 @@ class CategoryController extends Controller
             ],
             'description' => ['nullable', 'string'],
             'cover_image' => ['nullable', 'file', 'image', 'max:5120'],
+            'remove_cover_image' => ['nullable', 'in:0,1'],
             'is_active' => ['nullable'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
         ], [
@@ -315,29 +325,48 @@ class CategoryController extends Controller
         if ($baseSlug === '') {
             $baseSlug = 'category-'.now()->format('YmdHis');
         }
-        $slug = $category?->slug ?: $this->uniqueCategorySlug($type, $baseSlug);
+        $slug = $category?->slug ?: $this->uniqueCategorySlug($categoryTypeId, $baseSlug);
 
         $coverMedia = $this->storeUploadedMedia($request->file('cover_image'), 'public', 'uploads/category-covers');
 
         return [
-            'type' => (string) $validated['type'],
+            'category_type_id' => (int) $validated['category_type_id'],
             'parent_id' => ($validated['parent_id'] ?? null) !== null ? (int) $validated['parent_id'] : null,
             'title' => trim((string) $validated['title']),
             'slug' => $slug,
             'icon_key' => $category?->icon_key,
             'description' => isset($validated['description']) && $validated['description'] !== '' ? (string) $validated['description'] : null,
             'cover_media_id' => $coverMedia?->id ?? (int) ($category?->cover_media_id ?? 0) ?: null,
+            'remove_cover_image' => $request->boolean('remove_cover_image'),
             'is_active' => $request->boolean('is_active'),
             'sort_order' => ($validated['sort_order'] ?? null) !== null ? (int) $validated['sort_order'] : 0,
         ];
     }
 
-    private function uniqueCategorySlug(string $type, string $baseSlug): string
+    private function categoryTypes()
+    {
+        if (! Schema::hasTable('category_types')) {
+            return collect();
+        }
+
+        return CategoryType::query()->orderBy('id')->get(['id', 'key', 'title']);
+    }
+
+    private function categoryTypeTitles(): array
+    {
+        if (! Schema::hasTable('category_types')) {
+            return [];
+        }
+
+        return CategoryType::query()->pluck('title', 'key')->all();
+    }
+
+    private function uniqueCategorySlug(int $categoryTypeId, string $baseSlug): string
     {
         $slug = $baseSlug;
         $suffix = 2;
 
-        while (Category::query()->where('type', $type)->where('slug', $slug)->exists()) {
+        while (Category::query()->where('category_type_id', $categoryTypeId)->where('slug', $slug)->exists()) {
             $slug = $baseSlug.'-'.$suffix;
             $suffix++;
         }

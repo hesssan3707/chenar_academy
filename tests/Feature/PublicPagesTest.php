@@ -133,8 +133,6 @@ class PublicPagesTest extends TestCase
             'excerpt' => 'خلاصه جزوه',
             'description' => "پاراگراف اول\n\nپاراگراف دوم",
             'thumbnail_media_id' => null,
-            'preview_pdf_media_id' => $samplePdf->id,
-            'preview_image_media_ids' => [$previewImage->id],
             'status' => 'published',
             'base_price' => 100000,
             'sale_price' => null,
@@ -142,6 +140,14 @@ class PublicPagesTest extends TestCase
             'discount_value' => null,
             'currency' => 'IRR',
             'published_at' => now(),
+            'meta' => [],
+        ]);
+
+        \App\Models\Booklet::query()->create([
+            'product_id' => $note->id,
+            'file_media_id' => null,
+            'sample_pdf_media_id' => $samplePdf->id,
+            'preview_image_media_ids' => [$previewImage->id],
             'meta' => [],
         ]);
 

@@ -73,9 +73,13 @@ class AdminBookletUploadsTest extends TestCase
             'category_id' => (int) $category->id,
         ]);
 
-        $this->assertDatabaseMissing('product_parts', [
+        $this->assertDatabaseHas('booklets', [
             'product_id' => $productId,
-            'part_type' => 'file',
+        ]);
+
+        $this->assertDatabaseHas('booklets', [
+            'product_id' => $productId,
+            'file_media_id' => null,
         ]);
     }
 
@@ -176,20 +180,19 @@ class AdminBookletUploadsTest extends TestCase
         $this->assertNotNull($product->thumbnail_media_id);
         $this->assertNotSame('', (string) $product->slug);
 
-        $this->assertDatabaseHas('product_parts', [
+        $this->assertDatabaseHas('booklets', [
             'product_id' => $productId,
-            'part_type' => 'file',
         ]);
 
-        $partRow = DB::table('product_parts')->where('product_id', $productId)->where('part_type', 'file')->first();
-        $this->assertNotNull($partRow);
-        $this->assertNotNull($partRow->media_id);
+        $booklet = \App\Models\Booklet::query()->where('product_id', $productId)->first();
+        $this->assertNotNull($booklet);
+        $this->assertNotNull($booklet->file_media_id);
 
         $cover = \App\Models\Media::query()->findOrFail((int) $product->thumbnail_media_id);
         $this->assertSame('public', $cover->disk);
         $this->assertTrue(Storage::disk('public')->exists($cover->path));
 
-        $file = \App\Models\Media::query()->findOrFail((int) $partRow->media_id);
+        $file = \App\Models\Media::query()->findOrFail((int) $booklet->file_media_id);
         $this->assertSame('local', $file->disk);
         $this->assertTrue(Storage::disk('local')->exists($file->path));
     }
@@ -244,16 +247,17 @@ class AdminBookletUploadsTest extends TestCase
         $productId = (int) DB::table('products')->where('title', 'Booklet With Preview')->value('id');
         $this->assertNotSame(0, $productId);
 
-        $product = \App\Models\Product::query()->findOrFail($productId);
-        $this->assertNotNull($product->preview_pdf_media_id);
-        $this->assertIsArray($product->preview_image_media_ids);
-        $this->assertCount(2, $product->preview_image_media_ids);
+        $booklet = \App\Models\Booklet::query()->where('product_id', $productId)->first();
+        $this->assertNotNull($booklet);
+        $this->assertNotNull($booklet->sample_pdf_media_id);
+        $this->assertIsArray($booklet->preview_image_media_ids);
+        $this->assertCount(2, $booklet->preview_image_media_ids);
 
-        $sample = \App\Models\Media::query()->findOrFail((int) $product->preview_pdf_media_id);
+        $sample = \App\Models\Media::query()->findOrFail((int) $booklet->sample_pdf_media_id);
         $this->assertSame('public', $sample->disk);
         $this->assertTrue(Storage::disk('public')->exists($sample->path));
 
-        foreach ($product->preview_image_media_ids as $id) {
+        foreach ($booklet->preview_image_media_ids as $id) {
             $media = \App\Models\Media::query()->findOrFail((int) $id);
             $this->assertSame('public', $media->disk);
             $this->assertTrue(Storage::disk('public')->exists($media->path));

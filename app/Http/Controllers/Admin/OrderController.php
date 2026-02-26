@@ -23,20 +23,31 @@ use Symfony\Component\HttpFoundation\Response;
 
 class OrderController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $orders = Order::query()
+        $scopedUserId = $request->attributes->get('adminScopedUserId');
+
+        $ordersQuery = Order::query()
             ->with(['payments', 'user'])
-            ->orderByDesc('id')
-            ->paginate(40);
+            ->orderByDesc('id');
+
+        if (is_int($scopedUserId) && $scopedUserId > 0) {
+            $ordersQuery->where('user_id', $scopedUserId);
+        }
+
+        $orders = $ordersQuery->paginate(40);
 
         $activeCarts = collect();
         $activeCartUsers = collect();
         $activeCartStats = collect();
 
         if (Schema::hasTable('carts') && Schema::hasTable('cart_items')) {
-            $activeCarts = Cart::query()
-                ->where('status', 'active')
+            $activeCartsQuery = Cart::query()->where('status', 'active');
+            if (is_int($scopedUserId) && $scopedUserId > 0) {
+                $activeCartsQuery->where('user_id', $scopedUserId);
+            }
+
+            $activeCarts = $activeCartsQuery
                 ->orderByDesc('updated_at')
                 ->limit(20)
                 ->get();
@@ -94,9 +105,9 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(int $order): View
+    public function show(Request $request, int $order): View
     {
-        $orderModel = Order::query()->with(['items', 'items.product', 'payments', 'user'])->findOrFail($order);
+        $orderModel = $this->findOrderForAdmin($request, $order, ['items', 'items.product', 'payments', 'user']);
 
         $cardToCardPayment = ($orderModel->payments ?? collect())->firstWhere('gateway', 'card_to_card');
         $receiptMediaId = (int) (($cardToCardPayment?->meta ?? [])['receipt_media_id'] ?? 0);
@@ -110,9 +121,9 @@ class OrderController extends Controller
         ]);
     }
 
-    public function edit(int $order): View
+    public function edit(Request $request, int $order): View
     {
-        $orderModel = Order::query()->findOrFail($order);
+        $orderModel = $this->findOrderForAdmin($request, $order);
 
         return view('admin.orders.form', [
             'title' => 'ویرایش سفارش',
@@ -122,7 +133,7 @@ class OrderController extends Controller
 
     public function update(Request $request, int $order): RedirectResponse
     {
-        $orderModel = Order::query()->findOrFail($order);
+        $orderModel = $this->findOrderForAdmin($request, $order);
 
         $validated = $request->validate([
             'status' => ['required', 'string', Rule::in(['pending', 'pending_review', 'paid', 'rejected', 'cancelled'])],
@@ -147,9 +158,9 @@ class OrderController extends Controller
         return redirect()->route('admin.orders.edit', $orderModel->id);
     }
 
-    public function receiptCardToCard(int $order): Response
+    public function receiptCardToCard(Request $request, int $order): Response
     {
-        $orderModel = Order::query()->with('payments')->findOrFail($order);
+        $orderModel = $this->findOrderForAdmin($request, $order, ['payments']);
 
         $payment = ($orderModel->payments ?? collect())->firstWhere('gateway', 'card_to_card');
         $receiptMediaId = (int) (($payment?->meta ?? [])['receipt_media_id'] ?? 0);
@@ -170,7 +181,7 @@ class OrderController extends Controller
 
     public function approveCardToCard(Request $request, int $order): RedirectResponse
     {
-        $orderModel = Order::query()->with(['items', 'payments'])->findOrFail($order);
+        $orderModel = $this->findOrderForAdmin($request, $order, ['items', 'payments']);
 
         $payment = ($orderModel->payments ?? collect())->firstWhere('gateway', 'card_to_card');
         abort_if(! $payment, 404);
@@ -237,6 +248,23 @@ class OrderController extends Controller
             'title' => 'تایید شد',
             'message' => 'پرداخت کارت‌به‌کارت تایید شد و دسترسی کاربر فعال شد.',
         ]);
+    }
+
+    private function findOrderForAdmin(Request $request, int $order, array $with = []): Order
+    {
+        $orderQuery = Order::query();
+        if ($with !== []) {
+            $orderQuery->with($with);
+        }
+
+        $orderModel = $orderQuery->findOrFail($order);
+
+        $scopedUserId = $request->attributes->get('adminScopedUserId');
+        if (is_int($scopedUserId) && $scopedUserId > 0 && (int) $orderModel->user_id !== $scopedUserId) {
+            abort(404);
+        }
+
+        return $orderModel;
     }
 
     public function rejectCardToCard(int $order): RedirectResponse

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Category;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -58,9 +59,9 @@ class ProductionProductSeeder extends Seeder
             $subjectTitle = $this->detectSubjectTitle($title, $categoryNames);
             $categorySlug = $this->buildCategorySlug($institutionSlug, $subjectTitle);
 
-            $categoryType = $type === 'note' ? 'note' : ($type === 'course' ? 'course' : 'video');
+            $categoryType = $type === 'note' ? 'note' : 'video';
             $categoryId = (int) DB::table('categories')
-                ->where('type', $categoryType)
+                ->where('category_type_id', Category::typeId($categoryType))
                 ->where('slug', $categorySlug)
                 ->where('parent_id', $institutionCategoryId)
                 ->value('id');
@@ -117,14 +118,15 @@ class ProductionProductSeeder extends Seeder
     private function institutionIds(): array
     {
         $bySlug = DB::table('categories')
-            ->where('type', 'institution')
-            ->whereIn('slug', ['pnu', 'uni'])
+            ->where('category_type_id', Category::typeId('institution'))
+            ->whereIn('slug', ['pnu', 'state', 'iau'])
             ->pluck('id', 'slug')
             ->all();
 
         return [
             'pnu' => (int) ($bySlug['pnu'] ?? 0),
-            'uni' => (int) ($bySlug['uni'] ?? 0),
+            'state' => (int) ($bySlug['state'] ?? 0),
+            'iau' => (int) ($bySlug['iau'] ?? 0),
         ];
     }
 
@@ -153,7 +155,11 @@ class ProductionProductSeeder extends Seeder
             return 'pnu';
         }
 
-        return 'uni';
+        if (Str::contains($text, 'آزاد')) {
+            return 'iau';
+        }
+
+        return 'state';
     }
 
     private function detectSubjectTitle(string $title, string $categoryNames): string

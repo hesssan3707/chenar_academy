@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booklet;
 use App\Models\Category;
 use App\Models\Media;
 use App\Models\Product;
@@ -40,16 +41,19 @@ class BookletController extends Controller
                 'currency' => $this->commerceCurrency(),
                 'base_price' => 0,
             ]),
+            'bookletDetails' => new Booklet([
+                'meta' => [],
+            ]),
             'previewImages' => collect(),
             'institutions' => Category::query()
-                ->where('type', 'institution')
+                ->ofType('institution')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->where('type', 'note')
+                ->ofType('note')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
@@ -69,8 +73,6 @@ class BookletController extends Controller
             'excerpt' => $validated['excerpt'],
             'description' => null,
             'thumbnail_media_id' => $validated['thumbnail_media_id'],
-            'preview_pdf_media_id' => $validated['preview_pdf_media_id'],
-            'preview_image_media_ids' => $validated['preview_image_media_ids'],
             'institution_category_id' => $validated['institution_category_id'],
             'status' => $validated['status'],
             'base_price' => $validated['base_price'],
@@ -84,18 +86,13 @@ class BookletController extends Controller
 
         $booklet->categories()->sync(($validated['category_id'] ?? null) !== null ? [(int) $validated['category_id']] : []);
 
-        if (($validated['booklet_file_media_id'] ?? null) !== null) {
-            ProductPart::query()->updateOrCreate([
-                'product_id' => $booklet->id,
-                'part_type' => 'file',
-            ], [
-                'title' => 'فایل جزوه',
-                'sort_order' => 0,
-                'media_id' => $validated['booklet_file_media_id'],
-                'content' => null,
-                'meta' => [],
-            ]);
-        }
+        Booklet::query()->create([
+            'product_id' => $booklet->id,
+            'file_media_id' => $validated['file_media_id'],
+            'sample_pdf_media_id' => $validated['sample_pdf_media_id'],
+            'preview_image_media_ids' => $validated['preview_image_media_ids'],
+            'meta' => [],
+        ]);
 
         return redirect()->route('admin.booklets.edit', $booklet->id);
     }
@@ -109,11 +106,11 @@ class BookletController extends Controller
     {
         $bookletModel = Product::query()
             ->where('type', 'note')
+            ->with('booklet')
             ->findOrFail($booklet);
 
-        $bookletModel->loadMissing('previewPdfMedia');
         $previewImages = collect();
-        $previewIds = $bookletModel->preview_image_media_ids;
+        $previewIds = $bookletModel->booklet?->preview_image_media_ids;
         if (is_array($previewIds) && $previewIds !== []) {
             $ids = array_values(array_map('intval', $previewIds));
             $mediaById = Media::query()->whereIn('id', $ids)->get()->keyBy('id');
@@ -123,16 +120,20 @@ class BookletController extends Controller
         return view('admin.booklets.form', [
             'title' => 'ویرایش جزوه',
             'booklet' => $bookletModel,
+            'bookletDetails' => $bookletModel->booklet ?: new Booklet([
+                'product_id' => $bookletModel->id,
+                'meta' => [],
+            ]),
             'previewImages' => $previewImages,
             'institutions' => Category::query()
-                ->where('type', 'institution')
+                ->ofType('institution')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
                 ->orderBy('id')
                 ->get(),
             'categories' => Category::query()
-                ->where('type', 'note')
+                ->ofType('note')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('title')
@@ -159,26 +160,27 @@ class BookletController extends Controller
             'discount_value' => $validated['discount_value'],
             'currency' => $this->commerceCurrency(),
             'published_at' => $validated['published_at'],
-            'thumbnail_media_id' => $validated['thumbnail_media_id'] ?? $bookletModel->thumbnail_media_id,
-            'preview_pdf_media_id' => $validated['preview_pdf_media_id'],
-            'preview_image_media_ids' => $validated['preview_image_media_ids'],
+            'thumbnail_media_id' => $validated['remove_cover_image']
+                ? null
+                : ($validated['thumbnail_media_id'] ?? $bookletModel->thumbnail_media_id),
             'institution_category_id' => $validated['institution_category_id'],
         ])->save();
 
         $bookletModel->categories()->sync(($validated['category_id'] ?? null) !== null ? [(int) $validated['category_id']] : []);
 
-        if (($validated['booklet_file_media_id'] ?? null) !== null) {
-            ProductPart::query()->updateOrCreate([
-                'product_id' => $bookletModel->id,
-                'part_type' => 'file',
-            ], [
-                'title' => 'فایل جزوه',
-                'sort_order' => 0,
-                'media_id' => $validated['booklet_file_media_id'],
-                'content' => null,
-                'meta' => [],
-            ]);
-        }
+        $details = Booklet::query()->where('product_id', $bookletModel->id)->first() ?: new Booklet(['product_id' => $bookletModel->id]);
+        $details->forceFill([
+            'file_media_id' => $validated['remove_booklet_file']
+                ? null
+                : ($validated['file_media_id'] ?? $details->file_media_id),
+            'sample_pdf_media_id' => $validated['remove_sample_pdf']
+                ? null
+                : $validated['sample_pdf_media_id'],
+            'preview_image_media_ids' => $validated['remove_preview_images']
+                ? null
+                : $validated['preview_image_media_ids'],
+            'meta' => $details->meta ?? [],
+        ])->save();
 
         return redirect()->route('admin.booklets.edit', $bookletModel->id);
     }
@@ -213,18 +215,20 @@ class BookletController extends Controller
 
         $hasExistingBookletFile = false;
         if ($product && $product->exists) {
-            $hasExistingBookletFile = ProductPart::query()
+            $hasExistingBookletFile = Booklet::query()
                 ->where('product_id', $product->id)
-                ->where('part_type', 'file')
-                ->whereNotNull('media_id')
+                ->whereNotNull('file_media_id')
                 ->exists();
+            if ($request->boolean('remove_booklet_file')) {
+                $hasExistingBookletFile = false;
+            }
         }
 
         $rules = [
             'title' => ['required', 'string', 'max:180'],
             'excerpt' => ['nullable', 'string', 'max:500'],
-            'institution_category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'institution')],
-            'category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('type', 'note')],
+            'institution_category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('category_type_id', Category::typeId('institution'))],
+            'category_id' => ['required', 'integer', 'min:1', Rule::exists('categories', 'id')->where('category_type_id', Category::typeId('note'))],
             'status' => ['nullable', 'string', Rule::in(['draft', 'published'])],
             'base_price' => [$shouldPublish ? 'required' : 'nullable', 'integer', 'min:0', 'max:2000000000'],
             'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibits:discount_type,discount_value'],
@@ -243,6 +247,10 @@ class BookletController extends Controller
             'sample_pdf' => ['nullable', 'file', 'max:51200', 'mimes:pdf'],
             'preview_images' => ['nullable', 'array', 'max:20'],
             'preview_images.*' => ['file', 'image', 'max:5120'],
+            'remove_cover_image' => ['nullable', 'in:0,1'],
+            'remove_booklet_file' => ['nullable', 'in:0,1'],
+            'remove_sample_pdf' => ['nullable', 'in:0,1'],
+            'remove_preview_images' => ['nullable', 'in:0,1'],
             'booklet_file' => [
                 Rule::when($shouldPublish && ! $hasExistingBookletFile, ['required'], ['nullable']),
                 'file',
@@ -278,8 +286,11 @@ class BookletController extends Controller
                 }
             }
         } elseif ($product && $product->exists) {
-            $existing = $product->preview_image_media_ids;
-            $previewImageIds = is_array($existing) ? array_values(array_map('intval', $existing)) : null;
+            if (! $request->boolean('remove_preview_images')) {
+                $existing = Booklet::query()->where('product_id', $product->id)->value('preview_image_media_ids');
+                $existing = is_string($existing) ? json_decode($existing, true) : $existing;
+                $previewImageIds = is_array($existing) ? array_values(array_map('intval', $existing)) : null;
+            }
         }
 
         $publishedAt = $this->parseDateTimeOrFail('published_at', $validated['published_at'] ?? null);
@@ -298,9 +309,13 @@ class BookletController extends Controller
             'discount_value' => ($validated['discount_value'] ?? null) !== null && (string) $validated['discount_value'] !== '' ? (int) $validated['discount_value'] : null,
             'published_at' => $status === 'published' ? $publishedAt : null,
             'thumbnail_media_id' => $thumbnailMedia?->id,
-            'preview_pdf_media_id' => $samplePdfMedia?->id ?? ($product?->preview_pdf_media_id ?? null),
+            'sample_pdf_media_id' => $samplePdfMedia?->id ?? (Booklet::query()->where('product_id', $product?->id)->value('sample_pdf_media_id') ?: null),
             'preview_image_media_ids' => $previewImageIds,
-            'booklet_file_media_id' => $bookletFileMedia?->id,
+            'file_media_id' => $bookletFileMedia?->id,
+            'remove_cover_image' => $request->boolean('remove_cover_image'),
+            'remove_booklet_file' => $request->boolean('remove_booklet_file'),
+            'remove_sample_pdf' => $request->boolean('remove_sample_pdf'),
+            'remove_preview_images' => $request->boolean('remove_preview_images'),
             'institution_category_id' => (int) $validated['institution_category_id'],
             'category_id' => (int) $validated['category_id'],
         ];

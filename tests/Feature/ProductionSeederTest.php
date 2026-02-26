@@ -62,12 +62,18 @@ class ProductionSeederTest extends TestCase
         ]);
         $this->assertDatabaseHas('categories', [
             'type' => 'institution',
-            'slug' => 'uni',
+            'slug' => 'state',
+        ]);
+        $this->assertDatabaseHas('categories', [
+            'type' => 'institution',
+            'slug' => 'iau',
         ]);
         $this->assertSame(
-            2,
+            3,
             DB::table('categories')->where('type', 'institution')->count()
         );
+
+        $this->assertSame(5, DB::table('category_types')->count());
 
         $this->assertDatabaseMissing('users', [
             'phone' => '09120000000',

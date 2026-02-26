@@ -190,6 +190,18 @@ html[data-theme='admin'] .admin-categories-grid td.admin-nowrap {
     white-space: normal;
 }
 
+html[data-theme='admin'] .admin-category-box {
+    height: 400px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+html[data-theme='admin'] .admin-category-box .table-wrap {
+    flex: 1 1 auto;
+    overflow: auto;
+}
+
 @media (max-width: 980px) {
     html[data-theme='admin'] .container {
         width: calc(100% - 16px);
@@ -735,6 +747,63 @@ html[data-theme='admin'] tr.is-dragging {
     margin-top: 14px;
     display: flex;
     justify-content: center;
+}
+
+.admin-pager {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--panel);
+}
+
+.admin-pager__pages {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.admin-pager__btn,
+.admin-pager__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(11, 18, 32, 0.04);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1;
+    text-decoration: none;
+    user-select: none;
+}
+
+.admin-pager__btn:hover,
+.admin-pager__link:hover {
+    background: rgba(11, 18, 32, 0.08);
+}
+
+.admin-pager__btn.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.admin-pager__link.is-active {
+    background: rgba(124, 58, 237, 0.12);
+    border-color: rgba(124, 58, 237, 0.35);
+    font-weight: 800;
+}
+
+.admin-pager__ellipsis {
+    color: var(--muted);
+    padding: 0 4px;
 }
 
 .media-grid {

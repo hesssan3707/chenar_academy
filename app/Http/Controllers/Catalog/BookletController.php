@@ -21,7 +21,7 @@ class BookletController extends Controller
 
         // 1. Fetch Categories for Booklets
         $categories = Category::query()
-            ->where('type', $type)
+            ->ofType($type)
             ->where('is_active', true)
             ->with('coverMedia')
             ->withCount(['products' => function ($q) use ($type) {
@@ -39,7 +39,7 @@ class BookletController extends Controller
         // 2. If Category Selected, Fetch Booklets and Group by Institute
         if ($categorySlug) {
             $activeCategory = Category::query()
-                ->where('type', $type)
+                ->ofType($type)
                 ->where('slug', $categorySlug)
                 ->where('is_active', true)
                 ->firstOrFail();

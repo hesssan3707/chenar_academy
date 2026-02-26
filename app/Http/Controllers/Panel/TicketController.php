@@ -32,7 +32,7 @@ class TicketController extends Controller
     public function create(): View
     {
         $categories = Category::query()
-            ->where('type', 'ticket')
+            ->ofType('ticket')
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -52,7 +52,7 @@ class TicketController extends Controller
                 'required',
                 'string',
                 Rule::exists('categories', 'slug')
-                    ->where('type', 'ticket')
+                    ->where('category_type_id', Category::typeId('ticket'))
                     ->where('is_active', true),
             ],
             'priority' => ['required', 'string', 'in:low,normal,high'],
@@ -60,7 +60,7 @@ class TicketController extends Controller
         ]);
 
         $category = Category::query()
-            ->where('type', 'ticket')
+            ->ofType('ticket')
             ->where('slug', (string) $validated['category'])
             ->where('is_active', true)
             ->first();
