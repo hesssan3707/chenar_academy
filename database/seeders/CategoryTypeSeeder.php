@@ -12,11 +12,11 @@ class CategoryTypeSeeder extends Seeder
         CategoryType::clearTypeCache();
 
         $items = [
-            ['key' => 'institution', 'title' => 'University'],
-            ['key' => 'video', 'title' => 'Course & Video'],
-            ['key' => 'note', 'title' => 'Booklet'],
-            ['key' => 'ticket', 'title' => 'Ticket'],
-            ['key' => 'post', 'title' => 'Article'],
+            ['key' => 'institution', 'title' => 'دانشگاه'],
+            ['key' => 'video', 'title' => 'ویدیو و دوره'],
+            ['key' => 'note', 'title' => 'جزوه'],
+            ['key' => 'ticket', 'title' => 'تیکت'],
+            ['key' => 'post', 'title' => 'مقاله'],
         ];
 
         foreach ($items as $item) {

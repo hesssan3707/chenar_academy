@@ -20,8 +20,8 @@ class DiscountController extends Controller
             'currencyUnit' => $this->commerceCurrency(),
             'categories' => Category::query()
                 ->where('is_active', true)
-                ->whereNotIn('type', ['institution', 'post'])
-                ->orderBy('type')
+                ->whereNotIn('category_type_id', Category::typeIds(['institution', 'post']))
+                ->orderBy('category_type_id')
                 ->orderBy('title')
                 ->orderBy('id')
                 ->get(),

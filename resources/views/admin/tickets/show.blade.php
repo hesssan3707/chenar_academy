@@ -59,7 +59,6 @@
                 </div>
             </div>
 
-            {{-- Messenger-style Chat Container --}}
             <div class="panel" style="padding: 0; overflow: hidden;">
                 <div style="padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,0.08); font-weight: 600; font-size: 14px;">پیام‌ها</div>
                 <div class="admin-ticket-chat" id="admin-ticket-chat">
@@ -95,9 +94,8 @@
                 </div>
             </div>
 
-            {{-- Reply Form & Actions --}}
             <div class="panel">
-                <form method="post" action="{{ route('admin.tickets.update', $ticket->id) }}" class="stack stack--sm" enctype="multipart/form-data">
+                <form method="post" action="{{ route('admin.tickets.update', $ticket->id) }}" class="stack stack--sm" enctype="multipart/form-data" id="admin-ticket-reply-form">
                     @csrf
                     @method('put')
 
@@ -127,17 +125,19 @@
                             </label>
                         @endif
 
-                        <form method="post"
-                            action="{{ route('admin.tickets.destroy', $ticket->id) }}"
-                            style="display: inline;"
-                            data-confirm="1"
-                            data-confirm-title="حذف تیکت"
-                            data-confirm-message="آیا از حذف این تیکت مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
-                            @csrf
-                            @method('delete')
-                            <button class="btn btn--danger btn--sm" type="submit">حذف تیکت</button>
-                        </form>
+                        <button class="btn btn--danger btn--sm" type="submit" form="admin-ticket-delete-form">حذف تیکت</button>
                     </div>
+                </form>
+
+                <form method="post"
+                    action="{{ route('admin.tickets.destroy', $ticket->id) }}"
+                    id="admin-ticket-delete-form"
+                    style="display: none;"
+                    data-confirm="1"
+                    data-confirm-title="حذف تیکت"
+                    data-confirm-message="آیا از حذف این تیکت مطمئن هستید؟ این عملیات قابل بازگشت نیست.">
+                    @csrf
+                    @method('delete')
                 </form>
             </div>
         </div>

@@ -805,8 +805,8 @@ class AdminCrudSmokeTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('نوع: Booklet')
-            ->assertSee('نوع: University')
+            ->assertSee('نوع: جزوه')
+            ->assertSee('نوع: دانشگاه')
             ->assertSeeInOrder(['Root', 'Child']);
     }
 
@@ -957,7 +957,7 @@ class AdminCrudSmokeTest extends TestCase
         $this->actingAs($admin, 'admin')
             ->get(route('admin.categories.index'))
             ->assertOk()
-            ->assertSeeInOrder(['نوع: University', 'نوع: Course & Video', 'نوع: Booklet', 'نوع: Article', 'نوع: Ticket']);
+            ->assertSeeInOrder(['نوع: دانشگاه', 'نوع: ویدیو و دوره', 'نوع: جزوه', 'نوع: مقاله', 'نوع: تیکت']);
     }
 
     public function test_admin_categories_ticket_type_has_no_related_count_column(): void

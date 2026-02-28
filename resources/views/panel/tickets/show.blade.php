@@ -6,8 +6,8 @@
     <div class="spa-page-shell">
         <div class="user-panel-grid" data-panel-shell>
             @include('panel.partials.sidebar')
-            
-            <main class="user-content panel-main flex flex-col panel-ticket" data-panel-main>
+
+            <main class="user-content panel-main panel-ticket flex flex-col" data-panel-main>
                 <div class="cluster" style="justify-content: space-between; align-items: center;">
                     <div>
                         <h1 class="page-title">{{ $ticket->subject }}</h1>
@@ -37,7 +37,6 @@
 
                 @php($messages = $messages ?? collect())
 
-                {{-- Messenger-style Chat Container --}}
                 <div class="ticket-chat" id="ticket-chat-container">
                     <div class="ticket-chat__messages">
                         @forelse ($messages as $message)
@@ -66,10 +65,9 @@
                     </div>
                 </div>
 
-                {{-- Message Form & Actions --}}
                 @if ($ticket->status !== 'closed')
                     <div class="ticket-form" style="margin-top: 12px;">
-                        <form method="post" action="{{ route('panel.tickets.update', $ticket->id) }}" class="ticket-composer" enctype="multipart/form-data">
+                        <form method="post" action="{{ route('panel.tickets.update', $ticket->id) }}" class="ticket-composer" enctype="multipart/form-data" id="panel-ticket-reply-form">
                             @csrf
                             @method('put')
 
@@ -91,16 +89,28 @@
                             <div class="ticket-actions-row">
                                 <button class="btn btn--primary" type="submit">ارسال پیام</button>
 
-                                <button class="btn btn--ghost" type="submit" formaction="{{ route('panel.tickets.close', $ticket->id) }}" formmethod="post"
+                                <button class="btn btn--ghost" type="submit" form="panel-ticket-close-form"
                                     onclick="return confirm('آیا از بستن این تیکت مطمئن هستید؟')">بستن تیکت</button>
 
-                                <form method="post" action="{{ route('panel.tickets.destroy', $ticket->id) }}" style="display: inline;"
-                                    onsubmit="return confirm('آیا از حذف این تیکت مطمئن هستید؟ این عملیات قابل بازگشت نیست.')">
-                                    @csrf
-                                    @method('delete')
-                                    <button class="btn btn--danger btn--sm" type="submit">حذف تیکت</button>
-                                </form>
+                                <button class="btn btn--danger btn--sm" type="submit" form="panel-ticket-delete-form">حذف تیکت</button>
                             </div>
+                        </form>
+
+                        <form method="post"
+                            id="panel-ticket-delete-form"
+                            action="{{ route('panel.tickets.destroy', $ticket->id) }}"
+                            style="display: none;"
+                            onsubmit="return confirm('آیا از حذف این تیکت مطمئن هستید؟ این عملیات قابل بازگشت نیست.')">
+                            @csrf
+                            @method('delete')
+                        </form>
+
+                        <form method="post"
+                            id="panel-ticket-close-form"
+                            action="{{ route('panel.tickets.close', $ticket->id) }}"
+                            style="display: none;"
+                            onsubmit="return confirm('آیا از بستن این تیکت مطمئن هستید؟')">
+                            @csrf
                         </form>
                     </div>
                 @else

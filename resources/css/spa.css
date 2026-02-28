@@ -1427,7 +1427,8 @@ body.spa-body {
 }
 
 .user-content.panel-ticket {
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .panel-ticket .ticket-thread {
