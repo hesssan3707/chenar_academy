@@ -40,10 +40,11 @@
                                         </div>
                                     </div>
                                     <div class="text-left">
-                                        @php($currencyCode = strtoupper((string) ($order->currency ?? 'IRR')))
-                                        @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                        @php($displayCurrency = \App\Support\Currency::current())
+                                        @php($formattedAmount = \App\Support\Currency::format((int) ($order->payable_amount ?? 0), $order->currency, $displayCurrency))
+                                        @php($currencyUnit = \App\Support\Currency::label($displayCurrency))
                                         <div class="text-lg font-bold">
-                                            {{ number_format((int) $order->payable_amount) }} <span class="text-sm font-normal text-muted">{{ $currencyUnit }}</span>
+                                            {{ $formattedAmount }} <span class="text-sm font-normal text-muted">{{ $currencyUnit }}</span>
                                         </div>
                                         <div class="text-sm text-muted">{{ ($order->items ?? collect())->count() }} آیتم</div>
                                     </div>

@@ -13,6 +13,7 @@ use App\Models\Setting;
 use App\Models\SocialLink;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
+use App\Support\Currency;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
@@ -59,7 +60,7 @@ class AppServiceProvider extends ServiceProvider
 
                 $commercePayload = [
                     'commerceCurrency' => $commerceCurrency,
-                    'commerceCurrencyLabel' => $commerceCurrency === 'IRT' ? 'تومان' : 'ریال',
+                    'commerceCurrencyLabel' => Currency::label($commerceCurrency),
                 ];
             }
 

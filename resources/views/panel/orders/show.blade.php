@@ -19,8 +19,8 @@
                 <div class="stack stack--md">
                     <div class="panel p-6 bg-white/5 border border-white/10 rounded-xl">
                         <div class="stack stack--sm">
-                            @php($currencyCode = strtoupper((string) ($order->currency ?? 'IRR')))
-                            @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                            @php($displayCurrency = \App\Support\Currency::current())
+                            @php($currencyUnit = \App\Support\Currency::label($displayCurrency))
                             @php($statusLabel = match ((string) ($order->status ?? '')) {
                                 'pending_review' => 'در انتظار تایید',
                                 'rejected' => 'رد شده',
@@ -36,7 +36,7 @@
                                 <div class="stack stack--xs text-left" dir="ltr">
                                     <div class="text-muted">مبلغ قابل پرداخت</div>
                                     <div class="card__price">
-                                        <span class="price">{{ number_format((int) $order->payable_amount) }}</span>
+                                        <span class="price">{{ \App\Support\Currency::format((int) ($order->payable_amount ?? 0), $order->currency, $displayCurrency) }}</span>
                                         <span class="price__unit">{{ $currencyUnit }}</span>
                                     </div>
                                 </div>
@@ -67,7 +67,7 @@
                                         </div>
                                         <div class="stack stack--xs text-left" dir="ltr">
                                             <div class="card__price">
-                                                <span class="price">{{ number_format((int) $item->total_price) }}</span>
+                                                <span class="price">{{ \App\Support\Currency::format((int) ($item->total_price ?? 0), $item->currency ?? $order->currency, $displayCurrency) }}</span>
                                                 <span class="price__unit">{{ $currencyUnit }}</span>
                                             </div>
                                             @if ($item->product)

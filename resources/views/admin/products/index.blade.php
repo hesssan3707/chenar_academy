@@ -98,6 +98,7 @@
                                                     <button class="btn btn--ghost btn--sm" type="submit">تغییر</button>
                                                 </form>
                                             @endif
+                                            <a href="{{ route('admin.products.edit', $product->id) }}" class="btn btn--ghost btn--sm">ویرایش</a>
                                             <form method="post" action="{{ route('admin.products.destroy', $product->id) }}" class="inline-form" data-confirm="1">
                                                 @csrf
                                                 @method('delete')

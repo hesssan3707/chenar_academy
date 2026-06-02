@@ -1729,3 +1729,22 @@ body.spa-body {
     display: none;
     transform: scale(0);
 }
+
+/* Mobile-specific badge styling for card elements */
+@media (max-width: 768px) {
+    .card-product .badge,
+    [class*="card"] .badge {
+        padding: 3px 6px;
+        font-size: 10px;
+        line-height: 1.2;
+    }
+}
+
+@media (max-width: 480px) {
+    .card-product .badge,
+    [class*="card"] .badge {
+        padding: 2px 5px;
+        font-size: 9px;
+        line-height: 1.1;
+    }
+}

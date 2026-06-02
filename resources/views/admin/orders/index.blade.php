@@ -42,8 +42,8 @@
                                         @php($stats = $activeCartStats->get((int) $cart->id) ?? null)
                                         @php($itemsCount = (int) ($stats?->items_count ?? 0))
                                         @php($totalAmount = (int) ($stats?->total_amount ?? 0))
-                                        @php($currencyCode = strtoupper((string) ($cart->currency ?? 'IRR')))
-                                        @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                        @php($displayCurrency = \App\Support\Currency::current())
+                                        @php($currencyUnit = \App\Support\Currency::label($displayCurrency))
                                         <tr>
                                             <td class="admin-nowrap">
                                                 <div class="stack stack--xs">
@@ -55,7 +55,7 @@
                                             <td class="admin-nowrap" dir="ltr">{{ number_format($itemsCount) }}</td>
                                             <td class="admin-nowrap">
                                                 <span class="money">
-                                                    <span class="money__amount" dir="ltr">{{ number_format($totalAmount) }}</span>
+                                                    <span class="money__amount" dir="ltr">{{ \App\Support\Currency::format($totalAmount, $cart->currency, $displayCurrency) }}</span>
                                                     <span class="money__unit">{{ $currencyUnit }}</span>
                                                 </span>
                                             </td>
@@ -98,8 +98,8 @@
                                     'cancelled' => 'لغو شده',
                                     default => (string) ($order->status ?? '—'),
                                 })
-                                @php($currencyCode = strtoupper((string) ($order->currency ?? 'IRR')))
-                                @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                @php($displayCurrency = \App\Support\Currency::current())
+                                @php($currencyUnit = \App\Support\Currency::label($displayCurrency))
                                 @php($user = $order->user)
                                 @php($displayName = trim((string) ($user?->first_name ?? '').' '.(string) ($user?->last_name ?? '')))
                                 @php($displayName = $displayName !== '' ? $displayName : (string) ($user?->name ?? ''))
@@ -114,7 +114,7 @@
                                     <td class="admin-nowrap">{{ $statusLabel }}</td>
                                     <td class="admin-nowrap">
                                         <span class="money">
-                                            <span class="money__amount" dir="ltr">{{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }}</span>
+                                            <span class="money__amount" dir="ltr">{{ \App\Support\Currency::format((int) ($order->payable_amount ?? $order->total_amount ?? 0), $order->currency, $displayCurrency) }}</span>
                                             <span class="money__unit">{{ $currencyUnit }}</span>
                                         </span>
                                     </td>

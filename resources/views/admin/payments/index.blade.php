@@ -51,8 +51,8 @@
                                     'rejected' => 'رد شده',
                                     default => (string) ($payment->status ?? '—'),
                                 })
-                                @php($currencyCode = strtoupper((string) ($payment->currency ?? 'IRR')))
-                                @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
+                                @php($displayCurrency = \App\Support\Currency::current())
+                                @php($currencyUnit = \App\Support\Currency::label($displayCurrency))
                                 @php($user = $payment->order?->user)
                                 @php($displayName = trim((string) ($user?->first_name ?? '').' '.(string) ($user?->last_name ?? '')))
                                 @php($displayName = $displayName !== '' ? $displayName : (string) ($user?->name ?? ''))
@@ -67,7 +67,7 @@
                                     <td class="admin-nowrap">{{ $statusLabel }}</td>
                                     <td class="admin-nowrap">
                                         <span class="money">
-                                            <span class="money__amount" dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span>
+                                            <span class="money__amount" dir="ltr">{{ \App\Support\Currency::format((int) ($payment->amount ?? 0), $payment->currency, $displayCurrency) }}</span>
                                             <span class="money__unit">{{ $currencyUnit }}</span>
                                         </span>
                                     </td>

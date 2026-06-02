@@ -28,7 +28,7 @@
                     <div class="stack stack--xs">
                         <div class="card__meta">فروش کل</div>
                         <div class="admin-stat__value">{{ number_format((int) ($totalSales ?? 0)) }}</div>
-                        <div class="card__meta">ریال</div>
+                        <div class="card__meta">{{ $commerceCurrencyLabel ?? 'ریال' }}</div>
                     </div>
                 </div>
                 <div class="panel">
@@ -62,7 +62,7 @@
                             مجموع:
                             <span class="money">
                                 <span class="money__amount" dir="ltr">{{ number_format((int) $series->sum('total')) }}</span>
-                                <span class="money__unit">ریال</span>
+                                <span class="money__unit">{{ $commerceCurrencyLabel ?? 'ریال' }}</span>
                             </span>
                         </div>
                     </div>

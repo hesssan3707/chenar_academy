@@ -8,6 +8,7 @@ use App\Models\Post;
 use App\Models\Product;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Support\Currency;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -19,9 +20,18 @@ class DashboardController extends Controller
         $usersCount = User::query()->count();
         $productsCount = Product::query()->count();
         $paidOrdersCount = Order::query()->where('status', 'paid')->count();
-        $totalSales = (int) Order::query()->where('status', 'paid')->sum('payable_amount');
         $openTicketsCount = Ticket::query()->where('status', 'open')->count();
         $publishedPostsCount = Post::query()->where('status', 'published')->count();
+
+        $currency = Currency::current();
+        $paidOrders = Order::query()
+            ->where('status', 'paid')
+            ->whereNotNull('paid_at')
+            ->get(['currency', 'paid_at', 'payable_amount']);
+
+        $totalSales = $paidOrders->sum(function (Order $order) use ($currency) {
+            return Currency::convert((int) ($order->payable_amount ?? 0), $order->currency, $currency);
+        });
 
         $days = collect(range(6, 0))
             ->map(fn (int $daysAgo) => now()->subDays($daysAgo)->startOfDay());
@@ -33,11 +43,15 @@ class DashboardController extends Controller
             ->where('status', 'paid')
             ->whereNotNull('paid_at')
             ->whereBetween('paid_at', [$from, $to])
-            ->get(['paid_at', 'payable_amount']);
+            ->get(['currency', 'paid_at', 'payable_amount']);
 
         $salesByDay = $paidOrders
             ->groupBy(fn (Order $order) => $order->paid_at?->toDateString() ?? now()->toDateString())
-            ->map(fn ($orders) => (int) $orders->sum(fn (Order $order) => (int) ($order->payable_amount ?? 0)));
+            ->map(function ($orders) use ($currency) {
+                return (int) $orders->sum(function (Order $order) use ($currency) {
+                    return Currency::convert((int) ($order->payable_amount ?? 0), $order->currency, $currency);
+                });
+            });
 
         $salesSeries = $days->map(function ($day) use ($salesByDay) {
             $key = $day->toDateString();

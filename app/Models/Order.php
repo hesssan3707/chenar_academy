@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Currency;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -46,5 +47,32 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'order_id')->orderByDesc('id');
+    }
+
+    public function currencyCode(): string
+    {
+        $currency = strtoupper((string) ($this->currency ?? 'IRR'));
+
+        return in_array($currency, ['IRR', 'IRT'], true) ? $currency : 'IRR';
+    }
+
+    public function displaySubtotalAmount(?string $currency = null): int
+    {
+        return Currency::convert((int) ($this->subtotal_amount ?? 0), $this->currencyCode(), $currency);
+    }
+
+    public function displayDiscountAmount(?string $currency = null): int
+    {
+        return Currency::convert((int) ($this->discount_amount ?? 0), $this->currencyCode(), $currency);
+    }
+
+    public function displayTotalAmount(?string $currency = null): int
+    {
+        return Currency::convert((int) ($this->total_amount ?? 0), $this->currencyCode(), $currency);
+    }
+
+    public function displayPayableAmount(?string $currency = null): int
+    {
+        return Currency::convert((int) ($this->payable_amount ?? 0), $this->currencyCode(), $currency);
     }
 }

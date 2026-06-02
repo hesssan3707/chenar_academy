@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Http;
 
 class OtpController extends Controller
 {
@@ -86,16 +87,37 @@ class OtpController extends Controller
                 ? (string) random_int(10000, 99999)
                 : '11111';
 
-            OtpCode::query()->create([
-                'phone' => $phone,
-                'purpose' => $purpose,
-                'code_hash' => Hash::make($code),
-                'expires_at' => now()->addMinutes(5),
-                'consumed_at' => null,
-                'attempts' => 0,
-                'ip' => $request->ip(),
-                'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            ]);
+            $parameters = [
+            [
+                "name"=> "CODE",
+                "value"=> $code
+            ]
+            ];
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept'       => 'text/plain',
+                'x-api-key'    =>  env("SMS_IR_API_KEY"),
+                ])->post(env("SMS_IR_URL"), [
+                    'Mobile' => $normalizedPhone,
+                    'TemplateId' => env("SMS_IR_TEMPLATE_ID"),
+                    'parameters' => $parameters,
+                ]);
+            $result = json_decode($response->getBody()->getContents());
+
+            if($result->status == 1)
+            {
+                OtpCode::query()->create([
+                    'phone' => $phone,
+                    'purpose' => $purpose,
+                    'code_hash' => Hash::make($code),
+                    'expires_at' => now()->addMinutes(5),
+                    'consumed_at' => null,
+                    'attempts' => 0,
+                    'ip' => $request->ip(),
+                    'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                ]);
+            }
+            
         } catch (\Throwable $e) {
             // Log the error or rethrow it to be caught by the calling method
             throw $e;

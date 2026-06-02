@@ -11,6 +11,67 @@
         <link href="https://fonts.bunny.net/css?family=vazirmatn:400,500,600,700&display=swap" rel="stylesheet" />
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        <!-- Goftino Widget Custom Positioning CSS -->
+        <style>
+            /* Desktop positioning - higher and more to the left */
+            @media (min-width: 1025px) {
+                #goftino,
+                .goftino-widget,
+                [data-goftino],
+                iframe[src*="goftino"] {
+                    bottom: 200px !important;
+                    right: 70px !important;
+                    position: fixed !important;
+                    z-index: 9999 !important;
+                    pointer-events: auto !important;
+                }
+            }
+
+            /* Tablet positioning - adjust for tablet screens */
+            @media (min-width: 768px) and (max-width: 1024px) {
+                #goftino,
+                .goftino-widget,
+                [data-goftino],
+                iframe[src*="goftino"] {
+                    bottom: 220px !important;
+                    right: 20px !important;
+                    position: fixed !important;
+                    z-index: 9999 !important;
+                    pointer-events: auto !important;
+                }
+            }
+
+            /* Mobile positioning - adjust position only, no sizing restrictions */
+            @media (max-width: 767px) {
+                #goftino,
+                .goftino-widget,
+                [data-goftino],
+                iframe[src*="goftino"] {
+                    bottom: 220px !important;
+                    right: 15px !important;
+                    position: fixed !important;
+                    z-index: 9999 !important;
+                    pointer-events: auto !important;
+                    width: auto !important;
+                    height: auto !important;
+                    max-width: none !important;
+                    max-height: none !important;
+                    transform: none !important;
+                }
+            }
+
+            /* Small phones - extra clearance from navigation */
+            @media (max-width: 480px) {
+                #goftino,
+                .goftino-widget,
+                [data-goftino],
+                iframe[src*="goftino"] {
+                    bottom: 200px !important;
+                    right: 12px !important;
+                }
+            }
+        </style>
     </head>
     <body>
         @include('partials.header')
@@ -68,6 +129,11 @@
 
         <script type="application/json" data-flashes>
             @json(['toast' => session('toast'), 'otp_sent' => session('otp_sent')])
+        </script>
+
+        <!-- Goftino Support Widget -->
+        <script>
+            !function(){var i="gnCnLa",d=document,g=d.createElement("script"),s="https://www.goftino.com/widget/"+i,l=localStorage.getItem("goftino_"+i);g.type="text/javascript",g.async=!0,g.src=l?s+"?o="+l:s;d.getElementsByTagName("head")[0].appendChild(g);}();
         </script>
     </body>
 </html>

@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CategoryTypeSeeder::class,
             CatalogSeeder::class,
+            CsvImportSeeder::class,
         ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Support\Currency;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
@@ -146,9 +147,7 @@ class Controller extends BaseController
 
     protected function commerceCurrency(): string
     {
-        $currency = strtoupper($this->settingString('commerce.currency', 'IRR'));
-
-        return in_array($currency, ['IRR', 'IRT'], true) ? $currency : 'IRR';
+        return Currency::current();
     }
 
     protected function commerceTaxPercent(): int

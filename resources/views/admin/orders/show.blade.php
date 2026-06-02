@@ -20,6 +20,8 @@
                 <div class="panel">
                     <h2 class="section-title">اطلاعات</h2>
                     <div class="stack stack--xs">
+                        @php($displayCurrency = \App\Support\Currency::current())
+                        @php($currencyUnit = \App\Support\Currency::label($displayCurrency))
                         @php($statusLabel = match ((string) ($order->status ?? '')) {
                             'pending' => 'در انتظار پرداخت',
                             'pending_review' => 'در انتظار تایید',
@@ -28,8 +30,6 @@
                             'cancelled' => 'لغو شده',
                             default => (string) ($order->status ?? '—'),
                         })
-                        @php($currencyCode = strtoupper((string) ($order->currency ?? 'IRR')))
-                        @php($currencyUnit = $currencyCode === 'IRT' ? 'تومان' : 'ریال')
                         @php($user = $order->user)
                         @php($displayName = trim((string) ($user?->first_name ?? '').' '.(string) ($user?->last_name ?? '')))
                         @php($displayName = $displayName !== '' ? $displayName : (string) ($user?->name ?? ''))
@@ -38,7 +38,7 @@
                         <div>
                             مبلغ:
                             <span class="money">
-                                <span class="money__amount" dir="ltr">{{ number_format((int) ($order->payable_amount ?? $order->total_amount ?? 0)) }}</span>
+                                <span class="money__amount" dir="ltr">{{ \App\Support\Currency::format((int) ($order->payable_amount ?? $order->total_amount ?? 0), $order->currency, $displayCurrency) }}</span>
                                 <span class="money__unit">{{ $currencyUnit }}</span>
                             </span>
                         </div>
@@ -64,14 +64,12 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($items as $item)
-                                        @php($itemCurrencyCode = strtoupper((string) ($item->currency ?? ($order->currency ?? 'IRR'))))
-                                        @php($itemCurrencyUnit = $itemCurrencyCode === 'IRT' ? 'تومان' : 'ریال')
                                         <tr>
                                             <td>{{ $item->product?->title ?: ($item->product_title ?? '—') }}</td>
                                             <td class="admin-nowrap">
                                                 <span class="money">
-                                                    <span class="money__amount" dir="ltr">{{ number_format((int) ($item->total_price ?? 0)) }}</span>
-                                                    <span class="money__unit">{{ $itemCurrencyUnit }}</span>
+                                                    <span class="money__amount" dir="ltr">{{ \App\Support\Currency::format((int) ($item->total_price ?? 0), $item->currency ?? $order->currency, $displayCurrency) }}</span>
+                                                    <span class="money__unit">{{ $currencyUnit }}</span>
                                                 </span>
                                             </td>
                                         </tr>
@@ -155,14 +153,12 @@
                                         'rejected' => 'رد شده',
                                         default => (string) ($payment->status ?? '—'),
                                     })
-                                    @php($paymentCurrencyCode = strtoupper((string) ($payment->currency ?? ($order->currency ?? 'IRR'))))
-                                    @php($paymentCurrencyUnit = $paymentCurrencyCode === 'IRT' ? 'تومان' : 'ریال')
                                     <tr>
                                         <td class="admin-nowrap">{{ $paymentStatusLabel }}</td>
                                         <td class="admin-nowrap">
                                             <span class="money">
-                                                <span class="money__amount" dir="ltr">{{ number_format((int) ($payment->amount ?? 0)) }}</span>
-                                                <span class="money__unit">{{ $paymentCurrencyUnit }}</span>
+                                                <span class="money__amount" dir="ltr">{{ \App\Support\Currency::format((int) ($payment->amount ?? 0), $payment->currency ?? $order->currency, $displayCurrency) }}</span>
+                                                <span class="money__unit">{{ $currencyUnit }}</span>
                                             </span>
                                         </td>
                                         <td dir="ltr">{{ $payment->reference_id ?? '—' }}</td>

@@ -20,6 +20,67 @@
     <link href="https://fonts.bunny.net/css?family=vazirmatn:400,500,600,700&display=swap" rel="stylesheet" />
 
     @vite(['resources/css/app.css', 'resources/css/spa.css', 'resources/js/app.js'])
+
+    <!-- Goftino Widget Custom Positioning CSS -->
+    <style>
+        /* Desktop positioning - higher and more to the left */
+        @media (min-width: 1025px) {
+            #goftino,
+            .goftino-widget,
+            [data-goftino],
+            iframe[src*="goftino"] {
+                bottom: 200px !important;
+                right: 70px !important;
+                position: fixed !important;
+                z-index: 9999 !important;
+                pointer-events: auto !important;
+            }
+        }
+
+        /* Tablet positioning - adjust for tablet screens */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            #goftino,
+            .goftino-widget,
+            [data-goftino],
+            iframe[src*="goftino"] {
+                bottom: 220px !important;
+                right: 20px !important;
+                position: fixed !important;
+                z-index: 9999 !important;
+                pointer-events: auto !important;
+            }
+        }
+
+        /* Mobile positioning - adjust position only, no sizing restrictions */
+        @media (max-width: 767px) {
+            #goftino,
+            .goftino-widget,
+            [data-goftino],
+            iframe[src*="goftino"] {
+                bottom: 220px !important;
+                right: 15px !important;
+                position: fixed !important;
+                z-index: 9999 !important;
+                pointer-events: auto !important;
+                width: auto !important;
+                height: auto !important;
+                max-width: none !important;
+                max-height: none !important;
+                transform: none !important;
+            }
+        }
+
+        /* Small phones - extra clearance from navigation */
+        @media (max-width: 480px) {
+            #goftino,
+            .goftino-widget,
+            [data-goftino],
+            iframe[src*="goftino"] {
+                bottom: 200px !important;
+                right: 12px !important;
+            }
+        }
+    </style>
 </head>
 <body class="spa-body">
     <div class="spa-background" id="spa-bg"
@@ -645,6 +706,25 @@
                     openVideoModal(url, title);
                 }
             });
+        })();
+    </script>
+
+    <!-- Goftino Support Widget -->
+    <script>
+        (function() {
+            console.log('Initializing Goftino widget...');
+            var widgetId = "gnCnLa";
+            var document_ref = document;
+            var script = document_ref.createElement("script");
+            var widgetUrl = "https://www.goftino.com/widget/" + widgetId;
+            var cachedId = localStorage.getItem("goftino_" + widgetId);
+            
+            script.type = "text/javascript";
+            script.async = true;
+            script.src = cachedId ? widgetUrl + "?o=" + cachedId : widgetUrl;
+            
+            console.log('Appending Goftino script:', script.src);
+            document_ref.getElementsByTagName("head")[0].appendChild(script);
         })();
     </script>
 </body>

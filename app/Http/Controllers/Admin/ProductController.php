@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booklet;
 use App\Models\Category;
+use App\Models\Course;
 use App\Models\Product;
+use App\Models\Video;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -147,6 +150,7 @@ class ProductController extends Controller
         $product = DB::transaction(function () use ($validated, $categoryId) {
             $model = Product::query()->create($validated);
             $this->syncProductCategory($model, $categoryId);
+            $this->syncProductTypeDetailRecord($model);
 
             return $model;
         });
@@ -188,17 +192,23 @@ class ProductController extends Controller
     {
         $productModel = Product::query()->findOrFail($product);
 
-        $validated = $this->validatePayload($request, $productModel);
+        $validated = $request->validate([
+            'type' => ['required', 'string', Rule::in(['note', 'video', 'course'])],
+        ]);
 
-        $categoryId = (int) $validated['category_id'];
-        unset($validated['category_id']);
-
-        DB::transaction(function () use ($productModel, $validated, $categoryId) {
-            $productModel->forceFill($validated)->save();
-            $this->syncProductCategory($productModel, $categoryId);
+        DB::transaction(function () use ($productModel, $validated) {
+            $previousType = (string) $productModel->type;
+            $productModel->forceFill(['type' => (string) $validated['type']])->save();
+            $this->syncProductTypeDetailRecord($productModel, $previousType);
         });
 
-        return redirect()->route('admin.products.edit', $productModel->id);
+        // Redirect to the dedicated module edit page for further editing
+        return match ((string) $productModel->type) {
+            'note' => redirect()->route('admin.booklets.edit', $productModel->id),
+            'video' => redirect()->route('admin.videos.edit', $productModel->id),
+            'course' => redirect()->route('admin.courses.edit', $productModel->id),
+            default => redirect()->route('admin.products.edit', $productModel->id),
+        };
     }
 
     public function destroy(int $product): RedirectResponse
@@ -214,7 +224,7 @@ class ProductController extends Controller
         $inputType = trim((string) $request->input('type', ''));
 
         $validated = $request->validate([
-            'type' => ['required', 'string', 'max:20'],
+            'type' => ['required', 'string', Rule::in(['note', 'video', 'course'])],
             'title' => ['required', 'string', 'max:180'],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
@@ -297,6 +307,46 @@ class ProductController extends Controller
         }
 
         $product->categories()->syncWithoutDetaching([$categoryId]);
+    }
+
+    private function syncProductTypeDetailRecord(Product $product, ?string $previousType = null): void
+    {
+        $currentType = (string) ($product->type ?? '');
+
+        if ($previousType !== null && $previousType !== $currentType) {
+            $this->cleanupTypeDetailRecords($product, $previousType);
+        }
+
+        match ($currentType) {
+            'note' => Booklet::query()->firstOrCreate(
+                ['product_id' => $product->id],
+                ['file_media_id' => null, 'sample_pdf_media_id' => null, 'preview_image_media_ids' => null, 'meta' => []]
+            ),
+            'video' => Video::query()->firstOrCreate(
+                ['product_id' => $product->id],
+                ['media_id' => null, 'video_url' => null, 'preview_media_id' => null, 'duration_seconds' => null, 'meta' => []]
+            ),
+            'course' => Course::query()->firstOrCreate(
+                ['product_id' => $product->id],
+                ['body' => null, 'level' => null, 'total_duration_seconds' => 0, 'total_videos_count' => 0, 'meta' => []]
+            ),
+            default => null,
+        };
+    }
+
+    private function cleanupTypeDetailRecords(Product $product, string $previousType): void
+    {
+        if ($previousType === 'note') {
+            Booklet::query()->where('product_id', $product->id)->delete();
+        }
+
+        if ($previousType === 'video') {
+            Video::query()->where('product_id', $product->id)->delete();
+        }
+
+        if ($previousType === 'course') {
+            Course::query()->where('product_id', $product->id)->delete();
+        }
     }
 
     private function uniqueProductSlug(string $baseSlug, ?int $ignoreProductId = null): string
