@@ -36,6 +36,8 @@
                         @method('put')
                     @endif
 
+                    <x-validation-errors></x-validation-errors>
+
                     <div class="grid admin-grid-2 admin-grid-2--flush">
                         <label class="field">
                             <span class="field__label">نوع</span>

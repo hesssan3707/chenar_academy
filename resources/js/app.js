@@ -42,6 +42,7 @@ window.initApp = function() {
     initProductDetailTabsUi();
     initProductsAllUi();
     initCheckoutCouponUi();
+    initProductCardMarquees();
 
     const surveyModal = document.querySelector('[data-survey-modal]');
     if (surveyModal && !window.__surveyModalShown) {
@@ -866,6 +867,7 @@ function initProductsAllUi() {
         const html = await response.text();
         results.innerHTML = html;
         results.classList.remove('is-fading');
+        initProductCardMarquees();
 
         if (pushState) {
             history.pushState({}, '', url);
@@ -2651,6 +2653,58 @@ const showToast = ({ type = 'success', title = '', message = '' } = {}) => {
     setTimeout(remove, 5000);
     toast.addEventListener('click', remove);
 };
+
+function initProductCardMarquees() {
+    const cards = document.querySelectorAll('.card-product:not(.card-product--blog)');
+    cards.forEach(card => {
+        const title = card.querySelector('.card-product__title');
+        if (!title) return;
+
+        // Ensure title container styles
+        title.style.overflow = 'hidden';
+        title.style.whiteSpace = 'nowrap';
+        title.style.display = 'block';
+        title.style.height = '1.4em';
+        title.style.lineHeight = '1.4';
+
+        // Check if there is already a span inside. If not, wrap the content in a span.
+        let inner = title.querySelector('.card-product__title-inner');
+        if (!inner) {
+            inner = document.createElement('span');
+            inner.className = 'card-product__title-inner';
+            inner.style.display = 'inline-block';
+            inner.innerHTML = title.innerHTML;
+            title.innerHTML = '';
+            title.appendChild(inner);
+        }
+
+        // Measure widths
+        const titleWidth = title.clientWidth;
+        const innerWidth = inner.scrollWidth;
+
+        if (innerWidth > titleWidth) {
+            const overflowAmount = innerWidth - titleWidth;
+            const isRtl = window.getComputedStyle(title).direction === 'rtl';
+            if (isRtl) {
+                inner.style.setProperty('--scroll-amount', `${overflowAmount + 8}px`);
+            } else {
+                inner.style.setProperty('--scroll-amount', `-${overflowAmount + 8}px`);
+            }
+            inner.classList.add('animate-marquee');
+        } else {
+            inner.classList.remove('animate-marquee');
+            inner.style.removeProperty('--scroll-amount');
+        }
+    });
+}
+
+window.initProductCardMarquees = initProductCardMarquees;
+
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(initProductCardMarquees, 150);
+});
 
 // Handle flashes
 document.addEventListener('DOMContentLoaded', () => {

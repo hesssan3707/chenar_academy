@@ -601,7 +601,7 @@ body.spa-body {
 /* Cards */
 .card-product {
     width: 280px;
-    height: 340px;
+    height: 320px;
     background: var(--ds-panel);
     border-radius: var(--ds-radius-lg);
     border: 1px solid var(--ds-border);
@@ -629,7 +629,7 @@ body.spa-body {
 
 .products-grid .card-product {
     width: auto;
-    height: auto;
+    height: 320px;
     flex-shrink: 1;
 }
 
@@ -666,7 +666,7 @@ body.spa-body {
 
 .products-all-grid .card-product {
     width: auto;
-    height: auto;
+    height: 280px;
     flex-shrink: 1;
 }
 
@@ -690,6 +690,7 @@ body.spa-body {
     border: 1px solid var(--ds-border);
     background: rgba(0, 0, 0, 0.18);
     position: relative;
+    flex-shrink: 0;
 }
 
 .spa-cover img {
@@ -946,7 +947,7 @@ body.spa-body {
 
 .card-product.card-product--home {
     width: 210px;
-    height: 236px;
+    height: 265px;
     padding: 12px;
     gap: 8px;
 }
@@ -975,14 +976,14 @@ body.spa-body {
 @media (max-width: 520px) {
     .card-product.card-product--home {
         width: 180px;
-        height: 220px;
+        height: 250px;
     }
 }
 
 @media (max-width: 520px) {
     .h-scroll-container .card-product:not(.card-product--home) {
         width: 180px;
-        height: 220px;
+        height: 250px;
         padding: 12px;
         gap: 8px;
     }
@@ -1007,6 +1008,7 @@ body.spa-body {
     flex-direction: column;
     padding: 10px 0;
     overflow: hidden;
+    overflow-y: auto;
 }
 
 .checkout-head {
@@ -1174,6 +1176,7 @@ body.spa-body {
     flex-direction: column;
     padding: 10px 0;
     overflow: hidden;
+    overflow-y: auto;
 }
 
 .cart-head {
@@ -1312,6 +1315,7 @@ body.spa-body {
     flex-direction: column;
     padding: 10px 0;
     overflow: hidden;
+    overflow-y: auto;
 }
 
 .c2c-head {
@@ -1746,5 +1750,187 @@ body.spa-body {
         padding: 2px 5px;
         font-size: 9px;
         line-height: 1.1;
+    }
+}
+
+/* Product Card Title Marquee Styles */
+.card-product__title {
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    position: relative !important;
+    width: 100% !important;
+    display: block !important;
+}
+
+.card-product__title-inner {
+    display: inline-block !important;
+    white-space: nowrap !important;
+    will-change: transform;
+}
+
+@keyframes marquee-back-and-forth {
+    0%, 15% {
+        transform: translateX(0);
+    }
+    45%, 55% {
+        transform: translateX(var(--scroll-amount, 0));
+    }
+    85%, 100% {
+        transform: translateX(0);
+    }
+}
+
+.card-product__title-inner.animate-marquee {
+    animation: marquee-back-and-forth 8s ease-in-out infinite;
+}
+
+/* Pricing layout when discount is present */
+.card-price-stack--discount,
+.home-price-stack--discount {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 0.8rem !important;
+}
+
+.card-price-stack--discount .card-price-amount,
+.home-price-stack--discount .home-price-amount,
+.home-price-stack--discount .text-brand {
+    font-size: 0.85rem !important;
+}
+
+.card-price-stack--discount .line-through,
+.home-price-stack--discount .line-through {
+    font-size: 0.72rem !important;
+    opacity: 0.7;
+}
+
+/* Blog Card Custom Styling */
+.card-product--blog {
+    display: flex;
+    flex-direction: column;
+    height: 320px; /* Uniform card height matching standard card-product */
+}
+
+.card-product--blog .spa-cover {
+    flex-shrink: 0;
+}
+
+.card-product--blog .card-product__title {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    white-space: normal !important;
+    height: 4.2em !important; /* 3 lines * 1.4 line-height = 4.2em. Keeps uniform height! */
+    line-height: 1.4 !important;
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+}
+
+/* Responsive vertical scrolling page override for mobile devices */
+@media (max-width: 768px) {
+    /*
+        Goal: background + layout stay visually fixed; only the page content scrolls vertically.
+        We achieve this by keeping spa-layout / wrapper / spa-page from participating in document scrolling,
+        and enabling vertical scrolling only on the dedicated content container (.spa-page-scroll).
+    */
+    body.spa-body {
+        overflow-y: hidden !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
+    }
+
+    .spa-layout {
+        overflow: hidden !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
+    }
+
+    .spa-content-wrapper {
+        overflow: hidden !important;
+        height: 100% !important;
+        min-height: 0 !important;
+    }
+
+    .spa-page {
+        overflow-y: hidden !important;
+        overflow-x: hidden !important;
+        position: absolute !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
+    .spa-page-scroll {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        flex: 1;
+        min-height: 0;
+        padding-right: 8px;
+        padding-bottom: 120px; /* keep room for island nav/back-to-top area */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE 10+ */
+    }
+
+    .spa-page-scroll::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+
+
+    /* Keep home section behavior, but do not re-enable full-page scrolling */
+    .home-page {
+        height: 100% !important;
+        min-height: 0 !important;
+    }
+
+    .home-rows {
+        position: absolute !important;
+        width: min(920px, 100%) !important;
+        height: auto !important;
+        transform: none !important;
+        transition: opacity 360ms ease !important;
+    }
+
+    .home-rows.is-hidden {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        height: auto !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .checkout-shell,
+    .cart-shell,
+    .c2c-shell {
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .checkout-grid,
+    .cart-grid,
+    .c2c-grid {
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    .spa-page-shell {
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
+    /* Ensure all mobile pages that use spa-page-scroll actually hide the scrollbar */
+    .spa-page-scroll {
+        scrollbar-width: none; /* Firefox */
+    }
+
+    .spa-page-scroll::-webkit-scrollbar {
+        width: 0;
+        height: 0;
     }
 }

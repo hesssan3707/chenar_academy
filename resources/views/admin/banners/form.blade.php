@@ -28,6 +28,8 @@
                         @method('put')
                     @endif
 
+                    <x-validation-errors></x-validation-errors>
+
                     <label class="field">
                         <span class="field__label">جایگاه</span>
                         <input name="position" required value="{{ old('position', (string) ($banner->position ?? 'home')) }}">

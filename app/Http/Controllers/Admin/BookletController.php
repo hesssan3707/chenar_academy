@@ -94,7 +94,11 @@ class BookletController extends Controller
             'meta' => [],
         ]);
 
-        return redirect()->route('admin.booklets.edit', $booklet->id);
+        return redirect()->route('admin.booklets.edit', $booklet->id)->with('toast', [
+            'type' => 'success',
+            'title' => 'ایجاد موفق',
+            'message' => 'جزوه با موفقیت ایجاد شد.',
+        ]);
     }
 
     public function show(int $booklet): RedirectResponse
@@ -182,7 +186,11 @@ class BookletController extends Controller
             'meta' => $details->meta ?? [],
         ])->save();
 
-        return redirect()->route('admin.booklets.edit', $bookletModel->id);
+        return redirect()->route('admin.booklets.edit', $bookletModel->id)->with('toast', [
+            'type' => 'success',
+            'title' => 'ویرایش موفق',
+            'message' => 'جزوه با موفقیت ویرایش شد.',
+        ]);
     }
 
     public function destroy(int $booklet): RedirectResponse
@@ -193,7 +201,11 @@ class BookletController extends Controller
 
         $bookletModel->delete();
 
-        return redirect()->route('admin.booklets.index');
+        return redirect()->route('admin.booklets.index')->with('toast', [
+            'type' => 'success',
+            'title' => 'حذف موفق',
+            'message' => 'جزوه با موفقیت حذف شد.',
+        ]);
     }
 
     private function validatePayload(Request $request, ?Product $product = null): array
@@ -232,7 +244,7 @@ class BookletController extends Controller
             'status' => ['nullable', 'string', Rule::in(['draft', 'published'])],
             'base_price' => [$shouldPublish ? 'required' : 'nullable', 'integer', 'min:0', 'max:2000000000'],
             'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibits:discount_type,discount_value'],
-            'discount_type' => ['nullable', 'string', Rule::in(['percent', 'amount']), 'required_with:discount_value', 'prohibits:sale_price'],
+            'discount_type' => ['nullable', 'string', Rule::in(['percent', 'amount']), 'prohibits:sale_price'],
             'discount_value' => [
                 'nullable',
                 'integer',

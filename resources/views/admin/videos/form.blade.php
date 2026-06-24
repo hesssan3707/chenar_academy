@@ -37,6 +37,8 @@
                         @method('put')
                     @endif
 
+                    <x-validation-errors></x-validation-errors>
+
                     <label class="field">
                         <span class="field__label">عنوان</span>
                         <input name="title" required value="{{ old('title', (string) ($videoProduct->title ?? '')) }}">

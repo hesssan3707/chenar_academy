@@ -183,7 +183,11 @@ class CategoryController extends Controller
 
         $category = Category::query()->create($validated);
 
-        return redirect()->route('admin.categories.edit', $category->id);
+        return redirect()->route('admin.categories.edit', $category->id)->with('toast', [
+            'type' => 'success',
+            'title' => 'ایجاد موفق',
+            'message' => 'دسته‌بندی با موفقیت ایجاد شد.',
+        ]);
     }
 
     public function show(int $category): RedirectResponse
@@ -236,7 +240,11 @@ class CategoryController extends Controller
             'sort_order' => $validated['sort_order'],
         ])->save();
 
-        return redirect()->route('admin.categories.edit', $categoryModel->id);
+        return redirect()->route('admin.categories.edit', $categoryModel->id)->with('toast', [
+            'type' => 'success',
+            'title' => 'ویرایش موفق',
+            'message' => 'دسته‌بندی با موفقیت ویرایش شد.',
+        ]);
     }
 
     public function destroy(int $category): RedirectResponse
@@ -253,7 +261,11 @@ class CategoryController extends Controller
         }
         $categoryModel->delete();
 
-        return redirect()->route('admin.categories.index');
+        return redirect()->route('admin.categories.index')->with('toast', [
+            'type' => 'success',
+            'title' => 'حذف موفق',
+            'message' => 'دسته‌بندی با موفقیت حذف شد.',
+        ]);
     }
 
     private function descendantCategoryIds(int $rootCategoryId, int $categoryTypeId): array

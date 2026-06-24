@@ -26,6 +26,8 @@
                         @method('put')
                     @endif
 
+                    <x-validation-errors></x-validation-errors>
+
                     <label class="field">
                         <span class="field__label">سوال</span>
                         <textarea name="question" required>{{ old('question', (string) ($survey->question ?? '')) }}</textarea>

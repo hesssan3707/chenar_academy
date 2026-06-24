@@ -74,9 +74,9 @@
                                             @php($originalPrice = $item->displayOriginalPrice($currencyCode))
                                             @php($finalPrice = $item->displayFinalPrice($currencyCode))
                                             @if($item->hasDiscount())
-                                                <div class="home-price-stack">
+                                                <div class="home-price-stack home-price-stack--discount">
                                                     <span class="text-xs text-muted line-through">{{ number_format($originalPrice) }}</span>
-                                                    <span class="text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                                    <span class="text-brand font-bold home-price-amount">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                                 </div>
                                             @else
                                                 <span class="text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
@@ -131,9 +131,9 @@
                                     @php($originalPrice = $item->displayOriginalPrice($currencyCode))
                                     @php($finalPrice = $item->displayFinalPrice($currencyCode))
                                     @if($item->hasDiscount())
-                                        <div class="home-price-stack">
+                                        <div class="home-price-stack home-price-stack--discount">
                                             <span class="text-xs text-muted line-through">{{ number_format($originalPrice) }}</span>
-                                            <span class="text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
+                                            <span class="text-brand font-bold home-price-amount">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                         </div>
                                     @else
                                         <span class="text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>

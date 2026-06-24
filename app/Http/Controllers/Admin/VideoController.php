@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Media;
 use App\Models\Product;
 use App\Models\Video;
+use App\Support\VideoEmbedHelper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -102,7 +103,11 @@ class VideoController extends Controller
             'meta' => [],
         ]);
 
-        return redirect()->route('admin.videos.edit', $product->id);
+        return redirect()->route('admin.videos.edit', $product->id)->with('toast', [
+            'type' => 'success',
+            'title' => 'ایجاد موفق',
+            'message' => 'ویدیو با موفقیت ایجاد شد.',
+        ]);
     }
 
     public function show(int $video): RedirectResponse
@@ -190,7 +195,11 @@ class VideoController extends Controller
 
         Video::query()->updateOrCreate(['product_id' => $product->id], $videoPayload);
 
-        return redirect()->route('admin.videos.edit', $product->id);
+        return redirect()->route('admin.videos.edit', $product->id)->with('toast', [
+            'type' => 'success',
+            'title' => 'ویرایش موفق',
+            'message' => 'ویدیو با موفقیت ویرایش شد.',
+        ]);
     }
 
     public function destroy(int $video): RedirectResponse
@@ -201,7 +210,11 @@ class VideoController extends Controller
 
         $product->delete();
 
-        return redirect()->route('admin.videos.index');
+        return redirect()->route('admin.videos.index')->with('toast', [
+            'type' => 'success',
+            'title' => 'حذف موفق',
+            'message' => 'ویدیو با موفقیت حذف شد.',
+        ]);
     }
 
     private function validatePayload(Request $request, ?Product $product = null): array
@@ -241,7 +254,7 @@ class VideoController extends Controller
             'status' => ['nullable', 'string', Rule::in(['draft', 'published'])],
             'base_price' => [$shouldPublish ? 'required' : 'nullable', 'integer', 'min:0', 'max:2000000000'],
             'sale_price' => ['nullable', 'integer', 'min:0', 'max:2000000000', 'prohibits:discount_type,discount_value'],
-            'discount_type' => ['nullable', 'string', Rule::in(['percent', 'amount']), 'required_with:discount_value', 'prohibits:sale_price'],
+            'discount_type' => ['nullable', 'string', Rule::in(['percent', 'amount']), 'prohibits:sale_price'],
             'discount_value' => [
                 'nullable',
                 'integer',
@@ -257,7 +270,11 @@ class VideoController extends Controller
             'remove_cover_image' => ['nullable', 'in:0,1'],
             'remove_preview_video' => ['nullable', 'in:0,1'],
             'remove_video_file' => ['nullable', 'in:0,1'],
-            'video_url' => ['nullable', 'string', 'max:2048', 'url', 'prohibits:video_file'],
+            'video_url' => ['nullable', 'string', 'max:2048', function ($attribute, $value, $fail) {
+                if ($value && !$this->isValidVideoSourceOrIframe($value)) {
+                    $fail('فیلد لینک ویدیو باید یک URL معتبر یا کد iframe معتبر باشد.');
+                }
+            }, 'prohibits:video_file'],
             'video_file' => ['nullable', 'file', 'max:1048576', 'prohibits:video_url'],
         ];
 
@@ -468,5 +485,36 @@ class VideoController extends Controller
         $relativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($path, '/\\'));
 
         return rtrim($root, '/\\').DIRECTORY_SEPARATOR.$relativePath;
+    }
+
+    /**
+     * Check if a value is a valid video URL or iframe embed code.
+     * Supports both regular URLs and iframe embed code (from YouTube, Vimeo, etc.).
+     *
+     * @param string $value The value to validate
+     * @return bool True if valid URL or iframe embed code
+     */
+    private function isValidVideoSourceOrIframe(string $value): bool
+    {
+        $trimmed = trim($value);
+        if (empty($trimmed)) {
+            return false;
+        }
+
+        // Check if it's an iframe embed code
+        if (stripos($trimmed, '<iframe') === 0 || stripos($trimmed, '< iframe') === 0) {
+            // Validate iframe tag
+            if (preg_match('/<\s*iframe\s+[^>]*src\s*=\s*["\']?([^"\'>\s]+)["\']?[^>]*><\s*\/\s*iframe\s*>/i', $trimmed)) {
+                return true;
+            }
+            // Also accept iframe without closing tag (user might paste incomplete)
+            if (preg_match('/<\s*iframe\s+[^>]*src\s*=\s*["\']?([^"\'>\s]+)["\']?/i', $trimmed)) {
+                return true;
+            }
+            return false;
+        }
+
+        // Otherwise, validate as URL
+        return filter_var($trimmed, FILTER_VALIDATE_URL) !== false;
     }
 }

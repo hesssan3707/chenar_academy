@@ -13,6 +13,7 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\ProductAccess;
 use App\Models\Setting;
+use App\Services\Payment\PaymentGatewayInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -230,7 +231,7 @@ class CheckoutController extends Controller
 
             return Payment::query()->create([
                 'order_id' => $order->id,
-                'gateway' => app()->environment('production') ? 'gateway' : 'mock',
+                'gateway' => app(PaymentGatewayInterface::class)->getName(),
                 'status' => 'initiated',
                 'amount' => $total,
                 'currency' => $currency,
@@ -241,11 +242,166 @@ class CheckoutController extends Controller
             ]);
         });
 
-        if (! app()->environment('production')) {
-            return redirect()->route('checkout.mock-gateway.show', $payment->id);
+        $gateway = app(PaymentGatewayInterface::class);
+        $callbackUrl = route('checkout.gateway.callback', $payment->id);
+
+        $result = $gateway->requestPayment(
+            amount: (int) $payment->amount,
+            description: 'سفارش '.$payment->order->order_number,
+            email: $request->user()->email ?? 'noreply@example.com',
+            mobile: $request->user()->phone ?? '',
+            callbackUrl: $callbackUrl
+        );
+
+        if (! $result['success']) {
+            // Log error and mark payment as failed
+            $payment->forceFill([
+                'status' => 'failed',
+                'meta' => [
+                    'error' => $result['error'] ?? 'Unknown error',
+                    'message' => $result['message'] ?? 'Failed to request payment',
+                ],
+            ])->save();
+
+            return redirect()->route('checkout.index')->with('toast', [
+                'type' => 'error',
+                'title' => 'خطا در درخواست پرداخت',
+                'message' => $result['message'] ?? 'درخواست پرداخت ناموفق بود.',
+            ]);
         }
 
-        abort(501);
+        // Store authority in payment
+        $payment->forceFill([
+            'authority' => $result['authority'],
+            'meta' => [
+                'sandbox' => $gateway->isSandbox(),
+            ],
+        ])->save();
+
+        return redirect()->away($result['url']);
+    }
+
+    public function gatewayCallback(Request $request, Payment $payment): RedirectResponse
+    {
+        $validated = $request->validate([
+            'Authority' => ['required', 'string'],
+            'Status' => ['required', 'string'],
+        ]);
+
+        $payment->loadMissing('order.items');
+        $user = auth()->user();
+
+        // Verify payment belongs to current user
+        abort_if(! $payment->order || ! $user || (int) $payment->order->user_id !== (int) $user->id, 404);
+        abort_if((string) $payment->status !== 'initiated', 403);
+
+        $status = strtoupper((string) $validated['Status']);
+        $authority = (string) $validated['Authority'];
+
+        // If user cancelled payment
+        if ($status !== 'OK') {
+            $payment->forceFill([
+                'status' => 'failed',
+                'meta' => array_merge($payment->meta ?? [], [
+                    'cancelled_by_user' => true,
+                ]),
+            ])->save();
+
+            return redirect()->route('checkout.index')->with('toast', [
+                'type' => 'error',
+                'title' => 'پرداخت لغو شد',
+                'message' => 'شما پرداخت را لغو کردید.',
+            ]);
+        }
+
+        // Verify payment with Gateway
+        $gateway = app(PaymentGatewayInterface::class);
+        $result = $gateway->verifyPayment($authority, (int) $payment->amount);
+
+        if (! $result['success']) {
+            $payment->forceFill([
+                'status' => 'failed',
+                'meta' => array_merge($payment->meta ?? [], [
+                    'verification_error' => $result['error'] ?? 'Unknown error',
+                    'verification_message' => $result['message'] ?? 'Verification failed',
+                ]),
+            ])->save();
+
+            return redirect()->route('checkout.index')->with('toast', [
+                'type' => 'error',
+                'title' => 'تایید پرداخت ناموفق',
+                'message' => $result['message'] ?? 'پرداخت تایید نشد.',
+            ]);
+        }
+
+        // Payment verified successfully
+        $expirationDays = $this->accessExpirationDays();
+
+        DB::transaction(function () use ($payment, $result, $expirationDays) {
+            $order = $payment->order;
+
+            $payment->forceFill([
+                'status' => 'paid',
+                'reference_id' => $result['reference_id'],
+                'paid_at' => now(),
+            ])->save();
+
+            $order->forceFill([
+                'status' => 'paid',
+                'paid_at' => now(),
+            ])->save();
+
+            $couponId = (int) ($order->meta['coupon_id'] ?? 0);
+            if ($couponId > 0 && $coupon = Coupon::query()->find($couponId)) {
+                CouponRedemption::query()->firstOrCreate([
+                    'coupon_id' => $coupon->id,
+                    'user_id' => $order->user_id,
+                    'order_id' => $order->id,
+                ], [
+                    'redeemed_at' => now(),
+                ]);
+
+                $coupon->increment('used_count');
+            }
+
+            foreach ($order->items as $item) {
+                if (! $item->product_id) {
+                    continue;
+                }
+
+                $expiresAt = null;
+                if ($expirationDays > 0) {
+                    $expiresAt = now()->addDays($expirationDays);
+                }
+
+                ProductAccess::query()->firstOrCreate([
+                    'user_id' => $order->user_id,
+                    'product_id' => $item->product_id,
+                ], [
+                    'order_item_id' => $item->id,
+                    'granted_at' => now(),
+                    'expires_at' => $expiresAt,
+                    'meta' => [],
+                ]);
+            }
+
+            $cartId = (int) ($order->meta['cart_id'] ?? 0);
+            if ($cartId > 0) {
+                Cart::query()->where('id', $cartId)->where('user_id', $order->user_id)->update([
+                    'status' => 'checked_out',
+                ]);
+
+                CartItem::query()->where('cart_id', $cartId)->delete();
+            }
+        });
+
+        $request->session()->forget('checkout_coupon_code');
+
+        return redirect()->route('panel.library.index')->with('toast', [
+            'type' => 'success',
+            'title' => 'پرداخت موفق',
+            'message' => 'پرداخت با موفقیت انجام شد و دسترسی شما فعال شد.',
+        ]);
     }
 
     public function cardToCard(Request $request): View
@@ -399,111 +555,6 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function mockGateway(Request $request, Payment $payment): View
-    {
-        $payment->loadMissing('order.items');
-
-        abort_if(! $payment->order || (int) $payment->order->user_id !== (int) $request->user()->id, 404);
-        abort_if((string) $payment->gateway !== 'mock', 404);
-
-        return view('commerce.checkout.mock-gateway', [
-            'payment' => $payment,
-            'order' => $payment->order,
-        ]);
-    }
-
-    public function mockGatewayReturn(Request $request, Payment $payment): RedirectResponse
-    {
-        $validated = $request->validate([
-            'result' => ['required', 'string', 'in:success,fail'],
-        ]);
-
-        $payment->loadMissing('order.items');
-
-        abort_if(! $payment->order || (int) $payment->order->user_id !== (int) $request->user()->id, 404);
-        abort_if((string) $payment->gateway !== 'mock', 404);
-        abort_if((string) $payment->status !== 'initiated', 403);
-
-        if ($validated['result'] !== 'success') {
-            $payment->forceFill([
-                'status' => 'failed',
-            ])->save();
-
-            return redirect()->route('checkout.index')->with('toast', [
-                'type' => 'error',
-                'title' => 'پرداخت ناموفق',
-                'message' => 'پرداخت انجام نشد. می‌توانید دوباره تلاش کنید.',
-            ]);
-        }
-
-        $expirationDays = $this->accessExpirationDays();
-
-        DB::transaction(function () use ($payment, $expirationDays) {
-            $order = $payment->order;
-
-            $payment->forceFill([
-                'status' => 'paid',
-                'paid_at' => now(),
-                'reference_id' => 'MOCK-'.now()->format('YmdHis').'-'.random_int(1000, 9999),
-            ])->save();
-
-            $order->forceFill([
-                'status' => 'paid',
-                'paid_at' => now(),
-            ])->save();
-
-            $couponId = (int) ($order->meta['coupon_id'] ?? 0);
-            if ($couponId > 0 && $coupon = Coupon::query()->find($couponId)) {
-                CouponRedemption::query()->firstOrCreate([
-                    'coupon_id' => $coupon->id,
-                    'user_id' => $order->user_id,
-                    'order_id' => $order->id,
-                ], [
-                    'redeemed_at' => now(),
-                ]);
-
-                $coupon->increment('used_count');
-            }
-
-            foreach ($order->items as $item) {
-                if (! $item->product_id) {
-                    continue;
-                }
-
-                $expiresAt = null;
-                if ($expirationDays > 0) {
-                    $expiresAt = now()->addDays($expirationDays);
-                }
-
-                ProductAccess::query()->firstOrCreate([
-                    'user_id' => $order->user_id,
-                    'product_id' => $item->product_id,
-                ], [
-                    'order_item_id' => $item->id,
-                    'granted_at' => now(),
-                    'expires_at' => $expiresAt,
-                    'meta' => [],
-                ]);
-            }
-
-            $cartId = (int) ($order->meta['cart_id'] ?? 0);
-            if ($cartId > 0) {
-                Cart::query()->where('id', $cartId)->where('user_id', $order->user_id)->update([
-                    'status' => 'checked_out',
-                ]);
-
-                CartItem::query()->where('cart_id', $cartId)->delete();
-            }
-        });
-
-        $request->session()->forget('checkout_coupon_code');
-
-        return redirect()->route('panel.library.index')->with('toast', [
-            'type' => 'success',
-            'title' => 'پرداخت موفق',
-            'message' => 'پرداخت با موفقیت انجام شد و دسترسی شما فعال شد.',
-        ]);
-    }
 
     private function invoiceData(Request $request, $items, ?string $currency = null): array
     {

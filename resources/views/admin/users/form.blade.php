@@ -34,6 +34,8 @@
                             @method('put')
                         @endif
 
+                        <x-validation-errors></x-validation-errors>
+
                         <label class="field">
                             <span class="field__label">نام</span>
                             <input name="name" required value="{{ old('name', (string) ($user->name ?? '')) }}">

@@ -78,6 +78,11 @@
                                     </td>
                                     <td class="admin-nowrap">
                                         <a class="btn btn--ghost btn--sm" href="{{ route('admin.videos.edit', $video->id) }}">ویرایش</a>
+                                        <form method="post" action="{{ route('admin.videos.destroy', $video->id) }}" class="inline-form" data-confirm="1">
+                                            @csrf
+                                            @method('delete')
+                                            <button class="btn btn--ghost btn--sm" type="submit">حذف</button>
+                                        </form>
                                     </td>
                                 </tr>
                             @endforeach

@@ -100,7 +100,7 @@
                                                                 @php($originalPrice = $booklet->displayOriginalPrice($currencyCode))
                                                                 @php($finalPrice = $booklet->displayFinalPrice($currencyCode))
                                                                 @if($booklet->hasDiscount())
-                                                                    <div class="card-price-stack flex flex-col">
+                                                                    <div class="card-price-stack card-price-stack--discount">
                                                                         <span class="text-xs text-muted line-through">{{ number_format($originalPrice) }}</span>
                                                                         <span class="card-price-amount text-brand font-bold">{{ number_format($finalPrice) }} <span class="text-xs">{{ $currencyUnit }}</span></span>
                                                                     </div>

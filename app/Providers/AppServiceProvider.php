@@ -13,6 +13,9 @@ use App\Models\Setting;
 use App\Models\SocialLink;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
+use App\Services\Payment\MockPaymentGateway;
+use App\Services\Payment\PaymentGatewayInterface;
+use App\Services\Payment\ZarinpalGateway;
 use App\Support\Currency;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Cache;
@@ -27,7 +30,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PaymentGatewayInterface::class, function ($app) {
+            $env = $app->environment();
+
+            if ($env === 'local') {
+                return new MockPaymentGateway();
+            }
+
+            if ($env === 'production') {
+                return new ZarinpalGateway(false);
+            }
+
+            // Development, staging, etc.
+            return new ZarinpalGateway(true);
+        });
     }
 
     /**

@@ -28,6 +28,7 @@
                     @php($gatewayLabel = match ((string) ($payment->gateway ?? '')) {
                         'card_to_card' => 'کارت‌به‌کارت',
                         'mock' => 'درگاه آزمایشی',
+                        'zarinpal' => 'درگاه زرین‌پال',
                         'gateway' => 'درگاه',
                         default => (string) ($payment->gateway ?? '—'),
                     })

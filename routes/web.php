@@ -31,6 +31,7 @@ use App\Http\Controllers\Catalog\ProductController;
 use App\Http\Controllers\Catalog\VideoController as CatalogVideoController;
 use App\Http\Controllers\Commerce\CartController;
 use App\Http\Controllers\Commerce\CheckoutController;
+use App\Http\Controllers\Commerce\FakePaymentGatewayController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Page\AboutController;
 use App\Http\Controllers\Page\ContactController;
@@ -260,12 +261,15 @@ Route::prefix('cart')->name('cart.')->group(function () {
     Route::delete('/items/{item}', [CartController::class, 'destroyItem'])->name('items.destroy');
 });
 
+// Fake Gateway routes (only active in appropriate environments)
+Route::get('/fake-gateway', [FakePaymentGatewayController::class, 'show'])->name('fake-gateway.show');
+Route::post('/fake-gateway', [FakePaymentGatewayController::class, 'process'])->name('fake-gateway.process');
+
 Route::prefix('checkout')->name('checkout.')->middleware('auth')->group(function () {
     Route::get('/', [CheckoutController::class, 'index'])->name('index');
     Route::post('/coupon', [CheckoutController::class, 'applyCoupon'])->name('coupon.apply');
     Route::post('/pay', [CheckoutController::class, 'pay'])->name('pay');
     Route::get('/card-to-card', [CheckoutController::class, 'cardToCard'])->name('card-to-card.show');
     Route::post('/card-to-card', [CheckoutController::class, 'cardToCardStore'])->name('card-to-card.store');
-    Route::get('/mock-gateway/{payment}', [CheckoutController::class, 'mockGateway'])->name('mock-gateway.show');
-    Route::post('/mock-gateway/{payment}/return', [CheckoutController::class, 'mockGatewayReturn'])->name('mock-gateway.return');
+    Route::get('/zarinpal/{payment}/callback', [CheckoutController::class, 'gatewayCallback'])->name('gateway.callback');
 });
